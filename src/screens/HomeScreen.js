@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     ScrollView,
@@ -9,12 +9,34 @@ import {
     View
 } from 'react-native';
 
+import PropertyCard from '../components/PropertyCard';
 import api from '../services/api';
+import {
+    guardarPropiedadVista,
+    obtenerPropiedadesVistas,
+} from '../services/recentProperties';
 import { theme } from '../theme/theme';
 
-export default function HomeScreen() {
-    console.log('HOME SCREEN: componente montado');
+const colorConOpacidad = (color, opacidad) => {
+    if (!color) {
+        return 'rgba(0, 0, 0, 0)';
+    }
 
+    const hex = color.replace('#', '');
+
+    if (hex.length !== 6) {
+        return color;
+    }
+
+    const rojo = parseInt(hex.substring(0, 2), 16);
+    const verde = parseInt(hex.substring(2, 4), 16);
+    const azul = parseInt(hex.substring(4, 6), 16);
+
+    return `rgba(${rojo}, ${verde}, ${azul}, ${opacidad})`;
+};
+
+
+export default function HomeScreen() {
     const router = useRouter();
 
     const [propiedades, setPropiedades] = useState([]);
@@ -24,6 +46,8 @@ export default function HomeScreen() {
     const [categoriasBusqueda, setCategoriasBusqueda] = useState([]);
     const [localidadesBusqueda, setLocalidadesBusqueda] = useState([]);
 
+    const [propiedadesVistas, setPropiedadesVistas] = useState([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -31,9 +55,22 @@ export default function HomeScreen() {
         cargarDatos();
     }, []);
 
-    const cargarDatos = async () => {
-        console.log('HOME: iniciando carga');
+    const cargarPropiedadesVistas = async () => {
+        const idsVistos = await obtenerPropiedadesVistas();
 
+        const vistas = idsVistos
+            .map((id) =>
+                propiedades.find(
+                    (propiedad) =>
+                        Number(propiedad.id) === Number(id)
+                )
+            )
+            .filter(Boolean);
+
+        setPropiedadesVistas(vistas);
+    };
+
+    const cargarDatos = async () => {
         try {
             setLoading(true);
             setError('');
@@ -48,25 +85,6 @@ export default function HomeScreen() {
                 api.get('/localidades')
             ]);
 
-            console.log(
-                'HOME: propiedades recibidas',
-                propiedadesResponse.data
-            );
-
-            console.log(
-                'HOME: categorías recibidas',
-                categoriasResponse.data
-            );
-
-            console.log(
-                'HOME: localidades recibidas',
-                localidadesResponse.data
-            );
-
-            setPropiedades(
-                propiedadesResponse.data?.data?.items || []
-            );
-
             setCategorias(
                 categoriasResponse.data?.data?.items ||
                 categoriasResponse.data?.data ||
@@ -80,6 +98,12 @@ export default function HomeScreen() {
                 localidadesResponse.data ||
                 []
             );
+
+            const propiedadesData =
+                propiedadesResponse.data?.data?.items || [];
+
+            setPropiedades(propiedadesData);
+
         } catch (error) {
             console.error('HOME: ERROR', error);
             console.error('HOME: código', error.code);
@@ -93,10 +117,17 @@ export default function HomeScreen() {
                 'No se pudieron cargar los datos'
             );
         } finally {
-            console.log('HOME: finalizando carga');
             setLoading(false);
         }
     };
+
+    useFocusEffect(
+        useCallback(() => {
+            if (propiedades.length > 0) {
+                cargarPropiedadesVistas();
+            }
+        }, [propiedades])
+    );
 
     const toggleCategoria = (id) => {
         const categoriaId = String(id);
@@ -122,6 +153,21 @@ export default function HomeScreen() {
         );
     };
 
+    const handlePropiedadVista = async (propiedad) => {
+        await guardarPropiedadVista(propiedad.id);
+
+        setPropiedadesVistas((actuales) => [
+            propiedad,
+            ...actuales.filter(
+                (actual) => actual.id !== propiedad.id
+            ),
+        ]);
+
+        router.push(
+            `/propiedades/${propiedad.id}`
+        );
+    };
+
     const handleBuscar = () => {
         const params = [];
 
@@ -141,20 +187,17 @@ export default function HomeScreen() {
             ? `?${params.join('&')}`
             : '';
 
-        console.log(
-            'HOME: filtros seleccionados',
-            {
-                categorias: categoriasBusqueda,
-                localidades: localidadesBusqueda
-            }
-        );
-
-        console.log(
-            'HOME: navegación',
-            `/propiedades${query}`
-        );
-
         router.push(`/propiedades${query}`);
+    };
+
+    const handleCategoriaRapida = (id) => {
+        const categoriaId = String(id);
+
+        router.push(
+            `/propiedades?categoria_id[]=${encodeURIComponent(
+                categoriaId
+            )}`
+        );
     };
 
     if (loading) {
@@ -344,15 +387,82 @@ export default function HomeScreen() {
                 </View>
             ) : null}
 
-            {/* PROPIEDADES RECIENTES */}
-            <View style={styles.section}>
+            {/* CATEGORÍAS RÁPIDAS */}
+            <View style={styles.quickCategoriesSection}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionBadge}>
+                        Explorá
+                    </Text>
+
+                    <Text style={styles.sectionTitle}>
+                        Explorá por tipo
+                    </Text>
+
+                    <Text style={styles.sectionDescription}>
+                        Encontrá propiedades según lo que estás buscando
+                    </Text>
+                </View>
+
+                {categorias.length > 0 ? (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.categoriesScroll}
+                    >
+                        {categorias.map((categoria) => (
+                            <TouchableOpacity
+                                key={categoria.id}
+                                style={styles.categoryCard}
+                                onPress={() =>
+                                    handleCategoriaRapida(
+                                        categoria.id
+                                    )
+                                }
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.categoryIcon}>
+                                    <Text style={styles.categoryIconText}>
+                                        🏠
+                                    </Text>
+                                </View>
+
+                                <Text
+                                    style={styles.categoryName}
+                                    numberOfLines={1}
+                                >
+                                    {categoria.nombre}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                ) : (
+                    <Text style={styles.emptyText}>
+                        No hay categorías disponibles.
+                    </Text>
+                )}
+            </View>
+
+                 {/* PROPIEDADES RECIENTES */}
+                <View
+                    style={[
+                        styles.section,
+                        styles.sectionHighlight,
+                        {
+                            backgroundColor: colorConOpacidad(
+                                theme.colors.primary,
+                                0.06
+                            ),
+                        },
+                    ]}
+                >
+    
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionBadge}>
                         Catálogo
                     </Text>
 
                     <Text style={styles.sectionTitle}>
-                        Propiedades recientes
+                        Nuevas propiedades
                     </Text>
 
                     <Text style={styles.sectionDescription}>
@@ -367,65 +477,13 @@ export default function HomeScreen() {
                         contentContainerStyle={styles.propertiesScroll}
                     >
                         {propiedades.slice(0, 6).map((propiedad) => (
-                            <TouchableOpacity
+                            <PropertyCard
                                 key={propiedad.id}
-                                style={styles.propertyCard}
+                                propiedad={propiedad}
                                 onPress={() =>
-                                    router.push(
-                                        `/propiedades/${propiedad.id}`
-                                    )
+                                    handlePropiedadVista(propiedad)
                                 }
-                                activeOpacity={0.9}
-                            >
-                                <View style={styles.propertyImagePlaceholder}>
-                                    <Text style={styles.propertyImageText}>
-                                        🏠
-                                    </Text>
-                                </View>
-
-                                <View style={styles.propertyInfo}>
-                                    <Text
-                                        style={styles.propertyTitle}
-                                        numberOfLines={2}
-                                    >
-                                        {propiedad.titulo}
-                                    </Text>
-
-                                    <Text
-                                        style={styles.propertyAddress}
-                                        numberOfLines={1}
-                                    >
-                                        📍 {propiedad.direccion}
-                                    </Text>
-
-                                    <Text style={styles.propertyPrice}>
-                                        ${Number(
-                                            propiedad.precio || 0
-                                        ).toLocaleString()}
-                                    </Text>
-
-                                    <View style={styles.propertyFeatures}>
-                                        <Text style={styles.feature}>
-                                            🛏{' '}
-                                            {propiedad.cantidad_dormitorios || 0}
-                                        </Text>
-
-                                        <Text style={styles.feature}>
-                                            🚿{' '}
-                                            {propiedad.cantidad_banos || 0}
-                                        </Text>
-
-                                        <Text style={styles.feature}>
-                                            🚪{' '}
-                                            {propiedad.cantidad_ambientes || 0}
-                                        </Text>
-                                    </View>
-
-                                    <Text style={styles.viewMore}>
-                                        Ver más →
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
+                            />
                         ))}
                     </ScrollView>
                 ) : (
@@ -443,6 +501,41 @@ export default function HomeScreen() {
                     </Text>
                 </TouchableOpacity>
             </View>
+
+            {/* VISTOS RECIENTEMENTE */}
+            {propiedadesVistas.length > 0 && (
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionBadge}>
+                            Tu actividad
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>
+                            Vistos recientemente
+                        </Text>
+
+                        <Text style={styles.sectionDescription}>
+                            Propiedades que viste recientemente
+                        </Text>
+                    </View>
+
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.propertiesScroll}
+                    >
+                        {propiedadesVistas.map((propiedad) => (
+                            <PropertyCard
+                                key={propiedad.id}
+                                propiedad={propiedad}
+                                onPress={() =>
+                                    handlePropiedadVista(propiedad)
+                                }
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
 
             {/* ESTADÍSTICAS */}
             <View style={styles.statsSection}>
@@ -597,8 +690,16 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    section: {
+    quickCategoriesSection: {
         marginTop: 30,
+    },
+
+    section: {
+        marginTop: 30
+    },
+
+    sectionHighlight: {
+        paddingVertical: 28,
     },
 
     sectionHeader: {
@@ -626,70 +727,42 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 
-    propertiesScroll: {
+    categoriesScroll: {
         paddingHorizontal: theme.spacing.lg,
-        gap: 14,
+        gap: 12,
     },
 
-    propertyCard: {
-        width: 260,
-        backgroundColor: theme.colors.inputBg,
-        borderRadius: 14,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-
-    propertyImagePlaceholder: {
-        height: 150,
-        backgroundColor: theme.colors.border,
-        justifyContent: 'center',
+    categoryCard: {
+        width: 100,
         alignItems: 'center',
     },
 
-    propertyImageText: {
-        fontSize: 48,
-    },
-
-    propertyInfo: {
-        padding: 14,
-    },
-
-    propertyTitle: {
-        color: theme.colors.textDark,
-        fontSize: 17,
-        fontWeight: '700',
-        marginBottom: 7,
-    },
-
-    propertyAddress: {
-        color: theme.colors.text,
-        fontSize: 13,
+    categoryIcon: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        backgroundColor: theme.colors.inputBg,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: 8,
     },
 
-    propertyPrice: {
-        color: theme.colors.primary,
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 10,
+    categoryIconText: {
+        fontSize: 30,
     },
 
-    propertyFeatures: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 12,
-    },
-
-    feature: {
-        color: theme.colors.text,
-        fontSize: 12,
-    },
-
-    viewMore: {
-        color: theme.colors.primary,
-        fontSize: 14,
+    categoryName: {
+        color: theme.colors.textDark,
+        fontSize: 13,
         fontWeight: '600',
+        textAlign: 'center',
+    },
+
+    propertiesScroll: {
+        paddingHorizontal: theme.spacing.lg,
+        gap: 14,
     },
 
     viewAllButton: {

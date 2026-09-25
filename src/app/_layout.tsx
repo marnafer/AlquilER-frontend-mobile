@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import AppHeader from '@/components/AppHeader';
 import { AuthProvider } from '../context/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
@@ -18,8 +19,9 @@ export default function TabLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <SafeAreaView style={{ flex: 1 }}>
             <AnimatedSplashOverlay />
+            <AppHeader />
             <AppTabs />
-          </SafeAreaView>
+        </SafeAreaView>
         </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>
