@@ -1,12 +1,13 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    useWindowDimensions,
+    View,
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
@@ -35,9 +36,182 @@ const colorConOpacidad = (color, opacidad) => {
     return `rgba(${rojo}, ${verde}, ${azul}, ${opacidad})`;
 };
 
+const limitar = (valor, minimo, maximo) =>
+    Math.min(Math.max(valor, minimo), maximo);
+
+const crearValoresResponsive = (width, height) => {
+    /*
+     * 375px representa un teléfono de referencia.
+     *
+     * La escala queda limitada para evitar que:
+     * - celulares pequeños reduzcan demasiado los elementos;
+     * - tablets hagan crecer excesivamente la interfaz.
+     */
+    const escala = limitar(width / 375, 0.88, 1.2);
+
+    /*
+     * La altura se utiliza solamente para separar secciones
+     * y reservar espacio para la navegación inferior.
+     */
+    const separacionSeccion = limitar(
+        height * 0.025,
+        16,
+        28
+    );
+
+    const separacionPequena = limitar(
+        6 * escala,
+        5,
+        8
+    );
+
+    const separacionMedia = limitar(
+        12 * escala,
+        10,
+        16
+    );
+
+    const separacionGrande = limitar(
+        18 * escala,
+        14,
+        24
+    );
+
+    const paddingHorizontal = limitar(
+        width * 0.043,
+        16,
+        28
+    );
+
+    const paddingHero = limitar(
+        width * 0.043,
+        16,
+        28
+    );
+
+    const radioPequeno = limitar(
+        10 * escala,
+        8,
+        12
+    );
+
+    const radioMedio = limitar(
+        16 * escala,
+        14,
+        20
+    );
+
+    const radioGrande = limitar(
+        28 * escala,
+        24,
+        34
+    );
+
+    const fontBody = limitar(
+        14 * escala,
+        13,
+        16
+    );
+
+    const fontSmall = limitar(
+        12 * escala,
+        11,
+        14
+    );
+
+    const fontFilter = limitar(
+        13 * escala,
+        12,
+        15
+    );
+
+    const fontSectionTitle = limitar(
+        24 * escala,
+        21,
+        29
+    );
+
+    const fontHeroTitle = limitar(
+        30 * escala,
+        26,
+        36
+    );
+
+    const fontHeroHighlight = limitar(
+        32 * escala,
+        28,
+        38
+    );
+
+    const fontStatNumber = limitar(
+        28 * escala,
+        24,
+        34
+    );
+
+    const iconCategory = limitar(
+        30 * escala,
+        26,
+        36
+    );
+
+    const categorySize = limitar(
+        68 * escala,
+        60,
+        78
+    );
+
+    const categoryWidth = limitar(
+        100 * escala,
+        90,
+        120
+    );
+
+    const bottomContentSpace = limitar(
+        height * 0.11,
+        80,
+        120
+    );
+
+    return {
+        escala,
+        separacionSeccion,
+        separacionPequena,
+        separacionMedia,
+        separacionGrande,
+        paddingHorizontal,
+        paddingHero,
+        radioPequeno,
+        radioMedio,
+        radioGrande,
+        fontBody,
+        fontSmall,
+        fontFilter,
+        fontSectionTitle,
+        fontHeroTitle,
+        fontHeroHighlight,
+        fontStatNumber,
+        iconCategory,
+        categorySize,
+        categoryWidth,
+        bottomContentSpace,
+    };
+};
 
 export default function HomeScreen() {
     const router = useRouter();
+
+    const { width, height } = useWindowDimensions();
+
+    const responsive = useMemo(
+        () => crearValoresResponsive(width, height),
+        [width, height]
+    );
+
+    const styles = useMemo(
+        () => crearEstilos(responsive),
+        [responsive]
+    );
 
     const [propiedades, setPropiedades] = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -78,11 +252,11 @@ export default function HomeScreen() {
             const [
                 propiedadesResponse,
                 categoriasResponse,
-                localidadesResponse
+                localidadesResponse,
             ] = await Promise.all([
                 api.get('/propiedades'),
                 api.get('/categorias'),
-                api.get('/localidades')
+                api.get('/localidades'),
             ]);
 
             setCategorias(
@@ -103,7 +277,6 @@ export default function HomeScreen() {
                 propiedadesResponse.data?.data?.items || [];
 
             setPropiedades(propiedadesData);
-
         } catch (error) {
             console.error('HOME: ERROR', error);
             console.error('HOME: código', error.code);
@@ -224,16 +397,7 @@ export default function HomeScreen() {
             {/* HERO */}
             <View style={styles.hero}>
                 <Text style={styles.heroTitle}>
-                    Encontrá tu
-                </Text>
-
-                <Text style={styles.heroTitleHighlight}>
-                    próximo hogar
-                </Text>
-
-                <Text style={styles.heroDescription}>
-                    Las mejores propiedades en alquiler.
-                    Departamentos, casas, quintas y más.
+                    Encontrá tu próximo hogar
                 </Text>
 
                 <View style={styles.searchBox}>
@@ -255,7 +419,7 @@ export default function HomeScreen() {
                             style={[
                                 styles.filterOption,
                                 localidadesBusqueda.length === 0 &&
-                                    styles.filterOptionSelected
+                                    styles.filterOptionSelected,
                             ]}
                             onPress={() =>
                                 setLocalidadesBusqueda([])
@@ -265,7 +429,7 @@ export default function HomeScreen() {
                                 style={[
                                     styles.filterOptionText,
                                     localidadesBusqueda.length === 0 &&
-                                        styles.filterOptionTextSelected
+                                        styles.filterOptionTextSelected,
                                 ]}
                             >
                                 Todas
@@ -284,7 +448,7 @@ export default function HomeScreen() {
                                     style={[
                                         styles.filterOption,
                                         seleccionada &&
-                                            styles.filterOptionSelected
+                                            styles.filterOptionSelected,
                                     ]}
                                     onPress={() =>
                                         toggleLocalidad(localidad.id)
@@ -294,7 +458,7 @@ export default function HomeScreen() {
                                         style={[
                                             styles.filterOptionText,
                                             seleccionada &&
-                                                styles.filterOptionTextSelected
+                                                styles.filterOptionTextSelected,
                                         ]}
                                     >
                                         {localidad.nombre}
@@ -318,7 +482,7 @@ export default function HomeScreen() {
                             style={[
                                 styles.filterOption,
                                 categoriasBusqueda.length === 0 &&
-                                    styles.filterOptionSelected
+                                    styles.filterOptionSelected,
                             ]}
                             onPress={() =>
                                 setCategoriasBusqueda([])
@@ -328,7 +492,7 @@ export default function HomeScreen() {
                                 style={[
                                     styles.filterOptionText,
                                     categoriasBusqueda.length === 0 &&
-                                        styles.filterOptionTextSelected
+                                        styles.filterOptionTextSelected,
                                 ]}
                             >
                                 Todos
@@ -347,7 +511,7 @@ export default function HomeScreen() {
                                     style={[
                                         styles.filterOption,
                                         seleccionada &&
-                                            styles.filterOptionSelected
+                                            styles.filterOptionSelected,
                                     ]}
                                     onPress={() =>
                                         toggleCategoria(categoria.id)
@@ -357,7 +521,7 @@ export default function HomeScreen() {
                                         style={[
                                             styles.filterOptionText,
                                             seleccionada &&
-                                                styles.filterOptionTextSelected
+                                                styles.filterOptionTextSelected,
                                         ]}
                                     >
                                         {categoria.nombre}
@@ -386,6 +550,97 @@ export default function HomeScreen() {
                     </Text>
                 </View>
             ) : null}
+
+            {/* VISTOS RECIENTEMENTE */}
+            {propiedadesVistas.length > 0 && (
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionBadge}>
+                            Tu actividad
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>
+                            Vistos recientemente
+                        </Text>
+                    </View>
+
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.propertiesScroll}
+                    >
+                        {propiedadesVistas.map((propiedad) => (
+                            <PropertyCard
+                                key={propiedad.id}
+                                propiedad={propiedad}
+                                compacto
+                                onPress={() =>
+                                    handlePropiedadVista(propiedad)
+                                }
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+
+            {/* PROPIEDADES RECIENTES */}
+            <View
+                style={[
+                    styles.section,
+                    styles.sectionHighlight,
+                    {
+                        backgroundColor: colorConOpacidad(
+                            theme.colors.primary,
+                            0.06
+                        ),
+                    },
+                ]}
+            >
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionBadge}>
+                        Catálogo
+                    </Text>
+
+                    <Text style={styles.sectionTitle}>
+                        Nuevas propiedades
+                    </Text>
+
+                    <Text style={styles.sectionDescription}>
+                        Las últimas publicaciones en AlquilER
+                    </Text>
+                </View>
+
+                {propiedades.length > 0 ? (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.propertiesScroll}
+                    >
+                        {propiedades.slice(0, 6).map((propiedad) => (
+                            <PropertyCard
+                                key={propiedad.id}
+                                propiedad={propiedad}
+                                onPress={() =>
+                                    handlePropiedadVista(propiedad)
+                                }
+                            />
+                        ))}
+                    </ScrollView>
+                ) : (
+                    <Text style={styles.emptyText}>
+                        No hay propiedades publicadas.
+                    </Text>
+                )}
+
+                <TouchableOpacity
+                    style={styles.viewAllButton}
+                    onPress={() => router.push('/propiedades')}
+                >
+                    <Text style={styles.viewAllText}>
+                        Ver todas las propiedades
+                    </Text>
+                </TouchableOpacity>
+            </View>
 
             {/* CATEGORÍAS RÁPIDAS */}
             <View style={styles.quickCategoriesSection}>
@@ -442,101 +697,6 @@ export default function HomeScreen() {
                 )}
             </View>
 
-                 {/* PROPIEDADES RECIENTES */}
-                <View
-                    style={[
-                        styles.section,
-                        styles.sectionHighlight,
-                        {
-                            backgroundColor: colorConOpacidad(
-                                theme.colors.primary,
-                                0.06
-                            ),
-                        },
-                    ]}
-                >
-    
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionBadge}>
-                        Catálogo
-                    </Text>
-
-                    <Text style={styles.sectionTitle}>
-                        Nuevas propiedades
-                    </Text>
-
-                    <Text style={styles.sectionDescription}>
-                        Las últimas publicaciones en AlquilER
-                    </Text>
-                </View>
-
-                {propiedades.length > 0 ? (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.propertiesScroll}
-                    >
-                        {propiedades.slice(0, 6).map((propiedad) => (
-                            <PropertyCard
-                                key={propiedad.id}
-                                propiedad={propiedad}
-                                onPress={() =>
-                                    handlePropiedadVista(propiedad)
-                                }
-                            />
-                        ))}
-                    </ScrollView>
-                ) : (
-                    <Text style={styles.emptyText}>
-                        No hay propiedades publicadas.
-                    </Text>
-                )}
-
-                <TouchableOpacity
-                    style={styles.viewAllButton}
-                    onPress={() => router.push('/propiedades')}
-                >
-                    <Text style={styles.viewAllText}>
-                        Ver todas las propiedades
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* VISTOS RECIENTEMENTE */}
-            {propiedadesVistas.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionBadge}>
-                            Tu actividad
-                        </Text>
-
-                        <Text style={styles.sectionTitle}>
-                            Vistos recientemente
-                        </Text>
-
-                        <Text style={styles.sectionDescription}>
-                            Propiedades que viste recientemente
-                        </Text>
-                    </View>
-
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.propertiesScroll}
-                    >
-                        {propiedadesVistas.map((propiedad) => (
-                            <PropertyCard
-                                key={propiedad.id}
-                                propiedad={propiedad}
-                                onPress={() =>
-                                    handlePropiedadVista(propiedad)
-                                }
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
             {/* ESTADÍSTICAS */}
             <View style={styles.statsSection}>
                 <View style={styles.statItem}>
@@ -563,254 +723,274 @@ export default function HomeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
+const crearEstilos = (responsive) => {
+    const {
+        separacionSeccion,
+        separacionPequena,
+        separacionMedia,
+        separacionGrande,
+        paddingHorizontal,
+        paddingHero,
+        radioPequeno,
+        radioMedio,
+        radioGrande,
+        fontBody,
+        fontSmall,
+        fontFilter,
+        fontSectionTitle,
+        fontHeroTitle,
+        fontHeroHighlight,
+        fontStatNumber,
+        iconCategory,
+        categorySize,
+        categoryWidth,
+        bottomContentSpace,
+    } = responsive;
 
-    content: {
-        paddingBottom: 40,
-    },
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: theme.colors.background,
+        },
 
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.colors.background,
-    },
+        content: {
+            paddingBottom: bottomContentSpace,
+        },
 
-    loadingText: {
-        marginTop: 12,
-        color: theme.colors.text,
-        fontSize: theme.sizes.body,
-    },
+        loadingContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: theme.colors.background,
+            paddingHorizontal,
+        },
 
-    hero: {
-        backgroundColor: theme.colors.primary,
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: 30,
-        paddingBottom: 30,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-    },
+        loadingText: {
+            marginTop: separacionMedia,
+            color: theme.colors.text,
+            fontSize: fontBody,
+        },
 
-    heroTitle: {
-        color: '#ffffff',
-        fontSize: 30,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
+        hero: {
+            backgroundColor: theme.colors.primary,
+            paddingHorizontal: paddingHero,
+            paddingTop: separacionPequena,
+            paddingBottom: separacionMedia,
+            borderBottomLeftRadius: radioGrande,
+            borderBottomRightRadius: radioGrande,
+        },
 
-    heroTitleHighlight: {
-        color: '#ffffff',
-        fontSize: 32,
-        fontWeight: '800',
-        textAlign: 'center',
-        marginBottom: 12,
-    },
+        heroTitle: {
+            color: '#ffffff',
+            fontSize: fontHeroTitle,
+            fontWeight: '700',
+            textAlign: 'center',
+            paddingVertical: separacionMedia,
+        },
 
-    heroDescription: {
-        color: '#ffffff',
-        fontSize: 15,
-        lineHeight: 22,
-        textAlign: 'center',
-        opacity: 0.95,
-        marginBottom: 22,
-    },
+        searchBox: {
+            backgroundColor: '#ffffff',
+            borderRadius: radioMedio,
+            paddingHorizontal: separacionGrande,
+            paddingVertical: separacionMedia,
+            width: '90%',
+            maxWidth: 560,
+            alignSelf: 'center',
+        },
 
-    searchBox: {
-        backgroundColor: '#ffffff',
-        borderRadius: 16,
-        padding: 16,
-    },
+        searchTitle: {
+            fontSize: fontBody + 4,
+            fontWeight: '700',
+            color: theme.colors.textDark,
+            textAlign: 'center',
+            marginBottom: separacionMedia,
+        },
 
-    searchTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: theme.colors.textDark,
-        marginBottom: 16,
-    },
+        filterLabel: {
+            fontSize: fontBody,
+            fontWeight: '600',
+            color: theme.colors.textDark,
+            marginBottom: separacionPequena,
+        },
 
-    filterLabel: {
-        fontSize: theme.sizes.body,
-        fontWeight: '600',
-        color: theme.colors.textDark,
-        marginBottom: 8,
-    },
+        filterScroll: {
+            marginBottom: separacionMedia,
+        },
 
-    filterScroll: {
-        marginBottom: 14,
-    },
+        filterOption: {
+            paddingHorizontal: separacionMedia,
+            paddingVertical: separacionPequena,
+            borderRadius: 999,
+            backgroundColor: theme.colors.inputBg,
+            marginRight: separacionPequena,
+        },
 
-    filterOption: {
-        paddingHorizontal: 14,
-        paddingVertical: 9,
-        borderRadius: 20,
-        backgroundColor: theme.colors.inputBg,
-        marginRight: 8,
-    },
+        filterOptionSelected: {
+            backgroundColor: theme.colors.primaryDark,
+        },
 
-    filterOptionSelected: {
-        backgroundColor: theme.colors.primary,
-    },
+        filterOptionText: {
+            color: theme.colors.textDark,
+            fontSize: fontFilter,
+        },
 
-    filterOptionText: {
-        color: theme.colors.textDark,
-        fontSize: 13,
-    },
+        filterOptionTextSelected: {
+            color: '#ffffff',
+            fontWeight: '600',
+        },
 
-    filterOptionTextSelected: {
-        color: '#ffffff',
-        fontWeight: '600',
-    },
+        searchButton: {
+            backgroundColor: theme.colors.primaryDark,
+            borderRadius: radioPequeno,
+            paddingVertical: separacionMedia,
+            paddingHorizontal: separacionGrande,
+            alignItems: 'center',
+        },
 
-    searchButton: {
-        backgroundColor: theme.colors.primary,
-        borderRadius: 10,
-        paddingVertical: 13,
-        alignItems: 'center',
-    },
+        searchButtonText: {
+            color: '#ffffff',
+            fontSize: fontBody,
+            fontWeight: '600',
+            textAlign: 'center',
+        },
 
-    searchButtonText: {
-        color: '#ffffff',
-        fontSize: theme.sizes.body,
-        fontWeight: '600',
-    },
+        errorBox: {
+            marginHorizontal: paddingHorizontal,
+            marginTop: separacionSeccion,
+            padding: separacionMedia,
+            borderRadius: radioPequeno,
+            backgroundColor: theme.colors.errorBg,
+        },
 
-    errorBox: {
-        margin: theme.spacing.lg,
-        padding: theme.spacing.md,
-        borderRadius: 10,
-        backgroundColor: theme.colors.errorBg,
-    },
+        errorText: {
+            color: theme.colors.errorText,
+            textAlign: 'center',
+            fontSize: fontBody,
+        },
 
-    errorText: {
-        color: theme.colors.errorText,
-        textAlign: 'center',
-    },
+        quickCategoriesSection: {
+            marginTop: separacionSeccion,
+        },
 
-    quickCategoriesSection: {
-        marginTop: 30,
-    },
+        section: {
+            marginTop: separacionSeccion,
+        },
 
-    section: {
-        marginTop: 30
-    },
+        sectionHighlight: {
+            paddingVertical: separacionGrande,
+        },
 
-    sectionHighlight: {
-        paddingVertical: 28,
-    },
+        sectionHeader: {
+            paddingHorizontal,
+            marginBottom: separacionGrande,
+        },
 
-    sectionHeader: {
-        paddingHorizontal: theme.spacing.lg,
-        marginBottom: 18,
-    },
+        sectionBadge: {
+            color: theme.colors.primary,
+            fontSize: fontSmall,
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            marginBottom: separacionPequena,
+        },
 
-    sectionBadge: {
-        color: theme.colors.primary,
-        fontSize: 13,
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        marginBottom: 5,
-    },
+        sectionTitle: {
+            color: theme.colors.textDark,
+            fontSize: fontSectionTitle,
+            fontWeight: '700',
+            marginBottom: separacionPequena,
+        },
 
-    sectionTitle: {
-        color: theme.colors.textDark,
-        fontSize: 24,
-        fontWeight: '700',
-        marginBottom: 5,
-    },
+        categoriesScroll: {
+            paddingHorizontal,
+            gap: separacionMedia,
+        },
 
-    sectionDescription: {
-        color: theme.colors.text,
-        fontSize: 14,
-    },
+        categoryCard: {
+            width: categoryWidth,
+            alignItems: 'center',
+        },
 
-    categoriesScroll: {
-        paddingHorizontal: theme.spacing.lg,
-        gap: 12,
-    },
+        categoryIcon: {
+            width: categorySize,
+            height: categorySize,
+            borderRadius: categorySize / 2,
+            backgroundColor: theme.colors.inputBg,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: separacionPequena,
+        },
 
-    categoryCard: {
-        width: 100,
-        alignItems: 'center',
-    },
+        categoryIconText: {
+            fontSize: iconCategory,
+        },
 
-    categoryIcon: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
-        backgroundColor: theme.colors.inputBg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
+        categoryName: {
+            color: theme.colors.textDark,
+            fontSize: fontFilter,
+            fontWeight: '600',
+            textAlign: 'center',
+        },
 
-    categoryIconText: {
-        fontSize: 30,
-    },
+        propertiesScroll: {
+            paddingHorizontal,
+            gap: separacionMedia,
+        },
 
-    categoryName: {
-        color: theme.colors.textDark,
-        fontSize: 13,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
+        viewAllButton: {
+            marginHorizontal: paddingHorizontal,
+            marginTop: separacionGrande,
+            borderWidth: 1,
+            borderColor: theme.colors.primary,
+            borderRadius: radioPequeno,
+            paddingVertical: separacionMedia,
+            paddingHorizontal: separacionGrande,
+            alignItems: 'center',
+        },
 
-    propertiesScroll: {
-        paddingHorizontal: theme.spacing.lg,
-        gap: 14,
-    },
+        viewAllText: {
+            color: theme.colors.primary,
+            fontSize: fontBody,
+            fontWeight: '600',
+            textAlign: 'center',
+        },
 
-    viewAllButton: {
-        marginHorizontal: theme.spacing.lg,
-        marginTop: 18,
-        borderWidth: 1,
-        borderColor: theme.colors.primary,
-        borderRadius: 10,
-        paddingVertical: 12,
-        alignItems: 'center',
-    },
+        emptyText: {
+            color: theme.colors.text,
+            textAlign: 'center',
+            paddingHorizontal,
+            paddingVertical: separacionGrande,
+            fontSize: fontBody,
+        },
 
-    viewAllText: {
-        color: theme.colors.primary,
-        fontWeight: '600',
-    },
+        statsSection: {
+            marginTop: separacionSeccion,
+            marginHorizontal: paddingHorizontal,
+            padding: separacionGrande,
+            borderRadius: radioMedio,
+            backgroundColor: theme.colors.primary,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
 
-    emptyText: {
-        color: theme.colors.text,
-        textAlign: 'center',
-        padding: 20,
-    },
+        statItem: {
+            flex: 1,
+            alignItems: 'center',
+            paddingHorizontal: separacionPequena,
+        },
 
-    statsSection: {
-        marginTop: 30,
-        marginHorizontal: theme.spacing.lg,
-        padding: 20,
-        borderRadius: 16,
-        backgroundColor: theme.colors.primary,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
+        statNumber: {
+            color: '#ffffff',
+            fontSize: fontStatNumber,
+            fontWeight: '800',
+        },
 
-    statItem: {
-        width: '48%',
-        alignItems: 'center',
-    },
-
-    statNumber: {
-        color: '#ffffff',
-        fontSize: 28,
-        fontWeight: '800',
-    },
-
-    statLabel: {
-        color: '#ffffff',
-        fontSize: 12,
-        textAlign: 'center',
-        marginTop: 3,
-    },
-});
+        statLabel: {
+            color: '#ffffff',
+            fontSize: fontSmall,
+            textAlign: 'center',
+            marginTop: separacionPequena,
+        },
+    });
+};
