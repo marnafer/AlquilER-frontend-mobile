@@ -3,41 +3,89 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
-const PropertyCard = ({ propiedad, onPress }) => {
+const limitar = (valor, minimo, maximo) =>
+    Math.min(Math.max(valor, minimo), maximo);
+
+const PropertyCard = ({
+    propiedad,
+    onPress,
+    compacto = false,
+}) => {
+    const { width } = useWindowDimensions();
+
+    const escala = limitar(
+        width / 375,
+        0.88,
+        1.2
+    );
+
+    const anchoCard = compacto
+        ? limitar(width * 0.48, 170, 205)
+        : 260;
+
+    const altoImagen = compacto
+        ? limitar(100 * escala, 88, 120)
+        : 150;
+
     const construirUrlImagen = (ruta) => {
         if (!ruta) {
             return null;
         }
 
-        const baseUrl = api.defaults.baseURL.replace(/\/api\/?$/, '');
+        const baseUrl =
+            api.defaults.baseURL.replace(
+                /\/api\/?$/,
+                ''
+            );
 
-        return `${baseUrl}${ruta.startsWith('/') ? ruta : `/${ruta}`}`;
+        return `${baseUrl}${
+            ruta.startsWith('/')
+                ? ruta
+                : `/${ruta}`
+        }`;
     };
 
-    const imagenUrl = construirUrlImagen(propiedad.imagen_url);
+    const imagenUrl = construirUrlImagen(
+        propiedad.imagen_url
+    );
 
     console.log(
-    'PROPERTY CARD:',
-    propiedad.id,
-    'imagen_url:',
-    propiedad.imagen_url,
-    'URL final:',
-    imagenUrl
-);
+        'PROPERTY CARD:',
+        propiedad.id,
+        'imagen_url:',
+        propiedad.imagen_url,
+        'URL final:',
+        imagenUrl
+    );
 
     return (
         <TouchableOpacity
-            style={styles.card}
+            style={[
+                styles.card,
+                {
+                    width: anchoCard,
+                },
+                compacto &&
+                    styles.cardCompacta,
+            ]}
             onPress={onPress}
             activeOpacity={0.9}
         >
-            <View style={styles.imageContainer}>
+            <View
+                style={[
+                    styles.imageContainer,
+                    {
+                        height: altoImagen,
+                    },
+                ]}
+            >
                 {imagenUrl ? (
                     <Image
                         source={{ uri: imagenUrl }}
@@ -46,47 +94,83 @@ const PropertyCard = ({ propiedad, onPress }) => {
                     />
                 ) : (
                     <View style={styles.placeholder}>
-                        <Text style={styles.placeholderText}>
+                        <Text
+                            style={[
+                                styles.placeholderText,
+                                compacto &&
+                                    styles.placeholderTextCompacto,
+                            ]}
+                        >
                             🏠
                         </Text>
                     </View>
                 )}
             </View>
 
-            <View style={styles.info}>
+            <View
+                style={[
+                    styles.info,
+                    compacto &&
+                        styles.infoCompacta,
+                ]}
+            >
                 <Text
-                    style={styles.title}
-                    numberOfLines={2}
+                    style={[
+                        styles.title,
+                        compacto &&
+                            styles.titleCompacto,
+                    ]}
+                    numberOfLines={
+                        compacto ? 1 : 2
+                    }
                 >
                     {propiedad.titulo}
                 </Text>
 
                 <Text
-                    style={styles.location}
+                    style={[
+                        styles.location,
+                        compacto &&
+                            styles.locationCompacta,
+                    ]}
                     numberOfLines={1}
                 >
                     📍 {propiedad.direccion}
                 </Text>
 
-                <Text style={styles.price}>
-                    ${Number(
+                <Text
+                    style={[
+                        styles.price,
+                        compacto &&
+                            styles.priceCompacto,
+                    ]}
+                >
+                    $
+                    {Number(
                         propiedad.precio || 0
                     ).toLocaleString('es-AR')}
                 </Text>
 
-                <View style={styles.features}>
-                <Text style={styles.feature}>
-                    🛏 {propiedad.cantidad_dormitorios || 0}
-                </Text>
+                {!compacto && (
+                    <View style={styles.features}>
+                        <Text style={styles.feature}>
+                            🛏{' '}
+                            {propiedad.cantidad_dormitorios ||
+                                0}
+                        </Text>
 
-                <Text style={styles.feature}>
-                    🚿 {propiedad.cantidad_banos || 0}
-                </Text>
+                        <Text style={styles.feature}>
+                            🚿{' '}
+                            {propiedad.cantidad_banos ||
+                                0}
+                        </Text>
 
-                <Text style={styles.feature}>
-                    👥 {propiedad.capacidad || 0}
-                </Text>
-                </View>
+                        <Text style={styles.feature}>
+                            👥{' '}
+                            {propiedad.capacidad || 0}
+                        </Text>
+                    </View>
+                )}
             </View>
         </TouchableOpacity>
     );
@@ -94,18 +178,22 @@ const PropertyCard = ({ propiedad, onPress }) => {
 
 const styles = StyleSheet.create({
     card: {
-        width: 260,
         marginRight: 14,
         borderRadius: 14,
-        backgroundColor: theme.colors.inputBg,
+        backgroundColor:
+            theme.colors.inputBg,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor:
+            theme.colors.border,
+    },
+
+    cardCompacta: {
+        borderRadius: 12,
     },
 
     imageContainer: {
         width: '100%',
-        height: 150,
     },
 
     image: {
@@ -117,15 +205,24 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.border,
+        backgroundColor:
+            theme.colors.border,
     },
 
     placeholderText: {
         fontSize: 48,
     },
 
+    placeholderTextCompacto: {
+        fontSize: 32,
+    },
+
     info: {
         padding: 14,
+    },
+
+    infoCompacta: {
+        padding: 10,
     },
 
     title: {
@@ -135,10 +232,20 @@ const styles = StyleSheet.create({
         marginBottom: 7,
     },
 
+    titleCompacto: {
+        fontSize: 14,
+        marginBottom: 5,
+    },
+
     location: {
         fontSize: 13,
         color: theme.colors.text,
         marginBottom: 8,
+    },
+
+    locationCompacta: {
+        fontSize: 11,
+        marginBottom: 5,
     },
 
     price: {
@@ -146,6 +253,11 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: theme.colors.primary,
         marginBottom: 10,
+    },
+
+    priceCompacto: {
+        fontSize: 15,
+        marginBottom: 0,
     },
 
     features: {
