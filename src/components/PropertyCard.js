@@ -78,34 +78,30 @@ const PropertyCard = ({
             onPress={onPress}
             activeOpacity={0.9}
         >
-            <View
-                style={[
-                    styles.imageContainer,
-                    {
-                        height: altoImagen,
-                    },
-                ]}
-            >
-                {imagenUrl ? (
-                    <Image
-                        source={{ uri: imagenUrl }}
-                        style={styles.image}
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <View style={styles.placeholder}>
-                        <Text
-                            style={[
-                                styles.placeholderText,
-                                compacto &&
-                                    styles.placeholderTextCompacto,
-                            ]}
-                        >
-                            🏠
-                        </Text>
-                    </View>
-                )}
-            </View>
+            {!compacto && (
+                <View
+                    style={[
+                        styles.imageContainer,
+                        {
+                            height: altoImagen,
+                        },
+                    ]}
+                >
+                    {imagenUrl ? (
+                        <Image
+                            source={{ uri: imagenUrl }}
+                            style={styles.image}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={styles.placeholder}>
+                            <Text style={styles.placeholderText}>
+                                🏠
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            )}
 
             <View
                 style={[

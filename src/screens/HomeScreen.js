@@ -631,70 +631,41 @@ export default function HomeScreen() {
                         No hay propiedades publicadas.
                     </Text>
                 )}
-
-                <TouchableOpacity
-                    style={styles.viewAllButton}
-                    onPress={() => router.push('/propiedades')}
-                >
-                    <Text style={styles.viewAllText}>
-                        Ver todas las propiedades
-                    </Text>
-                </TouchableOpacity>
             </View>
 
-            {/* CATEGORÍAS RÁPIDAS */}
-            <View style={styles.quickCategoriesSection}>
+            {/* PUBLICA TU PROPIEDAD */}
+            <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionBadge}>
-                        Explorá
+                        Publicá
                     </Text>
 
                     <Text style={styles.sectionTitle}>
-                        Explorá por tipo
+                        ¿Tenés una propiedad para alquilar?
                     </Text>
 
                     <Text style={styles.sectionDescription}>
-                        Encontrá propiedades según lo que estás buscando
+                        Sumala a AlquilER y empezá a recibir consultas de personas interesadas.
                     </Text>
                 </View>
 
-                {categorias.length > 0 ? (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.categoriesScroll}
-                    >
-                        {categorias.map((categoria) => (
-                            <TouchableOpacity
-                                key={categoria.id}
-                                style={styles.categoryCard}
-                                onPress={() =>
-                                    handleCategoriaRapida(
-                                        categoria.id
-                                    )
-                                }
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.categoryIcon}>
-                                    <Text style={styles.categoryIconText}>
-                                        🏠
-                                    </Text>
-                                </View>
+                <TouchableOpacity
+                    style={styles.publishCard}
+                    activeOpacity={0.85}
+                    onPress={() => {}}
+                >
+                    <View style={styles.publishIconContainer}>
+                        <Text style={styles.publishIcon}>
+                            🏠
+                        </Text>
+                    </View>
 
-                                <Text
-                                    style={styles.categoryName}
-                                    numberOfLines={1}
-                                >
-                                    {categoria.nombre}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                ) : (
-                    <Text style={styles.emptyText}>
-                        No hay categorías disponibles.
-                    </Text>
-                )}
+                    <View style={styles.publishContent}>
+                        <Text style={styles.publishTitle}>
+                            Publicar propiedad      →
+                        </Text>
+                    </View>
+                </TouchableOpacity>
             </View>
 
             {/* ESTADÍSTICAS */}
@@ -826,7 +797,7 @@ const crearEstilos = (responsive) => {
         },
 
         filterOptionSelected: {
-            backgroundColor: theme.colors.primaryDark,
+            backgroundColor: theme.colors.primary,
         },
 
         filterOptionText: {
@@ -840,7 +811,7 @@ const crearEstilos = (responsive) => {
         },
 
         searchButton: {
-            backgroundColor: theme.colors.primaryDark,
+            backgroundColor: theme.colors.primary,
             borderRadius: radioPequeno,
             paddingVertical: separacionMedia,
             paddingHorizontal: separacionGrande,
@@ -900,6 +871,12 @@ const crearEstilos = (responsive) => {
             marginBottom: separacionPequena,
         },
 
+        sectionDescription: {
+            color: theme.colors.textMuted,
+            fontSize: fontBody,
+            lineHeight: fontBody + 6,
+        },
+
         categoriesScroll: {
             paddingHorizontal,
             gap: separacionMedia,
@@ -933,27 +910,57 @@ const crearEstilos = (responsive) => {
             textAlign: 'center',
         },
 
+        publishCard: {
+            width: "90%",
+            alignSelf: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: theme.colors.primaryDark,
+            borderRadius: radioMedio,
+            paddingVertical: separacionPequena,
+            paddingHorizontal: separacionPequena,
+            marginTop: separacionPequena,
+        },
+
+    publishIconContainer: {
+        width: categorySize,
+        height: categorySize,
+        borderRadius: categorySize / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colorConOpacidad(
+            theme.colors.background,
+            0.15
+        ),
+        marginRight: separacionPequena,
+    },
+
+    publishIcon: {
+        fontSize: iconCategory,
+    },
+
+    publishContent: {
+        flex: 1,
+    },
+
+    publishTitle: {
+        color: theme.colors.background,
+        fontSize: fontBody + 2,
+        fontWeight: '700',
+        marginBottom: separacionPequena,
+        alignSelf: "center"
+    },
+
+    publishSubtitle: {
+        color: theme.colors.background,
+        opacity: 0.85,
+        fontSize: fontSmall,
+        lineHeight: fontSmall + 5,
+    },
+
         propertiesScroll: {
             paddingHorizontal,
             gap: separacionMedia,
-        },
-
-        viewAllButton: {
-            marginHorizontal: paddingHorizontal,
-            marginTop: separacionGrande,
-            borderWidth: 1,
-            borderColor: theme.colors.primary,
-            borderRadius: radioPequeno,
-            paddingVertical: separacionMedia,
-            paddingHorizontal: separacionGrande,
-            alignItems: 'center',
-        },
-
-        viewAllText: {
-            color: theme.colors.primary,
-            fontSize: fontBody,
-            fontWeight: '600',
-            textAlign: 'center',
         },
 
         emptyText: {
