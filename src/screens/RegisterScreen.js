@@ -12,6 +12,7 @@ import {
     View
 } from 'react-native';
 
+import { useLayout } from '../context/LayoutContext';
 import { register } from '../services/api';
 import { theme } from '../theme/theme';
 
@@ -31,6 +32,7 @@ export default function RegisterScreen() {
     const [success, setSuccess] = useState('');
 
     const router = useRouter();
+    const { bottomNavigationHeight } = useLayout();
 
     const primerErrorValidacion = (result) => {
         const validationErrors = result?.validation_errors;
@@ -123,7 +125,12 @@ export default function RegisterScreen() {
             style={styles.container}
         >
             <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        {
+                            paddingBottom: bottomNavigationHeight,
+                        },
+                    ]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
@@ -133,11 +140,13 @@ export default function RegisterScreen() {
                     Registrate para alquilar o publicar propiedades
                 </Text>
 
-                {success ? (
-                    <View style={styles.alertSuccess}>
-                        <Text style={styles.successText}>{success}</Text>
-                    </View>
-                ) : null}
+                {success ? ( 
+                    <View style={styles.successToast}> 
+                        <Text style={styles.successToastText}
+                            > ✓ Usuario registrado correctamente 
+                        </Text> 
+                        </View> 
+                    ) : null}
 
                 {error ? (
                     <View style={styles.alertError}>
@@ -277,7 +286,7 @@ export default function RegisterScreen() {
                     </Text>
 
                     <TouchableOpacity
-                        onPress={() => router.push('/')}
+                        onPress={() => router.push('/login')}
                     >
                         <Text style={styles.link}>
                             Iniciá sesión
@@ -296,8 +305,7 @@ const styles = StyleSheet.create({
     },
 
     scrollContent: {
-        padding: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
+        padding: theme.spacing.lg
     },
 
     title: {
@@ -309,11 +317,11 @@ const styles = StyleSheet.create({
     },
 
     subtitle: {
-        fontSize: theme.sizes.body,
-        color: theme.colors.text,
-        textAlign: 'center',
-        marginBottom: theme.spacing.lg,
-    },
+    fontSize: theme.sizes.body,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+},
 
     alertError: {
         backgroundColor: theme.colors.errorBg,
@@ -328,17 +336,29 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 
-    alertSuccess: {
-    backgroundColor: '#DCFCE7',
-    padding: theme.spacing.md,
-    borderRadius: 8,
-    marginBottom: theme.spacing.lg,
+    successToast: { 
+        position: 'absolute', 
+        alignSelf: 'center', 
+        top: '50%', 
+        width: 280, 
+        minHeight: 140, 
+        zIndex: 1000, 
+        backgroundColor: '#DCFCE7', 
+        borderRadius: 12, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        paddingHorizontal: 20, 
+        paddingVertical: 20, 
+        elevation: 8, 
+        shadowOffset: { width: 0, height: 4, }, 
+        shadowOpacity: 0.25, shadowRadius: 8, 
     },
 
-    successText: {
+    successToastText: {
         color: '#166534',
         textAlign: 'center',
-        fontWeight: '500',
+        fontWeight: '600',
+        fontSize: theme.sizes.body,
     },
 
     row: {
@@ -346,13 +366,13 @@ const styles = StyleSheet.create({
         gap: theme.spacing.sm,
     },
 
-    inputGroup: {
-        marginBottom: theme.spacing.md,
-    },
-
-    inputGroupHalf: {
-        flex: 1,
-        marginBottom: theme.spacing.md,
+    inputGroup: { 
+        marginBottom: theme.spacing.sm, 
+    }, 
+    
+    inputGroupHalf: { 
+        flex: 1, 
+        marginBottom: theme.spacing.sm, 
     },
 
     label: {
@@ -362,24 +382,24 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
 
-    input: {
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        backgroundColor: theme.colors.inputBg,
-        borderRadius: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        fontSize: theme.sizes.input,
-        color: theme.colors.textDark,
+    input: { 
+        borderWidth: 1, 
+        borderColor: theme.colors.border, 
+        backgroundColor: theme.colors.inputBg, 
+        borderRadius: 8, 
+        paddingHorizontal: 14, 
+        paddingVertical: 10, 
+        fontSize: theme.sizes.input, 
+        color: theme.colors.textDark, 
     },
 
     button: {
-        backgroundColor: theme.colors.primary,
-        paddingVertical: 14,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: theme.spacing.sm,
-    },
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 2,
+},
 
     buttonDisabled: {
         backgroundColor: theme.colors.disabled,
@@ -392,11 +412,11 @@ const styles = StyleSheet.create({
     },
 
     footer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: theme.spacing.lg,
-    },
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+},
 
     footerText: {
         color: theme.colors.text,

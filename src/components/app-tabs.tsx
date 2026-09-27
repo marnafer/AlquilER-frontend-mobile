@@ -4,15 +4,19 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '../context/AuthContext';
+import { useLayout } from '../context/LayoutContext';
 import { theme } from '../theme/theme';
 
-const opciones = [
+const opcionesAutenticado = [
   {
     ruta: '/home',
     icono: '⌂',
-    etiqueta: 'Inicio',
+    etiqueta: 'Inici',
   },
   {
     ruta: '/favorites',
@@ -31,12 +35,60 @@ const opciones = [
   },
 ] as const;
 
+const opcionesNoAutenticado = [
+  {
+    ruta: '/home',
+    icono: '⌂',
+    etiqueta: 'Inicio',
+  },
+  {
+    ruta: '/register',
+    icono: '♙',
+    etiqueta: 'Registrate',
+  },
+  {
+    ruta: '/login',
+    icono: '→',
+    etiqueta: 'Iniciar sesión',
+  },
+] as const;
+
 export default function AppTabs() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { isAuthenticated, loading } = useAuth();
+  const { setBottomNavigationHeight } = useLayout();
+
+  if (loading) {
+    return null;
+  }
+
+  const opciones = isAuthenticated
+    ? opcionesAutenticado
+    : opcionesNoAutenticado;
+
+  const horizontalMargin = Math.max(12, Math.min(24, width * 0.04));
+
+  const bottomSpacing = Math.max(12, insets.bottom + 8);
 
   return (
-    <View style={styles.container}>
+    <View
+        onLayout={(event) => {
+          const { height } = event.nativeEvent.layout;
+
+          setBottomNavigationHeight(height + bottomSpacing);
+        }}
+        style={[
+          styles.container,
+          {
+            left: horizontalMargin,
+            right: horizontalMargin,
+            bottom: bottomSpacing,
+          },
+        ]}
+      >
       <View style={styles.bar}>
         {opciones.map((opcion) => {
           const activo = pathname === opcion.ruta;
@@ -69,6 +121,9 @@ export default function AppTabs() {
                   styles.label,
                   activo && styles.labelActivo,
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
               >
                 {opcion.etiqueta}
               </Text>
@@ -83,9 +138,6 @@ export default function AppTabs() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 22,
     zIndex: 100,
   },
 
@@ -115,6 +167,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
+    minWidth: 0,
+    paddingHorizontal: 2,
   },
 
   iconContainer: {
@@ -145,6 +199,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     textAlign: 'center',
+    width: '100%',
   },
 
   labelActivo: {

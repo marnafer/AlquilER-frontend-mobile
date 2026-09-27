@@ -14,6 +14,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import AppHeader from '@/components/AppHeader';
 import { AuthProvider } from '../context/AuthContext';
+import { LayoutProvider } from '../context/LayoutContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,9 +22,10 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <View style={{ flex: 1 }}>
+    <SafeAreaProvider> 
+      <AuthProvider> 
+        <LayoutProvider> 
+          <View style={{ flex: 1 }}>
             <AnimatedSplashOverlay />
 
             <AppHeader />
@@ -31,7 +33,8 @@ export default function RootLayout() {
             <Slot />
 
             <AppTabs />
-        </View>
+          </View>
+        </LayoutProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

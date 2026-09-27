@@ -195,11 +195,12 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.background,
     },
 
-    scrollContent: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        padding: theme.spacing.lg,
-        paddingBottom: theme.spacing.xl,
+    scrollContent: { 
+        flexGrow: 1, 
+        justifyContent: 'flex-start', 
+        paddingHorizontal: theme.spacing.lg, 
+        paddingTop: theme.spacing.xl, 
+        paddingBottom: theme.spacing.xl, 
     },
 
     title: {
