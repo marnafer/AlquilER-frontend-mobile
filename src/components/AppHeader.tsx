@@ -1,8 +1,9 @@
 import {
+    StatusBar,
     StyleSheet,
-    Text,
     View,
 } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme/theme';
@@ -11,38 +12,27 @@ export default function AppHeader() {
     const insets = useSafeAreaInsets();
 
     return (
-        <View
-            style={[
-                styles.header,
-                {
-                    paddingTop: insets.top + theme.spacing.headerTop,
-                },
-            ]}
-        >
-            <View style={styles.content}>
-                <Text style={styles.logo}>
-                    AlquilER
-                </Text>
-            </View>
-        </View>
+        <>
+            <StatusBar
+                barStyle="light-content"
+                backgroundColor={theme.colors.primaryDark}
+            />
+
+            <View
+                style={[
+                    styles.header,
+                    {
+                        height: insets.top,
+                    },
+                ]}
+            />
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     header: {
+        width: '100%',
         backgroundColor: theme.colors.primaryDark,
-    },
-
-    content: {
-        minHeight: 56,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: theme.spacing.lg,
-    },
-
-    logo: {
-        color: '#ffffff',
-        fontSize: 22,
-        fontWeight: '800',
     },
 });
