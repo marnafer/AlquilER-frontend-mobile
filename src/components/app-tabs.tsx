@@ -16,7 +16,7 @@ const opcionesAutenticado = [
   {
     ruta: '/home',
     icono: '⌂',
-    etiqueta: 'Inici',
+    etiqueta: 'Inicio',
   },
   {
     ruta: '/favorites',

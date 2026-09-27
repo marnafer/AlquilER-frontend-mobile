@@ -10,29 +10,22 @@ import {
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
-const limitar = (valor, minimo, maximo) =>
-    Math.min(Math.max(valor, minimo), maximo);
-
 const PropertyCard = ({
     propiedad,
     onPress,
     compacto = false,
+    ancho,
+    altura,
 }) => {
     const { width } = useWindowDimensions();
 
-    const escala = limitar(
-        width / 375,
-        0.88,
-        1.2
-    );
-
-    const anchoCard = compacto
-        ? limitar(width * 0.48, 170, 205)
-        : 260;
-
-    const altoImagen = compacto
-        ? limitar(100 * escala, 88, 120)
-        : 150;
+    const anchoCard =
+        ancho ??
+        (
+            compacto
+                ? width * 0.48
+                : 260
+        );
 
     const construirUrlImagen = (ruta) => {
         if (!ruta) {
@@ -71,6 +64,15 @@ const PropertyCard = ({
                 styles.card,
                 {
                     width: anchoCard,
+                    marginRight:
+                        ancho !== undefined
+                            ? 0
+                            : compacto
+                                ? 0
+                                : 14,
+                    ...(altura !== undefined && {
+                        height: altura,
+                    }),
                 },
                 compacto &&
                     styles.cardCompacta,
@@ -78,30 +80,33 @@ const PropertyCard = ({
             onPress={onPress}
             activeOpacity={0.9}
         >
-            {!compacto && (
-                <View
-                    style={[
-                        styles.imageContainer,
-                        {
-                            height: altoImagen,
-                        },
-                    ]}
-                >
-                    {imagenUrl ? (
-                        <Image
-                            source={{ uri: imagenUrl }}
-                            style={styles.image}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View style={styles.placeholder}>
-                            <Text style={styles.placeholderText}>
-                                🏠
-                            </Text>
-                        </View>
-                    )}
-                </View>
-            )}
+            <View
+                style={[
+                    styles.imageContainer,
+                    compacto &&
+                        styles.imageContainerCompacta,
+                ]}
+            >
+                {imagenUrl ? (
+                    <Image
+                        source={{ uri: imagenUrl }}
+                        style={styles.image}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <View style={styles.placeholder}>
+                        <Text
+                            style={[
+                                styles.placeholderText,
+                                compacto &&
+                                    styles.placeholderTextCompacto,
+                            ]}
+                        >
+                            🏠
+                        </Text>
+                    </View>
+                )}
+            </View>
 
             <View
                 style={[
@@ -116,9 +121,7 @@ const PropertyCard = ({
                         compacto &&
                             styles.titleCompacto,
                     ]}
-                    numberOfLines={
-                        compacto ? 1 : 2
-                    }
+                    numberOfLines={2}
                 >
                     {propiedad.titulo}
                 </Text>
@@ -147,26 +150,48 @@ const PropertyCard = ({
                     ).toLocaleString('es-AR')}
                 </Text>
 
-                {!compacto && (
-                    <View style={styles.features}>
-                        <Text style={styles.feature}>
-                            🛏{' '}
-                            {propiedad.cantidad_dormitorios ||
-                                0}
-                        </Text>
+                <View
+                    style={[
+                        styles.features,
+                        compacto &&
+                            styles.featuresCompactas,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.feature,
+                            compacto &&
+                                styles.featureCompacto,
+                        ]}
+                    >
+                        🛏{' '}
+                        {propiedad.cantidad_dormitorios ||
+                            0}
+                    </Text>
 
-                        <Text style={styles.feature}>
-                            🚿{' '}
-                            {propiedad.cantidad_banos ||
-                                0}
-                        </Text>
+                    <Text
+                        style={[
+                            styles.feature,
+                            compacto &&
+                                styles.featureCompacto,
+                        ]}
+                    >
+                        🚿{' '}
+                        {propiedad.cantidad_banos ||
+                            0}
+                    </Text>
 
-                        <Text style={styles.feature}>
-                            👥{' '}
-                            {propiedad.capacidad || 0}
-                        </Text>
-                    </View>
-                )}
+                    <Text
+                        style={[
+                            styles.feature,
+                            compacto &&
+                                styles.featureCompacto,
+                        ]}
+                    >
+                        👥{' '}
+                        {propiedad.capacidad || 0}
+                    </Text>
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -174,7 +199,6 @@ const PropertyCard = ({
 
 const styles = StyleSheet.create({
     card: {
-        marginRight: 14,
         borderRadius: 14,
         backgroundColor:
             theme.colors.inputBg,
@@ -186,10 +210,18 @@ const styles = StyleSheet.create({
 
     cardCompacta: {
         borderRadius: 12,
+        alignSelf: 'stretch',
     },
 
     imageContainer: {
         width: '100%',
+        aspectRatio: 1.5,
+        backgroundColor:
+            theme.colors.border,
+    },
+
+    imageContainerCompacta: {
+        aspectRatio: 1.5,
     },
 
     image: {
@@ -216,9 +248,10 @@ const styles = StyleSheet.create({
     info: {
         padding: 14,
     },
-
+    
     infoCompacta: {
-        padding: 10,
+        padding: theme.spacing.md,
+        paddingBottom: theme.spacing.md + 4,
     },
 
     title: {
@@ -253,17 +286,30 @@ const styles = StyleSheet.create({
 
     priceCompacto: {
         fontSize: 15,
-        marginBottom: 0,
+        marginBottom: 7,
     },
 
     features: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 8,
     },
 
     feature: {
         fontSize: 12,
         color: theme.colors.text,
+    },
+
+    featuresCompactas: {
+        gap: 5,
+        flexWrap: 'nowrap',
+        minHeight: 20,
+        alignItems: 'center',
+    },
+
+    featureCompacto: {
+        fontSize: 10,
+        lineHeight: 18,
+        flexShrink: 1,
     },
 });
 
