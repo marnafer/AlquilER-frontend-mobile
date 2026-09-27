@@ -168,9 +168,9 @@ const crearValoresResponsive = (width, height) => {
     );
 
     const bottomContentSpace = limitar(
-        height * 0.11,
-        80,
-        120
+        height * 0.1,
+        120,
+        160
     );
 
     return {
@@ -217,10 +217,20 @@ export default function HomeScreen() {
     const [categorias, setCategorias] = useState([]);
     const [localidades, setLocalidades] = useState([]);
 
-    const [categoriasBusqueda, setCategoriasBusqueda] = useState([]);
-    const [localidadesBusqueda, setLocalidadesBusqueda] = useState([]);
+    const [categoriasBusqueda, setCategoriasBusqueda] =
+        useState([]);
 
-    const [propiedadesVistas, setPropiedadesVistas] = useState([]);
+    const [localidadesBusqueda, setLocalidadesBusqueda] =
+        useState([]);
+
+    const [categoriasAbierto, setCategoriasAbierto] =
+        useState(false);
+
+    const [localidadesAbierto, setLocalidadesAbierto] =
+        useState(false);
+
+    const [propiedadesVistas, setPropiedadesVistas] =
+        useState([]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -397,139 +407,218 @@ export default function HomeScreen() {
             {/* HERO */}
             <View style={styles.hero}>
                 <Text style={styles.heroTitle}>
-                    Encontrá tu próximo hogar
+                    AlquilER
                 </Text>
 
-                <View style={styles.searchBox}>
-                    <Text style={styles.searchTitle}>
-                        ¿Qué estás buscando?
+                <View style={styles.descriptionCard}>
+                    <Text style={styles.descriptionTitle}>
+                        Alquilá con más confianza
                     </Text>
+
+                    <Text style={styles.descriptionText}>
+                        Calificaciones y reseñas de la comunidad
+                        para una mayor transparencia.
+                    </Text>
+                </View>
+
+                <View style={styles.searchBox}>
 
                     {/* LOCALIDAD */}
-                    <Text style={styles.filterLabel}>
-                        Localidad
+                <TouchableOpacity
+                    style={styles.dropdownHeader}
+                    onPress={() =>
+                        setLocalidadesAbierto(
+                            (actual) => !actual
+                        )
+                    }
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.dropdownHeaderText}>
+                        <Text style={styles.filterLabelDropdown}>
+                            Localidad
+                        </Text>
+
+                        <Text style={styles.dropdownSummary}>
+                            {localidadesBusqueda.length === 0
+                                ? 'Todas'
+                                : `${localidadesBusqueda.length} seleccionadas`}
+                        </Text>
+                    </View>
+
+                    <Text style={styles.dropdownArrow}>
+                        {localidadesAbierto ? '▲' : '▼'}
                     </Text>
+                </TouchableOpacity>
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.filterScroll}
-                    >
-                        <TouchableOpacity
-                            style={[
-                                styles.filterOption,
-                                localidadesBusqueda.length === 0 &&
-                                    styles.filterOptionSelected,
-                            ]}
-                            onPress={() =>
-                                setLocalidadesBusqueda([])
-                            }
+                {localidadesAbierto ? (
+                    <View style={styles.dropdownContent}>
+                        <ScrollView
+                            style={styles.optionsDropdownScroll}
+                            nestedScrollEnabled
+                            showsVerticalScrollIndicator={false}
                         >
-                            <Text
-                                style={[
-                                    styles.filterOptionText,
-                                    localidadesBusqueda.length === 0 &&
-                                        styles.filterOptionTextSelected,
-                                ]}
+                            <View
+                                style={
+                                    styles.optionsDropdownContainer
+                                }
                             >
-                                Todas
-                            </Text>
-                        </TouchableOpacity>
-
-                        {localidades.map((localidad) => {
-                            const seleccionada =
-                                localidadesBusqueda.includes(
-                                    String(localidad.id)
-                                );
-
-                            return (
                                 <TouchableOpacity
-                                    key={localidad.id}
                                     style={[
                                         styles.filterOption,
-                                        seleccionada &&
+                                        localidadesBusqueda.length === 0 &&
                                             styles.filterOptionSelected,
                                     ]}
                                     onPress={() =>
-                                        toggleLocalidad(localidad.id)
+                                        setLocalidadesBusqueda([])
                                     }
                                 >
                                     <Text
                                         style={[
                                             styles.filterOptionText,
-                                            seleccionada &&
+                                            localidadesBusqueda.length === 0 &&
                                                 styles.filterOptionTextSelected,
                                         ]}
                                     >
-                                        {localidad.nombre}
+                                        Todas
                                     </Text>
                                 </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
 
-                    {/* TIPO */}
-                    <Text style={styles.filterLabel}>
-                        Tipo
+                                {localidades.map((localidad) => {
+                                    const seleccionada =
+                                        localidadesBusqueda.includes(
+                                            String(localidad.id)
+                                        );
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={localidad.id}
+                                            style={[
+                                                styles.filterOption,
+                                                seleccionada &&
+                                                    styles.filterOptionSelected,
+                                            ]}
+                                            onPress={() =>
+                                                toggleLocalidad(
+                                                    localidad.id
+                                                )
+                                            }
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.filterOptionText,
+                                                    seleccionada &&
+                                                        styles.filterOptionTextSelected,
+                                                ]}
+                                            >
+                                                {localidad.nombre}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </ScrollView>
+                    </View>
+                ) : null}
+
+
+                {/* TIPO */}
+                <TouchableOpacity
+                    style={styles.dropdownHeader}
+                    onPress={() =>
+                        setCategoriasAbierto(
+                            (actual) => !actual
+                        )
+                    }
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.dropdownHeaderText}>
+                        <Text style={styles.filterLabelDropdown}>
+                            Tipo
+                        </Text>
+
+                        <Text style={styles.dropdownSummary}>
+                            {categoriasBusqueda.length === 0
+                                ? 'Todos'
+                                : `${categoriasBusqueda.length} seleccionados`}
+                        </Text>
+                    </View>
+
+                    <Text style={styles.dropdownArrow}>
+                        {categoriasAbierto ? '▲' : '▼'}
                     </Text>
+                </TouchableOpacity>
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.filterScroll}
-                    >
-                        <TouchableOpacity
-                            style={[
-                                styles.filterOption,
-                                categoriasBusqueda.length === 0 &&
-                                    styles.filterOptionSelected,
-                            ]}
-                            onPress={() =>
-                                setCategoriasBusqueda([])
-                            }
+                {categoriasAbierto ? (
+                    <View style={styles.dropdownContent}>
+                        <ScrollView
+                            style={styles.optionsDropdownScroll}
+                            nestedScrollEnabled
+                            showsVerticalScrollIndicator={false}
                         >
-                            <Text
-                                style={[
-                                    styles.filterOptionText,
-                                    categoriasBusqueda.length === 0 &&
-                                        styles.filterOptionTextSelected,
-                                ]}
+                            <View
+                                style={
+                                    styles.optionsDropdownContainer
+                                }
                             >
-                                Todos
-                            </Text>
-                        </TouchableOpacity>
-
-                        {categorias.map((categoria) => {
-                            const seleccionada =
-                                categoriasBusqueda.includes(
-                                    String(categoria.id)
-                                );
-
-                            return (
                                 <TouchableOpacity
-                                    key={categoria.id}
                                     style={[
                                         styles.filterOption,
-                                        seleccionada &&
+                                        categoriasBusqueda.length === 0 &&
                                             styles.filterOptionSelected,
                                     ]}
                                     onPress={() =>
-                                        toggleCategoria(categoria.id)
+                                        setCategoriasBusqueda([])
                                     }
                                 >
                                     <Text
                                         style={[
                                             styles.filterOptionText,
-                                            seleccionada &&
+                                            categoriasBusqueda.length === 0 &&
                                                 styles.filterOptionTextSelected,
                                         ]}
                                     >
-                                        {categoria.nombre}
+                                        Todos
                                     </Text>
                                 </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+
+                                {categorias.map((categoria) => {
+                                    const seleccionada =
+                                        categoriasBusqueda.includes(
+                                            String(categoria.id)
+                                        );
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={categoria.id}
+                                            style={[
+                                                styles.filterOption,
+                                                seleccionada &&
+                                                    styles.filterOptionSelected,
+                                            ]}
+                                            onPress={() =>
+                                                toggleCategoria(
+                                                    categoria.id
+                                                )
+                                            }
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.filterOptionText,
+                                                    seleccionada &&
+                                                        styles.filterOptionTextSelected,
+                                                ]}
+                                            >
+                                                {categoria.nombre}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </ScrollView>
+                    </View>
+                ) : null}
 
                     <TouchableOpacity
                         style={styles.searchButton}
@@ -569,16 +658,18 @@ export default function HomeScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.propertiesScroll}
                     >
-                        {propiedadesVistas.map((propiedad) => (
-                            <PropertyCard
-                                key={propiedad.id}
-                                propiedad={propiedad}
-                                compacto
-                                onPress={() =>
-                                    handlePropiedadVista(propiedad)
-                                }
-                            />
-                        ))}
+                        {propiedadesVistas
+                            .slice(0, 5)
+                            .map((propiedad) => (
+                                <PropertyCard
+                                    key={propiedad.id}
+                                    propiedad={propiedad}
+                                    compacto
+                                    onPress={() =>
+                                        handlePropiedadVista(propiedad)
+                                    }
+                                />
+                            ))}
                     </ScrollView>
                 </View>
             )}
@@ -616,7 +707,7 @@ export default function HomeScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.propertiesScroll}
                     >
-                        {propiedades.slice(0, 6).map((propiedad) => (
+                        {propiedades.slice(0, 5).map((propiedad) => (
                             <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
@@ -634,7 +725,12 @@ export default function HomeScreen() {
             </View>
 
             {/* PUBLICA TU PROPIEDAD */}
-            <View style={styles.section}>
+            <View
+                style={[
+                    styles.section,
+                    styles.publishSection,
+                ]}
+            >
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionBadge}>
                         Publicá
@@ -668,28 +764,6 @@ export default function HomeScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* ESTADÍSTICAS */}
-            <View style={styles.statsSection}>
-                <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>
-                        {propiedades.length}
-                    </Text>
-
-                    <Text style={styles.statLabel}>
-                        Propiedades publicadas
-                    </Text>
-                </View>
-
-                <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>
-                        {categorias.length}
-                    </Text>
-
-                    <Text style={styles.statLabel}>
-                        Categorías disponibles
-                    </Text>
-                </View>
-            </View>
         </ScrollView>
     );
 }
@@ -758,6 +832,41 @@ const crearEstilos = (responsive) => {
             textAlign: 'center',
             paddingVertical: separacionMedia,
         },
+
+        descriptionCard: {
+        width: '90%',
+        maxWidth: 560,
+        alignSelf: 'center',
+        marginBottom: separacionMedia,
+        paddingHorizontal: separacionGrande,
+        paddingVertical: separacionMedia,
+        borderRadius: radioMedio,
+        backgroundColor: colorConOpacidad(
+            '#FFFFFF',
+            0.12
+        ),
+        borderWidth: 1,
+        borderColor: colorConOpacidad(
+            '#FFFFFF',
+            0.22
+        ),
+    },
+
+    descriptionTitle: {
+        color: '#FFFFFF',
+        fontSize: fontBody + 2,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: separacionPequena,
+    },
+
+    descriptionText: {
+        color: '#FFFFFF',
+        opacity: 0.9,
+        fontSize: fontSmall,
+        lineHeight: fontSmall + 6,
+        textAlign: 'center',
+    },
 
         searchBox: {
             backgroundColor: '#ffffff',
@@ -958,6 +1067,10 @@ const crearEstilos = (responsive) => {
         lineHeight: fontSmall + 5,
     },
 
+    publishSection: {
+        marginBottom: separacionGrande,
+    },
+
         propertiesScroll: {
             paddingHorizontal,
             gap: separacionMedia,
@@ -971,33 +1084,59 @@ const crearEstilos = (responsive) => {
             fontSize: fontBody,
         },
 
-        statsSection: {
-            marginTop: separacionSeccion,
-            marginHorizontal: paddingHorizontal,
-            padding: separacionGrande,
-            borderRadius: radioMedio,
-            backgroundColor: theme.colors.primary,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-        },
+        dropdownHeader: {
+        minHeight: 54,
+        marginBottom: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
 
-        statItem: {
-            flex: 1,
-            alignItems: 'center',
-            paddingHorizontal: separacionPequena,
-        },
+    dropdownHeaderText: {
+        flex: 1,
+    },
 
-        statNumber: {
-            color: '#ffffff',
-            fontSize: fontStatNumber,
-            fontWeight: '800',
-        },
+    filterLabelDropdown: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.colors.textDark,
+    },
 
-        statLabel: {
-            color: '#ffffff',
-            fontSize: fontSmall,
-            textAlign: 'center',
-            marginTop: separacionPequena,
-        },
+    dropdownSummary: {
+        marginTop: 2,
+        fontSize: 12,
+        color: theme.colors.text,
+    },
+
+    dropdownArrow: {
+        marginLeft: 12,
+        fontSize: 12,
+        color: theme.colors.text,
+    },
+
+    dropdownContent: {
+        marginBottom: 10,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    optionsDropdownScroll: {
+        maxHeight: 170,
+    },
+
+    optionsDropdownContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
     });
 };
