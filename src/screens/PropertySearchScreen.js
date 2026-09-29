@@ -429,25 +429,6 @@ export default function PropertySearchScreen() {
         orden,
     ]);
 
-    const propiedadRows = useMemo(() => {
-        const filas = [];
-
-        for (
-            let i = 0;
-            i < propiedadesOrdenadas.length;
-            i += 2
-        ) {
-            filas.push(
-                propiedadesOrdenadas.slice(
-                    i,
-                    i + 2
-                )
-            );
-        }
-
-        return filas;
-    }, [propiedadesOrdenadas]);
-
     const ordenarSeleccion = (
         nuevoOrden
     ) => {
@@ -459,17 +440,6 @@ export default function PropertySearchScreen() {
         (opcion) =>
             opcion.valor === orden
     );
-
-    const anchoDisponible =
-        width - theme.spacing.md * 2;
-
-    const anchoTarjeta =
-        (anchoDisponible -
-            theme.spacing.md) /
-        2;
-
-    const alturaTarjeta =
-    anchoTarjeta / 1.5 + 165;
 
     if (loading) {
         return (
@@ -720,59 +690,15 @@ export default function PropertySearchScreen() {
                             styles.propertiesGrid
                         }
                     >
-                        {propiedadRows.map(
-                            (fila, index) => (
-                                <View
-                                    key={`fila-${index}`}
-                                    style={
-                                        styles.propertyRow
-                                    }
-                                >
-                                    {fila.map(
-                                        (
-                                            propiedad
-                                        ) => (
-                                            <View
-                                                key={
-                                                    propiedad.id
-                                                }
-                                                style={[
-                                                    styles.propertyItem,
-                                                    {
-                                                        width:
-                                                            anchoTarjeta,
-                                                    },
-                                                ]}
-                                            >
-                                                <PropertyCard
-                                                    propiedad={propiedad}
-                                                    ancho={anchoTarjeta}
-                                                    altura={alturaTarjeta}
-                                                    onPress={() =>
-                                                        handlePropiedadVista(
-                                                            propiedad
-                                                        )
-                                                    }
-                                                />
-                                            </View>
-                                        )
-                                    )}
-
-                                    {fila.length ===
-                                    1 ? (
-                                        <View
-                                            style={[
-                                                styles.propertyItem,
-                                                {
-                                                    width:
-                                                        anchoTarjeta,
-                                                },
-                                            ]}
-                                        />
-                                    ) : null}
-                                </View>
-                            )
-                        )}
+                        {propiedades.map((propiedad) => (
+                            <PropertyCard
+                                key={propiedad.id}
+                                propiedad={propiedad}
+                                onPress={() =>
+                                    handlePropiedadVista(propiedad)
+                                }
+                            />
+                        ))}
                     </View>
                 )}
             </View>
@@ -963,8 +889,11 @@ const styles = StyleSheet.create({
     },
 
     propertiesGrid: {
-        paddingHorizontal:
-            theme.spacing.md,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        paddingHorizontal: theme.spacing.md,
+        rowGap: theme.spacing.md,
     },
 
     propertyRow: {

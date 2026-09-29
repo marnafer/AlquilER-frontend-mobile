@@ -14,18 +14,22 @@ const PropertyCard = ({
     propiedad,
     onPress,
     compacto = false,
-    ancho,
-    altura,
 }) => {
     const { width } = useWindowDimensions();
 
-    const anchoCard =
-        ancho ??
-        (
-            compacto
-                ? width * 0.48
-                : 260
-        );
+    const anchoDisponible =
+    width - theme.spacing.md * 2;
+
+    const anchoGrid =
+        (anchoDisponible - theme.spacing.md) / 2;
+
+    const anchoCard = compacto
+        ? width * 0.48
+        : anchoGrid;
+
+    const alturaCard = compacto
+        ? undefined
+        : anchoGrid / 1.5 + 165;
 
     const construirUrlImagen = (ruta) => {
         if (!ruta) {
@@ -61,22 +65,16 @@ const PropertyCard = ({
     return (
         <TouchableOpacity
             style={[
-                styles.card,
-                {
-                    width: anchoCard,
-                    marginRight:
-                        ancho !== undefined
-                            ? 0
-                            : compacto
-                                ? 0
-                                : 14,
-                    ...(altura !== undefined && {
-                        height: altura,
-                    }),
-                },
-                compacto &&
-                    styles.cardCompacta,
-            ]}
+                    styles.card,
+                    {
+                        width: anchoCard,
+                        ...(alturaCard !== undefined && {
+                            height: alturaCard,
+                        }),
+                    },
+                    compacto &&
+                        styles.cardCompacta,
+                ]}
             onPress={onPress}
             activeOpacity={0.9}
         >
