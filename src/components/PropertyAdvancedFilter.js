@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
 
     arrow: {
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     content: {
@@ -783,13 +783,13 @@ const styles = StyleSheet.create({
     dropdownSummary: {
         marginTop: 2,
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     dropdownArrow: {
         marginLeft: theme.spacing.md,
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     dropdownContent: {
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
 
     chipText: {
         fontSize: 13,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     chipTextActive: {
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     label: {
         marginBottom: 6,
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     input: {
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     },
 
     clearText: {
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         fontSize: 14,
         fontWeight: '600',
     },
