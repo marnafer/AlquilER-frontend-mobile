@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
     guardarPropiedadVista,
@@ -201,6 +202,8 @@ const crearValoresResponsive = (width, height) => {
 export default function HomeScreen() {
     const router = useRouter();
 
+    const { isAuthenticated } = useAuth();
+
     const { width, height } = useWindowDimensions();
 
     const responsive = useMemo(
@@ -349,6 +352,15 @@ export default function HomeScreen() {
         router.push(
             `/propiedades/${propiedad.id}`
         );
+    };
+
+    const handlePublicarPropiedad = () => {
+        if (isAuthenticated) {
+            router.push('/publicar-propiedad');
+            return;
+        }
+
+        router.push('/login');
     };
 
     const handleBuscar = () => {
@@ -748,7 +760,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                     style={styles.publishCard}
                     activeOpacity={0.85}
-                    onPress={() => {}}
+                    onPress={handlePublicarPropiedad}
                 >
                     <View style={styles.publishIconContainer}>
                         <Text style={styles.publishIcon}>
