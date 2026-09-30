@@ -1,20 +1,20 @@
 import {
-  useFocusEffect,
-  useRouter,
+    useFocusEffect,
+    useRouter,
 } from 'expo-router';
 
 import {
-  useCallback,
-  useState,
+    useCallback,
+    useState,
 } from 'react';
 
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
