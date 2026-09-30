@@ -16,6 +16,7 @@ import {
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import AppHeader from '@/components/AppHeader';
+import AuthNavigation from '@/components/AuthNavigation';
 import { AuthProvider } from '../context/AuthContext';
 import { LayoutProvider } from '../context/LayoutContext';
 
@@ -26,19 +27,23 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
+    <AuthProvider>
         <LayoutProvider>
-          <View style={{ flex: 1 }}>
-          <AnimatedSplashOverlay />
 
-          <AppHeader />
+            <AuthNavigation />
 
-          <Slot />
+            <View style={{ flex: 1 }}>
+                <AnimatedSplashOverlay />
 
-          <AppTabs />
-      </View>
+                <AppHeader />
+
+                <Slot />
+
+                <AppTabs />
+            </View>
+
         </LayoutProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    </AuthProvider>
+</SafeAreaProvider>
   );
 }

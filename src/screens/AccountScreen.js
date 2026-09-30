@@ -38,38 +38,40 @@ export default function AccountScreen() {
             setLoading(true);
             setError('');
 
-            const [
-                usuarioResponse,
-                propiedadesResponse,
-            ] = await Promise.all([
-                api.get('/usuarios/me'),
-                api.get('/propiedades/mis-propiedades'),
-            ]);
+            const usuarioResponse = await api.get('/usuarios/me');
 
             if (usuarioResponse.data?.success) {
-                setUsuario(
-                    usuarioResponse.data.data
-                );
+                setUsuario(usuarioResponse.data.data);
             } else {
                 setUsuario(null);
             }
 
-            const propiedadesData =
-                propiedadesResponse.data?.data?.items ||
-                propiedadesResponse.data?.data ||
-                [];
+            try {
+                const propiedadesResponse = await api.get(
+                    '/propiedades/mis-propiedades'
+                );
 
-            setPropiedades(propiedadesData);
+                const propiedadesData =
+                    propiedadesResponse.data?.data?.items ||
+                    propiedadesResponse.data?.data ||
+                    [];
+
+                setPropiedades(propiedadesData);
+            } catch (error) {
+                console.error(
+                    'ACCOUNT: error al cargar propiedades',
+                    error.response?.data
+                );
+
+                setPropiedades([]);
+            }
         } catch (error) {
             console.error(
-                'ACCOUNT: ERROR',
-                error
-            );
-
-            console.error(
-                'ACCOUNT: respuesta',
+                'ACCOUNT: error al cargar usuario',
                 error.response?.data
             );
+
+            setUsuario(null);
 
             setError(
                 error.response?.data?.error ||

@@ -112,10 +112,14 @@ api.interceptors.response.use(
 
             return api(originalRequest);
         } catch (refreshError) {
-            await AsyncStorage.removeItem(TOKEN_KEY);
+           await AsyncStorage.removeItem(TOKEN_KEY);
             await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
 
             notifyRefreshSubscribers(null);
+
+            if (onSessionExpired) {
+                onSessionExpired();
+            }
 
             return Promise.reject(refreshError);
         } finally {
@@ -167,5 +171,10 @@ export async function login(userData) {
         };
     }
 }
+    let onSessionExpired = null;
+
+    export const setSessionExpiredHandler = (handler) => {
+        onSessionExpired = handler;
+    };
 
 export default api;
