@@ -1,15 +1,16 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import ScreenHeader from '../components/ScreenHeader';
 import { useLayout } from '../context/LayoutContext';
 import { obtenerFavoritos } from '../services/api';
 import { abrirPropiedad } from '../services/propertyNavigation';
@@ -118,21 +119,18 @@ export default function FavoritesScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>
-                    Mis favoritos
-                </Text>
-
-                <Text style={styles.subtitle}>
-                    {favoritos.length === 0
+           <ScreenHeader
+                title="Mis favoritos"
+                subtitle={
+                    favoritos.length === 0
                         ? 'Todavía no tienes propiedades favoritas'
                         : `${favoritos.length} ${
-                              favoritos.length === 1
-                                  ? 'propiedad guardada'
-                                  : 'propiedades guardadas'
-                          }`}
-                </Text>
-            </View>
+                            favoritos.length === 1
+                                ? 'propiedad guardada'
+                                : 'propiedades guardadas'
+                        }`
+                }
+            />
 
             {favoritos.length === 0 ? (
                 <View
@@ -190,24 +188,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
-    },
-
-    header: {
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.sm,
-    },
-
-    title: {
-        fontSize: 26,
-        fontWeight: '700',
-        color: theme.colors.textDark,
-    },
-
-    subtitle: {
-        marginTop: 4,
-        fontSize: 14,
-        color: theme.colors.textMuted,
     },
 
     list: {

@@ -21,6 +21,7 @@ import {
 
 import PropertyAdvancedFilter from '../components/PropertyAdvancedFilter';
 import PropertyCard from '../components/PropertyCard';
+import ScreenHeader from '../components/ScreenHeader';
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
@@ -466,21 +467,10 @@ export default function PropertySearchScreen() {
                 false
             }
         >
-            <View style={styles.hero}>
-                <Text style={styles.heroTitle}>
-                    Encontrá tu próximo hogar
-                </Text>
-
-                <Text
-                    style={
-                        styles.heroDescription
-                    }
-                >
-                    Explorá propiedades y
-                    encontrá la que mejor se
-                    adapte a lo que buscás.
-                </Text>
-            </View>
+            <ScreenHeader
+                title="Encontrá tu próximo hogar"
+                subtitle="Explorá propiedades y encontrá la que mejor se adapte a lo que buscás."
+            />
 
             <View style={styles.filtersContainer}>
                 <PropertyAdvancedFilter
@@ -718,35 +708,7 @@ const styles = StyleSheet.create({
         color: theme.colors.textMuted,
         fontSize: 14,
     },
-
-    hero: {
-        paddingHorizontal:
-            theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom:
-            theme.spacing.lg,
-        backgroundColor:
-            theme.colors.primary,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-    },
-
-    heroTitle: {
-        color: '#ffffff',
-        fontSize: 28,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    heroDescription: {
-        marginTop: theme.spacing.sm,
-        color: '#ffffff',
-        fontSize: 14,
-        lineHeight: 20,
-        textAlign: 'center',
-        opacity: 0.9,
-    },
-
+    
     filtersContainer: {
         marginTop: theme.spacing.md,
         marginHorizontal:

@@ -19,6 +19,7 @@ import {
 
 import PropertyCard from '../components/PropertyCard';
 import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
+import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { theme } from '../theme/theme';
@@ -121,15 +122,10 @@ export default function AccountScreen() {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>
-                    Cuenta
-                </Text>
-
-                <Text style={styles.headerSubtitle}>
-                    Tu información y tus propiedades
-                </Text>
-            </View>
+           <ScreenHeader
+                title="Cuenta"
+                subtitle="Tu información y tus propiedades"
+            />
 
             {error ? (
                 <View style={styles.errorBox}>
@@ -302,34 +298,6 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         color: theme.colors.textMuted,
         fontSize: 14,
-    },
-
-    header: {
-        paddingHorizontal:
-            theme.spacing.lg,
-        paddingTop:
-            theme.spacing.md,
-        paddingBottom:
-            theme.spacing.lg,
-        backgroundColor:
-            theme.colors.primary,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-    },
-
-    headerTitle: {
-        color: '#ffffff',
-        fontSize: 28,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    headerSubtitle: {
-        marginTop: theme.spacing.sm,
-        color: '#ffffff',
-        fontSize: 14,
-        textAlign: 'center',
-        opacity: 0.9,
     },
 
     errorBox: {
