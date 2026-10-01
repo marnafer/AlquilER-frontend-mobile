@@ -1,18 +1,24 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Animated,
     Image,
     ScrollView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     useWindowDimensions,
-    View,
+    View
 } from 'react-native';
 
 import { useLayout } from '@/context/LayoutContext';
-import api from '@/services/api';
 import { theme } from '@/theme/theme';
+import api, {
+    agregarFavorito,
+    eliminarFavorito,
+    obtenerFavoritos,
+} from '../../services/api';
 
 interface Servicio {
     id: number;
@@ -81,6 +87,40 @@ export default function PropiedadDetailScreen() {
     const [error, setError] =
         useState('');
 
+    const [mensajeFavorito, setMensajeFavorito] = useState('');
+
+    const escalaFavorito = useRef(
+        new Animated.Value(1)
+    ).current;
+
+    const [esFavorito, setEsFavorito] = useState(false);
+    const [actualizandoFavorito, setActualizandoFavorito] =
+    useState(false);
+
+    const cargarEstadoFavorito = useCallback(async () => {
+        if (!propiedad?.id) {
+            return;
+        }
+
+        try {
+            const response = await obtenerFavoritos();
+
+            if (!response?.success) {
+                return;
+            }
+
+            const favorito = (response.data || []).some(
+                (item: any) =>
+                    Number(item.propiedad_id) ===
+                    Number(propiedad.id)
+            );
+
+            setEsFavorito(favorito);
+        } catch {
+            // No impedimos mostrar la propiedad si falla favoritos.
+        }
+    }, [propiedad?.id]);
+
     const construirUrlImagen = (
         ruta: string | null
     ) => {
@@ -100,6 +140,81 @@ export default function PropiedadDetailScreen() {
                 : `/${ruta}`
         }`;
     };
+
+    const toggleFavorito = async () => {
+        if (!propiedad?.id || actualizandoFavorito) {
+            return;
+        }
+
+        const estadoAnterior = esFavorito;
+        const nuevoEstado = !esFavorito;
+
+        // Cambio visual inmediato
+        setEsFavorito(nuevoEstado);
+        setActualizandoFavorito(true);
+        setMensajeFavorito('');
+
+        // Animación inmediata
+        animarFavorito();
+
+        try {
+            const response = nuevoEstado
+                ? await agregarFavorito(propiedad.id)
+                : await eliminarFavorito(propiedad.id);
+
+            if (!response?.success) {
+                throw new Error(
+                    response?.message ||
+                        'No se pudo actualizar el favorito'
+                );
+            }
+
+            setMensajeFavorito(
+                nuevoEstado
+                    ? '♥ Agregada a favoritos'
+                    : '♡ Eliminada de favoritos'
+            );
+
+            setTimeout(() => {
+                setMensajeFavorito('');
+            }, 2200);
+        } catch (error: any) {
+            // Revertimos el cambio visual
+            setEsFavorito(estadoAnterior);
+
+            setMensajeFavorito(
+                error?.message ||
+                    'No se pudo actualizar el favorito'
+            );
+
+            setTimeout(() => {
+                setMensajeFavorito('');
+            }, 2800);
+        } finally {
+            setActualizandoFavorito(false);
+        }
+    };
+
+    const animarFavorito = () => {
+        Animated.sequence([
+            Animated.timing(escalaFavorito, {
+                toValue: 1.25,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(escalaFavorito, {
+                toValue: 1,
+                friction: 4,
+                tension: 120,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    };
+
+    useEffect(() => {
+        cargarEstadoFavorito();
+    }, [cargarEstadoFavorito]);
+
 
     useEffect(() => {
         const cargarPropiedad = async () => {
@@ -321,6 +436,36 @@ export default function PropiedadDetailScreen() {
                             }
                         >
                             Sin imágenes
+                        </Text>
+                    </View>
+                )}
+
+                <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={toggleFavorito}
+                    disabled={actualizandoFavorito}
+                    activeOpacity={0.8}
+                >
+                    <Animated.Text
+                        style={[
+                            styles.favoriteIcon,
+                            {
+                                transform: [
+                                    {
+                                        scale: escalaFavorito,
+                                    },
+                                ],
+                            },
+                        ]}
+                    >
+                        {esFavorito ? '♥' : '♡'}
+                    </Animated.Text>
+                </TouchableOpacity>
+
+                {mensajeFavorito !== '' && (
+                    <View style={styles.favoriteToast}>
+                        <Text style={styles.favoriteToastText}>
+                            {mensajeFavorito}
                         </Text>
                     </View>
                 )}
@@ -697,5 +842,55 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor:
             '#ffffff',
+    },
+
+    favoriteButton: {
+        position: 'absolute',
+        top: 14,
+        right: 14,
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: '#ffffffdd',
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 3,
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+    },
+
+    favoriteIcon: {
+        fontSize: 30,
+        color: theme.colors.primary,
+        lineHeight: 34,
+    },
+
+    favoriteToast: {
+        position: 'absolute',
+        bottom: 18,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+    },
+
+    favoriteToastText: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: theme.colors.background,
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontWeight: '600',
+        elevation: 4,
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
     },
 });
