@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { abrirPropiedad } from '../services/propertyNavigation';
 import {
-    guardarPropiedadVista,
-    obtenerPropiedadesVistas,
+    obtenerPropiedadesVistas
 } from '../services/recentProperties';
 import { theme } from '../theme/theme';
 
@@ -340,7 +341,7 @@ export default function HomeScreen() {
     };
 
     const handlePropiedadVista = async (propiedad) => {
-        await guardarPropiedadVista(propiedad.id);
+        await abrirPropiedad(router, propiedad);
 
         setPropiedadesVistas((actuales) => [
             propiedad,
@@ -348,19 +349,6 @@ export default function HomeScreen() {
                 (actual) => actual.id !== propiedad.id
             ),
         ]);
-
-        router.push(
-            `/propiedades/${propiedad.id}`
-        );
-    };
-
-    const handlePublicarPropiedad = () => {
-        if (isAuthenticated) {
-            router.push('/publicar-propiedad');
-            return;
-        }
-
-        router.push('/login');
     };
 
     const handleBuscar = () => {
@@ -676,10 +664,7 @@ export default function HomeScreen() {
                                 <PropertyCard
                                     key={propiedad.id}
                                     propiedad={propiedad}
-                                    compacto
-                                    onPress={() =>
-                                        handlePropiedadVista(propiedad)
-                                    }
+                                    onPress={() => handlePropiedadVista(propiedad)}
                                 />
                             ))}
                     </ScrollView>
@@ -736,45 +721,7 @@ export default function HomeScreen() {
                 )}
             </View>
 
-            {/* PUBLICA TU PROPIEDAD */}
-            <View
-                style={[
-                    styles.section,
-                    styles.publishSection,
-                ]}
-            >
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionBadge}>
-                        Publicá
-                    </Text>
-
-                    <Text style={styles.sectionTitle}>
-                        ¿Tenés una propiedad para alquilar?
-                    </Text>
-
-                    <Text style={styles.sectionDescription}>
-                        Sumala a AlquilER y empezá a recibir consultas de personas interesadas.
-                    </Text>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.publishCard}
-                    activeOpacity={0.85}
-                    onPress={handlePublicarPropiedad}
-                >
-                    <View style={styles.publishIconContainer}>
-                        <Text style={styles.publishIcon}>
-                            🏠
-                        </Text>
-                    </View>
-
-                    <View style={styles.publishContent}>
-                        <Text style={styles.publishTitle}>
-                            Publicar propiedad      →
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
+                <PublicarPropiedadSection />
 
         </ScrollView>
     );
@@ -1030,58 +977,6 @@ const crearEstilos = (responsive) => {
             fontWeight: '600',
             textAlign: 'center',
         },
-
-        publishCard: {
-            width: "90%",
-            alignSelf: "center",
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: theme.colors.primaryDark,
-            borderRadius: radioMedio,
-            paddingVertical: separacionPequena,
-            paddingHorizontal: separacionPequena,
-            marginTop: separacionPequena,
-        },
-
-    publishIconContainer: {
-        width: categorySize,
-        height: categorySize,
-        borderRadius: categorySize / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colorConOpacidad(
-            theme.colors.background,
-            0.15
-        ),
-        marginRight: separacionPequena,
-    },
-
-    publishIcon: {
-        fontSize: iconCategory,
-    },
-
-    publishContent: {
-        flex: 1,
-    },
-
-    publishTitle: {
-        color: theme.colors.background,
-        fontSize: fontBody + 2,
-        fontWeight: '700',
-        marginBottom: separacionPequena,
-        alignSelf: "center"
-    },
-
-    publishSubtitle: {
-        color: theme.colors.background,
-        opacity: 0.85,
-        fontSize: fontSmall,
-        lineHeight: fontSmall + 5,
-    },
-
-    publishSection: {
-        marginBottom: separacionGrande,
-    },
 
         propertiesScroll: {
             paddingHorizontal,

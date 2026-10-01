@@ -24,9 +24,7 @@ import PropertyCard from '../components/PropertyCard';
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
-import {
-    guardarPropiedadVista,
-} from '../services/recentProperties';
+import { abrirPropiedad } from '../services/propertyNavigation';
 
 const normalizarParametro = (valor) => {
     if (valor === undefined || valor === null) {
@@ -458,18 +456,6 @@ export default function PropertySearchScreen() {
         );
     }
 
-    const handlePropiedadVista = async (
-        propiedad
-    ) => {
-        await guardarPropiedadVista(
-            propiedad.id
-        );
-
-        router.push(
-            `/propiedades/${propiedad.id}`
-        );
-    };
-
     return (
         <ScrollView
             style={styles.container}
@@ -691,12 +677,10 @@ export default function PropertySearchScreen() {
                         }
                     >
                         {propiedades.map((propiedad) => (
-                            <PropertyCard
+                           <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
-                                onPress={() =>
-                                    handlePropiedadVista(propiedad)
-                                }
+                                onPress={() => abrirPropiedad(router, propiedad)}
                             />
                         ))}
                     </View>

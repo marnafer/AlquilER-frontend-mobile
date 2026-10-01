@@ -18,9 +18,12 @@ import {
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { theme } from '../theme/theme';
+
+import { abrirPropiedad } from '../services/propertyNavigation';
 
 export default function AccountScreen() {
     const router = useRouter();
@@ -87,12 +90,6 @@ export default function AccountScreen() {
             cargarDatos();
         }, [])
     );
-
-    const handlePropiedad = (propiedad) => {
-        router.push(
-            `/propiedades/${propiedad.id}`
-        );
-    };
 
     const handleLogout = async () => {
         try {
@@ -244,7 +241,7 @@ export default function AccountScreen() {
                             <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
-                                onPress={() => handlePropiedad(propiedad)}
+                                onPress={() => abrirPropiedad(router, propiedad)}
                             />
                         ))}
                     </View>
@@ -265,6 +262,8 @@ export default function AccountScreen() {
                     </View>
                 )}
             </View>
+
+            <PublicarPropiedadSection />
 
             <TouchableOpacity
                 style={styles.logoutButton}
