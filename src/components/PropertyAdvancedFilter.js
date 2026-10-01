@@ -159,7 +159,6 @@ const PropertyAdvancedFilter = ({
 
     return (
         <View style={styles.container}>
-            {/* CABECERA DEL FILTRO */}
             <TouchableOpacity
                 style={styles.header}
                 onPress={() =>
@@ -189,6 +188,7 @@ const PropertyAdvancedFilter = ({
             {abierto ? (
                 <View style={styles.content}>
                     {/* CATEGORÍAS */}
+
                     <TouchableOpacity
                         style={styles.dropdownHeader}
                         onPress={() =>
@@ -212,9 +212,7 @@ const PropertyAdvancedFilter = ({
                         </View>
 
                         <Text style={styles.dropdownArrow}>
-                            {categoriasAbierto
-                                ? '▲'
-                                : '▼'}
+                            {categoriasAbierto ? '▲' : '▼'}
                         </Text>
                     </TouchableOpacity>
 
@@ -223,15 +221,9 @@ const PropertyAdvancedFilter = ({
                             <ScrollView
                                 style={styles.dropdownScroll}
                                 nestedScrollEnabled
-                                showsVerticalScrollIndicator={
-                                    false
-                                }
+                                showsVerticalScrollIndicator={false}
                             >
-                                <View
-                                    style={
-                                        styles.optionsContainer
-                                    }
-                                >
+                                <View style={styles.optionsContainer}>
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
@@ -240,9 +232,7 @@ const PropertyAdvancedFilter = ({
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
-                                            setCategoriasSeleccionadas(
-                                                []
-                                            )
+                                            setCategoriasSeleccionadas([])
                                         }
                                     >
                                         <Text
@@ -257,57 +247,48 @@ const PropertyAdvancedFilter = ({
                                         </Text>
                                     </TouchableOpacity>
 
-                                    {categorias.map(
-                                        (categoria) => {
-                                            const seleccionada =
-                                                categoriasSeleccionadas.includes(
-                                                    String(
-                                                        categoria.id
-                                                    )
-                                                );
-
-                                            return (
-                                                <TouchableOpacity
-                                                    key={
-                                                        categoria.id
-                                                    }
-                                                    style={[
-                                                        styles.chip,
-                                                        seleccionada &&
-                                                            styles.chipActive,
-                                                    ]}
-                                                    onPress={() =>
-                                                        toggleSeleccion(
-                                                            categoria.id,
-                                                            categoriasSeleccionadas,
-                                                            setCategoriasSeleccionadas
-                                                        )
-                                                    }
-                                                    activeOpacity={
-                                                        0.8
-                                                    }
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.chipText,
-                                                            seleccionada &&
-                                                                styles.chipTextActive,
-                                                        ]}
-                                                    >
-                                                        {
-                                                            categoria.nombre
-                                                        }
-                                                    </Text>
-                                                </TouchableOpacity>
+                                    {categorias.map((categoria) => {
+                                        const seleccionada =
+                                            categoriasSeleccionadas.includes(
+                                                String(categoria.id)
                                             );
-                                        }
-                                    )}
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={categoria.id}
+                                                style={[
+                                                    styles.chip,
+                                                    seleccionada &&
+                                                        styles.chipActive,
+                                                ]}
+                                                onPress={() =>
+                                                    toggleSeleccion(
+                                                        categoria.id,
+                                                        categoriasSeleccionadas,
+                                                        setCategoriasSeleccionadas
+                                                    )
+                                                }
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.chipText,
+                                                        seleccionada &&
+                                                            styles.chipTextActive,
+                                                    ]}
+                                                >
+                                                    {categoria.nombre}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </View>
                             </ScrollView>
                         </View>
                     ) : null}
 
                     {/* LOCALIDADES */}
+
                     <TouchableOpacity
                         style={styles.dropdownHeader}
                         onPress={() =>
@@ -331,9 +312,7 @@ const PropertyAdvancedFilter = ({
                         </View>
 
                         <Text style={styles.dropdownArrow}>
-                            {localidadesAbierto
-                                ? '▲'
-                                : '▼'}
+                            {localidadesAbierto ? '▲' : '▼'}
                         </Text>
                     </TouchableOpacity>
 
@@ -342,15 +321,9 @@ const PropertyAdvancedFilter = ({
                             <ScrollView
                                 style={styles.dropdownScroll}
                                 nestedScrollEnabled
-                                showsVerticalScrollIndicator={
-                                    false
-                                }
+                                showsVerticalScrollIndicator={false}
                             >
-                                <View
-                                    style={
-                                        styles.optionsContainer
-                                    }
-                                >
+                                <View style={styles.optionsContainer}>
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
@@ -359,9 +332,7 @@ const PropertyAdvancedFilter = ({
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
-                                            setLocalidadesSeleccionadas(
-                                                []
-                                            )
+                                            setLocalidadesSeleccionadas([])
                                         }
                                     >
                                         <Text
@@ -376,57 +347,48 @@ const PropertyAdvancedFilter = ({
                                         </Text>
                                     </TouchableOpacity>
 
-                                    {localidades.map(
-                                        (localidad) => {
-                                            const seleccionada =
-                                                localidadesSeleccionadas.includes(
-                                                    String(
-                                                        localidad.id
-                                                    )
-                                                );
-
-                                            return (
-                                                <TouchableOpacity
-                                                    key={
-                                                        localidad.id
-                                                    }
-                                                    style={[
-                                                        styles.chip,
-                                                        seleccionada &&
-                                                            styles.chipActive,
-                                                    ]}
-                                                    onPress={() =>
-                                                        toggleSeleccion(
-                                                            localidad.id,
-                                                            localidadesSeleccionadas,
-                                                            setLocalidadesSeleccionadas
-                                                        )
-                                                    }
-                                                    activeOpacity={
-                                                        0.8
-                                                    }
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.chipText,
-                                                            seleccionada &&
-                                                                styles.chipTextActive,
-                                                        ]}
-                                                    >
-                                                        {
-                                                            localidad.nombre
-                                                        }
-                                                    </Text>
-                                                </TouchableOpacity>
+                                    {localidades.map((localidad) => {
+                                        const seleccionada =
+                                            localidadesSeleccionadas.includes(
+                                                String(localidad.id)
                                             );
-                                        }
-                                    )}
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={localidad.id}
+                                                style={[
+                                                    styles.chip,
+                                                    seleccionada &&
+                                                        styles.chipActive,
+                                                ]}
+                                                onPress={() =>
+                                                    toggleSeleccion(
+                                                        localidad.id,
+                                                        localidadesSeleccionadas,
+                                                        setLocalidadesSeleccionadas
+                                                    )
+                                                }
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.chipText,
+                                                        seleccionada &&
+                                                            styles.chipTextActive,
+                                                    ]}
+                                                >
+                                                    {localidad.nombre}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </View>
                             </ScrollView>
                         </View>
                     ) : null}
 
                     {/* SERVICIOS */}
+
                     <TouchableOpacity
                         style={styles.dropdownHeader}
                         onPress={() =>
@@ -450,9 +412,7 @@ const PropertyAdvancedFilter = ({
                         </View>
 
                         <Text style={styles.dropdownArrow}>
-                            {serviciosAbierto
-                                ? '▲'
-                                : '▼'}
+                            {serviciosAbierto ? '▲' : '▼'}
                         </Text>
                     </TouchableOpacity>
 
@@ -461,15 +421,9 @@ const PropertyAdvancedFilter = ({
                             <ScrollView
                                 style={styles.dropdownScroll}
                                 nestedScrollEnabled
-                                showsVerticalScrollIndicator={
-                                    false
-                                }
+                                showsVerticalScrollIndicator={false}
                             >
-                                <View
-                                    style={
-                                        styles.optionsContainer
-                                    }
-                                >
+                                <View style={styles.optionsContainer}>
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
@@ -478,9 +432,7 @@ const PropertyAdvancedFilter = ({
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
-                                            setServiciosSeleccionados(
-                                                []
-                                            )
+                                            setServiciosSeleccionados([])
                                         }
                                     >
                                         <Text
@@ -495,57 +447,48 @@ const PropertyAdvancedFilter = ({
                                         </Text>
                                     </TouchableOpacity>
 
-                                    {servicios.map(
-                                        (servicio) => {
-                                            const seleccionado =
-                                                serviciosSeleccionados.includes(
-                                                    String(
-                                                        servicio.id
-                                                    )
-                                                );
-
-                                            return (
-                                                <TouchableOpacity
-                                                    key={
-                                                        servicio.id
-                                                    }
-                                                    style={[
-                                                        styles.chip,
-                                                        seleccionado &&
-                                                            styles.chipActive,
-                                                    ]}
-                                                    onPress={() =>
-                                                        toggleSeleccion(
-                                                            servicio.id,
-                                                            serviciosSeleccionados,
-                                                            setServiciosSeleccionados
-                                                        )
-                                                    }
-                                                    activeOpacity={
-                                                        0.8
-                                                    }
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.chipText,
-                                                            seleccionado &&
-                                                                styles.chipTextActive,
-                                                        ]}
-                                                    >
-                                                        {
-                                                            servicio.nombre
-                                                        }
-                                                    </Text>
-                                                </TouchableOpacity>
+                                    {servicios.map((servicio) => {
+                                        const seleccionado =
+                                            serviciosSeleccionados.includes(
+                                                String(servicio.id)
                                             );
-                                        }
-                                    )}
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={servicio.id}
+                                                style={[
+                                                    styles.chip,
+                                                    seleccionado &&
+                                                        styles.chipActive,
+                                                ]}
+                                                onPress={() =>
+                                                    toggleSeleccion(
+                                                        servicio.id,
+                                                        serviciosSeleccionados,
+                                                        setServiciosSeleccionados
+                                                    )
+                                                }
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.chipText,
+                                                        seleccionado &&
+                                                            styles.chipTextActive,
+                                                    ]}
+                                                >
+                                                    {servicio.nombre}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </View>
                             </ScrollView>
                         </View>
                     ) : null}
 
                     {/* PRECIO */}
+
                     <Text style={styles.sectionTitle}>
                         Precio
                     </Text>
@@ -587,6 +530,7 @@ const PropertyAdvancedFilter = ({
                     </View>
 
                     {/* CARACTERÍSTICAS */}
+
                     <Text style={styles.sectionTitle}>
                         Características
                     </Text>
@@ -599,9 +543,7 @@ const PropertyAdvancedFilter = ({
                         <TextInput
                             style={styles.input}
                             value={cantidadAmbientes}
-                            onChangeText={
-                                setCantidadAmbientes
-                            }
+                            onChangeText={setCantidadAmbientes}
                             placeholder="Ej.: 2"
                             placeholderTextColor={
                                 theme.colors.textMuted
@@ -618,9 +560,7 @@ const PropertyAdvancedFilter = ({
                         <TextInput
                             style={styles.input}
                             value={cantidadDormitorios}
-                            onChangeText={
-                                setCantidadDormitorios
-                            }
+                            onChangeText={setCantidadDormitorios}
                             placeholder="Ej.: 2"
                             placeholderTextColor={
                                 theme.colors.textMuted
@@ -664,6 +604,7 @@ const PropertyAdvancedFilter = ({
                     </View>
 
                     {/* ACCIONES */}
+
                     <View style={styles.actions}>
                         <TouchableOpacity
                             style={styles.clearButton}

@@ -352,35 +352,20 @@ export default function HomeScreen() {
     };
 
     const handleBuscar = () => {
-        const params = [];
+        const params = {};
 
-        categoriasBusqueda.forEach((id) => {
-            params.push(
-                `categoria_id[]=${encodeURIComponent(id)}`
-            );
+        if (categoriasBusqueda.length > 0) {
+            params.categoria_id = categoriasBusqueda;
+        }
+
+        if (localidadesBusqueda.length > 0) {
+            params.localidad_id = localidadesBusqueda;
+        }
+
+        router.push({
+            pathname: '/propiedades',
+            params,
         });
-
-        localidadesBusqueda.forEach((id) => {
-            params.push(
-                `localidad_id[]=${encodeURIComponent(id)}`
-            );
-        });
-
-        const query = params.length > 0
-            ? `?${params.join('&')}`
-            : '';
-
-        router.push(`/propiedades${query}`);
-    };
-
-    const handleCategoriaRapida = (id) => {
-        const categoriaId = String(id);
-
-        router.push(
-            `/propiedades?categoria_id[]=${encodeURIComponent(
-                categoriaId
-            )}`
-        );
     };
 
     if (loading) {
