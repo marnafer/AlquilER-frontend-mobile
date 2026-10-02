@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
+    ActivityIndicator,
     Animated,
     Image,
     KeyboardAvoidingView,
@@ -22,6 +23,7 @@ import PropertySelect from '../components/PropertySelect';
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
+const MAX_IMAGENES_POR_PROPIEDAD = 10;
 
 const esNumeroPositivo = (valor: string): boolean => {
     const numero = Number(valor);
@@ -71,6 +73,10 @@ export default function PublicarPropiedad() {
 
     const router = useRouter();
 
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    const posicionesSectores = useRef<Record<string, number>>({});
+
     const [titulo, setTitulo] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [precio, setPrecio] = useState('');
@@ -97,6 +103,11 @@ export default function PublicarPropiedad() {
         ImagePicker.ImagePickerAsset[]
     >([]);
 
+    const [cargandoImagenes, setCargandoImagenes] = useState(false);
+    const [imagenesCargando, setImagenesCargando] = useState<Set<string>>(
+        new Set()
+    );
+
     const [loadingCatalogos, setLoadingCatalogos] = useState(true);
     const [errorCatalogos, setErrorCatalogos] = useState('');
 
@@ -114,6 +125,55 @@ export default function PublicarPropiedad() {
     const escalaExito = useState(
         new Animated.Value(0.7)
     )[0];
+
+    const centrarSector = (sector: string) => {
+        const posicion = posicionesSectores.current[sector];
+
+        if (posicion === undefined) {
+            return;
+        }
+
+        scrollViewRef.current?.scrollTo({
+            y: Math.max(posicion - 20, 0),
+            animated: true,
+        });
+    };
+
+    const centrarPrimerError = (
+        errores: Record<string, string>
+    ) => {
+        const campos = Object.keys(errores);
+
+        if (campos.length === 0) {
+            return;
+        }
+
+        const campo = campos[0];
+
+        const sectores: Record<string, string> = {
+            titulo: 'informacion',
+            descripcion: 'informacion',
+            precio: 'informacion',
+            expensas: 'informacion',
+            categoria_id: 'informacion',
+
+            direccion: 'ubicacion',
+            localidad_id: 'ubicacion',
+
+            cantidad_ambientes: 'caracteristicas',
+            cantidad_dormitorios: 'caracteristicas',
+            cantidad_banos: 'caracteristicas',
+            capacidad: 'caracteristicas',
+        };
+
+        const sector = sectores[campo];
+
+        if (sector) {
+            setTimeout(() => {
+                centrarSector(sector);
+            }, 100);
+        }
+    };
 
 
     const cargarCatalogos = async () => {
@@ -172,7 +232,16 @@ export default function PublicarPropiedad() {
 
 
     const seleccionarImagenes = async () => {
+        if (imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD) {
+            setErrorPublicacion(
+                `Ya alcanzaste el máximo de ${MAX_IMAGENES_POR_PROPIEDAD} imágenes.`
+            );
+
+            return;
+        }
+
         setErrorPublicacion('');
+        setCargandoImagenes(true);
 
         const resultado =
             await ImagePicker.launchImageLibraryAsync({
@@ -182,20 +251,82 @@ export default function PublicarPropiedad() {
             });
 
         if (resultado.canceled) {
+            setCargandoImagenes(false);
+            setImagenesCargando(new Set());
+
             return;
         }
 
+        const cantidadDisponible =
+            MAX_IMAGENES_POR_PROPIEDAD - imagenes.length;
+
+        const nuevasImagenes = resultado.assets.slice(
+            0,
+            cantidadDisponible
+        );
+
+        const seAlcanzaraLimite =
+            resultado.assets.length > cantidadDisponible;
+
+        if (seAlcanzaraLimite) {
+            setErrorPublicacion(
+                `Solo se pueden tener ${MAX_IMAGENES_POR_PROPIEDAD} imágenes por propiedad.`
+            );
+        }
+
+        if (nuevasImagenes.length === 0) {
+            setCargandoImagenes(false);
+            setImagenesCargando(new Set());
+
+            return;
+        }
+
+        setImagenesCargando(
+            new Set(
+                nuevasImagenes.map((imagen) => imagen.uri)
+            )
+        );
+
         setImagenes((actuales) => [
             ...actuales,
-            ...resultado.assets,
+            ...nuevasImagenes,
         ]);
     };
 
 
+    const finalizarCargaImagen = (uri: string) => {
+        setImagenesCargando((actuales) => {
+            const nuevas = new Set(actuales);
+
+            nuevas.delete(uri);
+
+            if (nuevas.size === 0) {
+                setCargandoImagenes(false);
+            }
+
+            return nuevas;
+        });
+    };
+
+
     const eliminarImagen = (index: number) => {
+        const imagen = imagenes[index];
+
         setImagenes((actuales) =>
-            actuales.filter((_, indice) => indice !== index)
+            actuales.filter((_, i) => i !== index)
         );
+
+        setImagenesCargando((actuales) => {
+            const nuevas = new Set(actuales);
+
+            nuevas.delete(imagen.uri);
+
+            if (nuevas.size === 0) {
+                setCargandoImagenes(false);
+            }
+
+            return nuevas;
+        });
     };
 
 
@@ -241,228 +372,245 @@ export default function PublicarPropiedad() {
 
 
     const handlePublicar = async () => {
-    setErrorPublicacion('');
-    setErroresCampos({});
-    setMensajeExito('');
 
-    const tituloLimpio = titulo.trim();
-    const descripcionLimpia = descripcion.trim();
-    const precioLimpio = precio.trim();
-    const expensasLimpias = expensas.trim();
-    const direccionLimpia = direccion.trim();
-    const ambientesLimpios = cantidadAmbientes.trim();
-    const dormitoriosLimpios = cantidadDormitorios.trim();
-    const banosLimpios = cantidadBanos.trim();
-    const capacidadLimpia = capacidad.trim();
-
-    const erroresLocales: Record<string, string> = {};
-
-    if (!tituloLimpio) {
-        erroresLocales.titulo =
-            'El título es obligatorio.';
-    } else if (tituloLimpio.length < 3) {
-        erroresLocales.titulo =
-            'El título debe tener al menos 3 caracteres.';
-    }
-
-    if (!descripcionLimpia) {
-        erroresLocales.descripcion =
-            'La descripción es obligatoria.';
-    }
-
-    if (!esNumeroPositivo(precioLimpio)) {
-        erroresLocales.precio =
-            'El precio debe ser un número mayor a 0.';
-    }
-
-    if (
-        expensasLimpias &&
-        !esNumeroNoNegativo(expensasLimpias)
-    ) {
-        erroresLocales.expensas =
-            'Las expensas deben ser un número mayor o igual a 0.';
-    }
-
-    if (!direccionLimpia) {
-        erroresLocales.direccion =
-            'La dirección es obligatoria.';
-    } else if (direccionLimpia.length < 3) {
-        erroresLocales.direccion =
-            'La dirección debe tener al menos 3 caracteres.';
-    }
-
-    if (!esEnteroPositivo(ambientesLimpios)) {
-        erroresLocales.cantidad_ambientes =
-            'La cantidad de ambientes debe ser un entero mayor a 0.';
-    }
-
-    if (!esEnteroNoNegativo(dormitoriosLimpios)) {
-        erroresLocales.cantidad_dormitorios =
-            'La cantidad de dormitorios debe ser un entero mayor o igual a 0.';
-    }
-
-    if (!esEnteroNoNegativo(banosLimpios)) {
-        erroresLocales.cantidad_banos =
-            'La cantidad de baños debe ser un entero mayor o igual a 0.';
-    }
-
-    if (
-        capacidadLimpia &&
-        !esEnteroPositivo(capacidadLimpia)
-    ) {
-        erroresLocales.capacidad =
-            'La capacidad debe ser un entero mayor a 0.';
-    }
-
-    if (!categoriaId) {
-        erroresLocales.categoria_id =
-            'Debés seleccionar una categoría.';
-    }
-
-    if (!localidadId) {
-        erroresLocales.localidad_id =
-            'Debés seleccionar una localidad.';
-    }
-
-    if (Object.keys(erroresLocales).length > 0) {
-        setErroresCampos(erroresLocales);
-        return;
-    }
-
-    try {
-        setPublicando(true);
-
-        const payload = {
-            titulo: tituloLimpio,
-            descripcion: descripcionLimpia,
-            precio: Number(precioLimpio),
-            expensas: expensasLimpias
-                ? Number(expensasLimpias)
-                : 0,
-            direccion: direccionLimpia,
-            cantidad_ambientes:
-                Number(ambientesLimpios),
-            cantidad_dormitorios:
-                Number(dormitoriosLimpios),
-            cantidad_banos:
-                Number(banosLimpios),
-            capacidad: capacidadLimpia
-                ? Number(capacidadLimpia)
-                : null,
-            disponible,
-            categoria_id: Number(categoriaId),
-            localidad_id: Number(localidadId),
-            servicios:
-                serviciosSeleccionados.map(Number),
-        };
-
-        const response = await api.post(
-            '/propiedades',
-            payload
-        );
-
-        const propiedadId =
-            response.data?.data?.id;
-
-        if (!propiedadId) {
-            throw new Error(
-                'La API no devolvió el ID de la propiedad creada.'
-            );
+        if (cargandoImagenes) {
+            return;
         }
 
-        setTotalImagenes(imagenes.length);
-        setImagenActual(0);
-
-        for (let i = 0; i < imagenes.length; i++) {
-            setImagenActual(i + 1);
-
-            await subirImagen(
-                imagenes[i],
-                Number(propiedadId)
+        if (imagenes.length > MAX_IMAGENES_POR_PROPIEDAD) {
+            setErrorPublicacion(
+                `No podés publicar una propiedad con más de ${MAX_IMAGENES_POR_PROPIEDAD} imágenes.`
             );
-        }
-
-        setImagenActual(0);
-        setTotalImagenes(0);
-
-        setMensajeExito(
-            'Propiedad creada correctamente'
-        );
-
-        setMostrarExito(true);
-
-        escalaExito.setValue(0.7);
-
-        Animated.spring(escalaExito, {
-            toValue: 1,
-            friction: 5,
-            tension: 100,
-            useNativeDriver: true,
-        }).start();
-
-        setTimeout(() => {
-            setMostrarExito(false);
-            router.replace('/account');
-        }, 2000);
-
-    } catch (error: any) {
-        console.log(
-            'ERROR PUBLICAR:',
-            error
-        );
-
-        console.log(
-            'STATUS:',
-            error?.response?.status
-        );
-
-        console.log(
-            'DATA:',
-            error?.response?.data
-        );
-
-        const validationErrors =
-            error?.response?.data?.validation_errors;
-
-        if (
-            validationErrors &&
-            typeof validationErrors === 'object'
-        ) {
-            const errores: Record<string, string> = {};
-
-            Object.entries(
-                validationErrors
-            ).forEach(
-                ([campo, mensajesCampo]) => {
-                    if (
-                        Array.isArray(
-                            mensajesCampo
-                        )
-                    ) {
-                        errores[campo] =
-                            mensajesCampo.join('\n');
-                    } else {
-                        errores[campo] =
-                            String(mensajesCampo);
-                    }
-                }
-            );
-
-            setErroresCampos(errores);
 
             return;
         }
 
-        setErrorPublicacion(
-            error?.response?.data?.message ||
-            error?.response?.data?.error ||
-            error?.message ||
-            'No se pudo publicar la propiedad.'
-        );
-    } finally {
-        setPublicando(false);
-    }
-};
+        setErrorPublicacion('');
+        setErroresCampos({});
+        setMensajeExito('');
+
+        const tituloLimpio = titulo.trim();
+        const descripcionLimpia = descripcion.trim();
+        const precioLimpio = precio.trim();
+        const expensasLimpias = expensas.trim();
+        const direccionLimpia = direccion.trim();
+        const ambientesLimpios = cantidadAmbientes.trim();
+        const dormitoriosLimpios = cantidadDormitorios.trim();
+        const banosLimpios = cantidadBanos.trim();
+        const capacidadLimpia = capacidad.trim();
+
+        const erroresLocales: Record<string, string> = {};
+
+        if (!tituloLimpio) {
+            erroresLocales.titulo =
+                'El título es obligatorio.';
+        } else if (tituloLimpio.length < 3) {
+            erroresLocales.titulo =
+                'El título debe tener al menos 3 caracteres.';
+        }
+
+        if (!descripcionLimpia) {
+            erroresLocales.descripcion =
+                'La descripción es obligatoria.';
+        }
+
+        if (!esNumeroPositivo(precioLimpio)) {
+            erroresLocales.precio =
+                'El precio debe ser un número mayor a 0.';
+        }
+
+        if (
+            expensasLimpias &&
+            !esNumeroNoNegativo(expensasLimpias)
+        ) {
+            erroresLocales.expensas =
+                'Las expensas deben ser un número mayor o igual a 0.';
+        }
+
+        if (!direccionLimpia) {
+            erroresLocales.direccion =
+                'La dirección es obligatoria.';
+        } else if (direccionLimpia.length < 3) {
+            erroresLocales.direccion =
+                'La dirección debe tener al menos 3 caracteres.';
+        }
+
+        if (!esEnteroPositivo(ambientesLimpios)) {
+            erroresLocales.cantidad_ambientes =
+                'La cantidad de ambientes debe ser un entero mayor a 0.';
+        }
+
+        if (!esEnteroNoNegativo(dormitoriosLimpios)) {
+            erroresLocales.cantidad_dormitorios =
+                'La cantidad de dormitorios debe ser un entero mayor o igual a 0.';
+        }
+
+        if (!esEnteroNoNegativo(banosLimpios)) {
+            erroresLocales.cantidad_banos =
+                'La cantidad de baños debe ser un entero mayor o igual a 0.';
+        }
+
+        if (
+            capacidadLimpia &&
+            !esEnteroPositivo(capacidadLimpia)
+        ) {
+            erroresLocales.capacidad =
+                'La capacidad debe ser un entero mayor a 0.';
+        }
+
+        if (!categoriaId) {
+            erroresLocales.categoria_id =
+                'Debés seleccionar una categoría.';
+        }
+
+        if (!localidadId) {
+            erroresLocales.localidad_id =
+                'Debés seleccionar una localidad.';
+        }
+
+        if (Object.keys(erroresLocales).length > 0) {
+            setErroresCampos(erroresLocales);
+            centrarPrimerError(erroresLocales);
+            return;
+        }
+
+        try {
+            setPublicando(true);
+
+            const payload = {
+                titulo: tituloLimpio,
+                descripcion: descripcionLimpia,
+                precio: Number(precioLimpio),
+                expensas: expensasLimpias
+                    ? Number(expensasLimpias)
+                    : 0,
+                direccion: direccionLimpia,
+                cantidad_ambientes:
+                    Number(ambientesLimpios),
+                cantidad_dormitorios:
+                    Number(dormitoriosLimpios),
+                cantidad_banos:
+                    Number(banosLimpios),
+                capacidad: capacidadLimpia
+                    ? Number(capacidadLimpia)
+                    : null,
+                disponible,
+                categoria_id: Number(categoriaId),
+                localidad_id: Number(localidadId),
+                servicios:
+                    serviciosSeleccionados.map(Number),
+            };
+
+            const response = await api.post(
+                '/propiedades',
+                payload
+            );
+
+            const propiedadId =
+                response.data?.data?.id;
+
+            if (!propiedadId) {
+                throw new Error(
+                    'La API no devolvió el ID de la propiedad creada.'
+                );
+            }
+
+            setTotalImagenes(imagenes.length);
+            setImagenActual(0);
+
+            for (let i = 0; i < imagenes.length; i++) {
+                setImagenActual(i + 1);
+
+                await subirImagen(
+                    imagenes[i],
+                    Number(propiedadId)
+                );
+            }
+
+            setImagenActual(0);
+            setTotalImagenes(0);
+
+            setMensajeExito(
+                'Propiedad creada correctamente'
+            );
+
+            setMostrarExito(true);
+
+            escalaExito.setValue(0.7);
+
+            Animated.spring(escalaExito, {
+                toValue: 1,
+                friction: 5,
+                tension: 100,
+                useNativeDriver: true,
+            }).start();
+
+            setTimeout(() => {
+                setMostrarExito(false);
+                router.replace('/my-properties');
+            }, 2000);
+
+        } catch (error: any) {
+            console.log(
+                'ERROR PUBLICAR:',
+                error
+            );
+
+            console.log(
+                'STATUS:',
+                error?.response?.status
+            );
+
+            console.log(
+                'DATA:',
+                error?.response?.data
+            );
+
+            const validationErrors =
+                error?.response?.data?.validation_errors;
+
+            if (
+                validationErrors &&
+                typeof validationErrors === 'object'
+            ) {
+                const errores: Record<string, string> = {};
+
+                Object.entries(
+                    validationErrors
+                ).forEach(
+                    ([campo, mensajesCampo]) => {
+                        if (
+                            Array.isArray(
+                                mensajesCampo
+                            )
+                        ) {
+                            errores[campo] =
+                                mensajesCampo.join('\n');
+                        } else {
+                            errores[campo] =
+                                String(mensajesCampo);
+                        }
+                    }
+                );
+
+                setErroresCampos(errores);
+                centrarPrimerError(errores);
+
+                return;
+            }
+
+            setErrorPublicacion(
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                error?.message ||
+                'No se pudo publicar la propiedad.'
+            );
+        } finally {
+            setPublicando(false);
+        }
+    };
+
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -509,7 +657,9 @@ export default function PublicarPropiedad() {
                     </Animated.View>
                 </View>
             </Modal>
+
             <ScrollView
+                ref={scrollViewRef}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}
@@ -542,270 +692,298 @@ export default function PublicarPropiedad() {
 
                     {/* Información básica */}
 
-                    <Text style={styles.sectionTitleFirst}>
-                        Información básica
-                    </Text>
+                    <View
+                        onLayout={(event) => {
+                            posicionesSectores.current.informacion =
+                                event.nativeEvent.layout.y;
+                        }}
+                    >
 
-                    <View style={styles.field}>
-                        <Text style={styles.label}>
-                            Título
+                        <Text style={styles.sectionTitleFirst}>
+                            Información básica
                         </Text>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: Casa con patio"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
-                            value={titulo}
-                            onChangeText={setTitulo}
+                        <View style={styles.field}>
+                            <Text style={styles.label}>
+                                Título
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: Casa con patio"
+                                placeholderTextColor={
+                                    theme.colors.textMuted
+                                }
+                                value={titulo}
+                                onChangeText={setTitulo}
+                            />
+
+                            {erroresCampos.titulo ? (
+                                <Text style={styles.fieldError}>
+                                    {erroresCampos.titulo}
+                                </Text>
+                            ) : null}
+                        </View>
+                    
+
+                        <View style={styles.field}>
+                            <Text style={styles.label}>
+                                Descripción
+                            </Text>
+
+                            <TextInput
+                                style={[
+                                    styles.input,
+                                    styles.textArea,
+                                ]}
+                                placeholder="Describí la propiedad"
+                                placeholderTextColor={
+                                    theme.colors.textMuted
+                                }
+                                value={descripcion}
+                                onChangeText={setDescripcion}
+                                multiline
+                                numberOfLines={5}
+                                textAlignVertical="top"
+                            />
+
+                            {erroresCampos.descripcion ? (
+                                <Text style={styles.fieldError}>
+                                    {erroresCampos.descripcion}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        <View style={styles.field}>
+                            <Text style={styles.label}>
+                                Precio
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: 150000"
+                                placeholderTextColor={
+                                    theme.colors.textMuted
+                                }
+                                keyboardType="numeric"
+                                value={precio}
+                                onChangeText={setPrecio}
+                            />
+
+                            {erroresCampos.precio ? (
+                                <Text style={styles.fieldError}>
+                                    {erroresCampos.precio}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        <View style={styles.field}>
+                            <Text style={styles.label}>
+                                Expensas
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: 25000"
+                                placeholderTextColor={
+                                    theme.colors.textMuted
+                                }
+                                keyboardType="numeric"
+                                value={expensas}
+                                onChangeText={setExpensas}
+                            />
+
+                            {erroresCampos.expensas ? (
+                                <Text style={styles.fieldError}>
+                                    {erroresCampos.expensas}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        <PropertySelect
+                            label="Categoría"
+                            placeholder="Seleccioná una categoría"
+                            options={categorias}
+                            value={categoriaId}
+                            onChange={setCategoriaId}
+                            disabled={loadingCatalogos}
                         />
 
-                        {erroresCampos.titulo ? (
+                        {erroresCampos.categoria_id ? (
                             <Text style={styles.fieldError}>
-                                {erroresCampos.titulo}
+                                {erroresCampos.categoria_id}
                             </Text>
                         ) : null}
+
                     </View>
-
-                    <View style={styles.field}>
-                        <Text style={styles.label}>
-                            Descripción
-                        </Text>
-
-                        <TextInput
-                            style={[
-                                styles.input,
-                                styles.textArea,
-                            ]}
-                            placeholder="Describí la propiedad"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
-                            value={descripcion}
-                            onChangeText={setDescripcion}
-                            multiline
-                            numberOfLines={5}
-                            textAlignVertical="top"
-                        />
-
-                        {erroresCampos.descripcion ? (
-                            <Text style={styles.fieldError}>
-                                {erroresCampos.descripcion}
-                            </Text>
-                        ) : null}
-                    </View>
-
-                    <View style={styles.field}>
-                        <Text style={styles.label}>
-                            Precio
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: 150000"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
-                            keyboardType="numeric"
-                            value={precio}
-                            onChangeText={setPrecio}
-                        />
-
-                        {erroresCampos.precio ? (
-                            <Text style={styles.fieldError}>
-                                {erroresCampos.precio}
-                            </Text>
-                        ) : null}
-                    </View>
-
-                    <View style={styles.field}>
-                        <Text style={styles.label}>
-                            Expensas
-                        </Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: 25000"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
-                            keyboardType="numeric"
-                            value={expensas}
-                            onChangeText={setExpensas}
-                        />
-
-                        {erroresCampos.expensas ? (
-                            <Text style={styles.fieldError}>
-                                {erroresCampos.expensas}
-                            </Text>
-                        ) : null}
-                    </View>
-
-                    <PropertySelect
-                        label="Categoría"
-                        placeholder="Seleccioná una categoría"
-                        options={categorias}
-                        value={categoriaId}
-                        onChange={setCategoriaId}
-                        disabled={loadingCatalogos}
-                    />
-
-                    {erroresCampos.categoria_id ? (
-                        <Text style={styles.fieldError}>
-                            {erroresCampos.categoria_id}
-                        </Text>
-                    ) : null}
 
                     {/* Ubicación */}
 
-                    <Text style={styles.sectionTitle}>
-                        Ubicación
-                    </Text>
+                    <View
+                        onLayout={(event) => {
+                            posicionesSectores.current.ubicacion =
+                                event.nativeEvent.layout.y;
+                        }}
+                    >
 
-                    <View style={styles.field}>
-                        <Text style={styles.label}>
-                            Dirección
+                        <Text style={styles.sectionTitle}>
+                            Ubicación
                         </Text>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: San Martín 123"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
-                            value={direccion}
-                            onChangeText={setDireccion}
+                        <View style={styles.field}>
+                            <Text style={styles.label}>
+                                Dirección
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: San Martín 123"
+                                placeholderTextColor={
+                                    theme.colors.textMuted
+                                }
+                                value={direccion}
+                                onChangeText={setDireccion}
+                            />
+
+                            {erroresCampos.direccion ? (
+                                <Text style={styles.fieldError}>
+                                    {erroresCampos.direccion}
+                                </Text>
+                            ) : null}
+                        </View>
+
+                        <PropertySelect
+                            label="Localidad"
+                            placeholder="Seleccioná una localidad"
+                            options={localidades}
+                            value={localidadId}
+                            onChange={setLocalidadId}
+                            disabled={loadingCatalogos}
                         />
 
-                        {erroresCampos.direccion ? (
+                        {erroresCampos.localidad_id ? (
                             <Text style={styles.fieldError}>
-                                {erroresCampos.direccion}
+                                {erroresCampos.localidad_id}
                             </Text>
                         ) : null}
+
                     </View>
-
-                    <PropertySelect
-                        label="Localidad"
-                        placeholder="Seleccioná una localidad"
-                        options={localidades}
-                        value={localidadId}
-                        onChange={setLocalidadId}
-                        disabled={loadingCatalogos}
-                    />
-
-                    {erroresCampos.localidad_id ? (
-                        <Text style={styles.fieldError}>
-                            {erroresCampos.localidad_id}
-                        </Text>
-                    ) : null}
 
                     {/* Características */}
 
-                    <Text style={styles.sectionTitle}>
-                        Características
-                    </Text>
+                    <View
+                        onLayout={(event) => {
+                            posicionesSectores.current.caracteristicas =
+                                event.nativeEvent.layout.y;
+                        }}
+                    >
 
-                    <View style={styles.row}>
-                        <View style={styles.halfField}>
-                            <Text style={styles.label}>
-                                Ambientes
-                            </Text>
+                        <Text style={styles.sectionTitle}>
+                            Características
+                        </Text>
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ej: 3"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
-                                keyboardType="numeric"
-                                value={cantidadAmbientes}
-                                onChangeText={
-                                    setCantidadAmbientes
-                                }
-                            />
-
-                            {erroresCampos.cantidad_ambientes ? (
-                                <Text style={styles.fieldError}>
-                                    {erroresCampos.cantidad_ambientes}
+                        <View style={styles.row}>
+                            <View style={styles.halfField}>
+                                <Text style={styles.label}>
+                                    Ambientes
                                 </Text>
-                            ) : null}
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Ej: 3"
+                                    placeholderTextColor={
+                                        theme.colors.textMuted
+                                    }
+                                    keyboardType="numeric"
+                                    value={cantidadAmbientes}
+                                    onChangeText={
+                                        setCantidadAmbientes
+                                    }
+                                />
+
+                                {erroresCampos.cantidad_ambientes ? (
+                                    <Text style={styles.fieldError}>
+                                        {erroresCampos.cantidad_ambientes}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            <View style={styles.halfField}>
+                                <Text style={styles.label}>
+                                    Dormitorios
+                                </Text>
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Ej: 2"
+                                    placeholderTextColor={
+                                        theme.colors.textMuted
+                                    }
+                                    keyboardType="numeric"
+                                    value={cantidadDormitorios}
+                                    onChangeText={
+                                        setCantidadDormitorios
+                                    }
+                                />
+
+                                {erroresCampos.cantidad_dormitorios ? (
+                                    <Text style={styles.fieldError}>
+                                        {erroresCampos.cantidad_dormitorios}
+                                    </Text>
+                                ) : null}
+                            </View>
                         </View>
 
-                        <View style={styles.halfField}>
-                            <Text style={styles.label}>
-                                Dormitorios
-                            </Text>
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ej: 2"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
-                                keyboardType="numeric"
-                                value={cantidadDormitorios}
-                                onChangeText={
-                                    setCantidadDormitorios
-                                }
-                            />
-
-                            {erroresCampos.cantidad_dormitorios ? (
-                                <Text style={styles.fieldError}>
-                                    {erroresCampos.cantidad_dormitorios}
+                        <View style={styles.row}>
+                            <View style={styles.halfField}>
+                                <Text style={styles.label}>
+                                    Baños
                                 </Text>
-                            ) : null}
-                        </View>
-                    </View>
 
-                    <View style={styles.row}>
-                        <View style={styles.halfField}>
-                            <Text style={styles.label}>
-                                Baños
-                            </Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Ej: 1"
+                                    placeholderTextColor={
+                                        theme.colors.textMuted
+                                    }
+                                    keyboardType="numeric"
+                                    value={cantidadBanos}
+                                    onChangeText={
+                                        setCantidadBanos
+                                    }
+                                />
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ej: 1"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
-                                keyboardType="numeric"
-                                value={cantidadBanos}
-                                onChangeText={
-                                    setCantidadBanos
-                                }
-                            />
+                                {erroresCampos.cantidad_banos ? (
+                                    <Text style={styles.fieldError}>
+                                        {erroresCampos.cantidad_banos}
+                                    </Text>
+                                ) : null}
+                            </View>
 
-                            {erroresCampos.cantidad_banos ? (
-                                <Text style={styles.fieldError}>
-                                    {erroresCampos.cantidad_banos}
+                            <View style={styles.halfField}>
+                                <Text style={styles.label}>
+                                    Capacidad
                                 </Text>
-                            ) : null}
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Ej: 4"
+                                    placeholderTextColor={
+                                        theme.colors.textMuted
+                                    }
+                                    keyboardType="numeric"
+                                    value={capacidad}
+                                    onChangeText={setCapacidad}
+                                />
+
+                                {erroresCampos.capacidad ? (
+                                    <Text style={styles.fieldError}>
+                                        {erroresCampos.capacidad}
+                                    </Text>
+                                ) : null}
+                            </View>
                         </View>
 
-                        <View style={styles.halfField}>
-                            <Text style={styles.label}>
-                                Capacidad
-                            </Text>
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Ej: 4"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
-                                keyboardType="numeric"
-                                value={capacidad}
-                                onChangeText={setCapacidad}
-                            />
-
-                            {erroresCampos.capacidad ? (
-                                <Text style={styles.fieldError}>
-                                    {erroresCampos.capacidad}
-                                </Text>
-                            ) : null}
-                        </View>
                     </View>
 
                     {/* Servicios */}
@@ -831,40 +1009,68 @@ export default function PublicarPropiedad() {
                     </Text>
 
                     <Text style={styles.helperText}>
-                        Agregá imágenes de la propiedad. La primera será la imagen principal.
+                        Agregá hasta {MAX_IMAGENES_POR_PROPIEDAD} imágenes.
+                        La primera será la imagen principal.
                     </Text>
 
-                    <TouchableOpacity
-                        style={styles.addImagesButton}
-                        activeOpacity={0.85}
+                    <Text style={styles.imageCountText}>
+                        {imagenes.length}/{MAX_IMAGENES_POR_PROPIEDAD} imágenes
+                    </Text>
+
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.addImagesButton,
+                            pressed && styles.addImagesButtonPressed,
+                        ]}
                         onPress={seleccionarImagenes}
-                        disabled={publicando}
+                        disabled={
+                            publicando ||
+                            cargandoImagenes ||
+                            imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD
+                        }
                     >
                         <Text style={styles.addImagesButtonText}>
-                            + Agregar imágenes
+                            {imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD
+                                ? 'Máximo de imágenes alcanzado'
+                                : '+ Agregar imágenes'}
                         </Text>
-                    </TouchableOpacity>
+                    </Pressable>
+
+                    {cargandoImagenes ? (
+                        <View style={styles.loadingImagesContainer}>
+                            <ActivityIndicator
+                                size="small"
+                                color={theme.colors.primary}
+                            />
+
+                            <View style={styles.loadingImagesTextContainer}>
+                                <Text style={styles.loadingImagesTitle}>
+                                    Cargando imágenes...
+                                </Text>
+                            </View>
+                        </View>
+                    ) : null}
 
                     {publicando && totalImagenes > 0 ? (
-                    <View style={styles.uploadProgressContainer}>
-                        <Text style={styles.uploadProgressText}>
-                            Subiendo imágenes... {imagenActual} de {totalImagenes}
-                        </Text>
+                        <View style={styles.uploadProgressContainer}>
+                            <Text style={styles.uploadProgressText}>
+                                Subiendo imágenes... {imagenActual} de {totalImagenes}
+                            </Text>
 
-                        <View style={styles.progressBarBackground}>
-                            <View
-                                style={[
-                                    styles.progressBarFill,
-                                    {
-                                        width: `${
-                                            (imagenActual / totalImagenes) * 100
-                                        }%`,
-                                    },
-                                ]}
-                            />
+                            <View style={styles.progressBarBackground}>
+                                <View
+                                    style={[
+                                        styles.progressBarFill,
+                                        {
+                                            width: `${
+                                                (imagenActual / totalImagenes) * 100
+                                            }%`,
+                                        },
+                                    ]}
+                                />
+                            </View>
                         </View>
-                    </View>
-                ) : null}
+                    ) : null}
 
                     {imagenes.length > 0 ? (
                         <View style={styles.imagesContainer}>
@@ -874,12 +1080,10 @@ export default function PublicarPropiedad() {
                                     style={styles.imageWrapper}
                                 >
                                     <Image
-                                        source={{
-                                            uri: imagen.uri,
-                                        }}
+                                        source={{ uri: imagen.uri }}
                                         style={styles.previewImage}
+                                        onLoadEnd={() => finalizarCargaImagen(imagen.uri)}
                                     />
-
                                     {index === 0 ? (
                                         <View
                                             style={
@@ -903,7 +1107,10 @@ export default function PublicarPropiedad() {
                                         onPress={() =>
                                             eliminarImagen(index)
                                         }
-                                        disabled={publicando}
+                                        disabled={
+                                            publicando ||
+                                            cargandoImagenes
+                                        }
                                     >
                                         <Text
                                             style={
@@ -917,11 +1124,13 @@ export default function PublicarPropiedad() {
                             ))}
                         </View>
                     ) : (
-                        <View style={styles.noImagesContainer}>
-                            <Text style={styles.noImagesText}>
-                                Todavía no agregaste imágenes.
-                            </Text>
-                        </View>
+                        !cargandoImagenes && (
+                            <View style={styles.noImagesContainer}>
+                                <Text style={styles.noImagesText}>
+                                    Todavía no agregaste imágenes.
+                                </Text>
+                            </View>
+                        )
                     )}
 
                     {/* Disponibilidad */}
@@ -977,13 +1186,14 @@ export default function PublicarPropiedad() {
                         ]}
                         activeOpacity={0.85}
                         onPress={handlePublicar}
-                        disabled={publicando}
+                        disabled={
+                            publicando ||
+                            cargandoImagenes
+                        }
                     >
                         <Text style={styles.publishButtonText}>
                             {publicando
-                                ? totalImagenes > 0
-                                    ? `Subiendo imágenes ${imagenActual}/${totalImagenes}...`
-                                    : 'Publicando...'
+                                ? 'Publicando propiedad...'
                                 : 'Publicar propiedad'}
                         </Text>
                     </TouchableOpacity>
@@ -1144,6 +1354,38 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
 
+    addImagesButtonPressed: {
+        backgroundColor: theme.colors.primary,
+    },
+
+    loadingImagesContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: theme.spacing.md,
+        padding: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    loadingImagesTextContainer: {
+        marginLeft: theme.spacing.md,
+        flex: 1,
+    },
+
+    loadingImagesTitle: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
+    loadingImagesText: {
+        marginTop: 3,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+    },
+
     imagesContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -1158,6 +1400,13 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         position: 'relative',
         backgroundColor: theme.colors.inputBg,
+    },
+
+    imageCountText: {
+        marginTop: 4,
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.textDark,
     },
 
     previewImage: {
