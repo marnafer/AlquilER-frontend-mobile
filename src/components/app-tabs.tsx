@@ -19,19 +19,14 @@ const opcionesAutenticado = [
     etiqueta: 'Inicio',
   },
   {
-    ruta: '/favorites',
-    icono: '♡',
-    etiqueta: 'Favoritos',
-  },
-  {
     ruta: '/notifications',
     icono: '♧',
     etiqueta: 'Notificaciones',
   },
   {
-    ruta: '/account',
-    icono: '♙',
-    etiqueta: 'Cuenta',
+      ruta: '/my-information',
+      icono: '♙',
+      etiqueta: 'Mi información',
   },
 ] as const;
 
