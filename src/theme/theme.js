@@ -1,4 +1,4 @@
-const primary = '#0d9488';
+const primary = '#3b82f6';
 
 function oscurecerColor(hex, porcentaje = 0.2) {
     const valor = hex.replace('#', '');
@@ -22,6 +22,9 @@ export const theme = {
     colors: {
         primary,
         primaryDark: oscurecerColor(primary),
+        primaryLight: '#3B82F6',
+        primarySoft: '#E0E7FF',
+        primaryBg: '#EEF2FF',
 
         background: '#ffffff',
         textDark: '#0f172a',
