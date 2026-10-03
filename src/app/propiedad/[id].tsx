@@ -12,11 +12,13 @@ import {
     View
 } from 'react-native';
 
+
 import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
 import api, {
     agregarFavorito,
     eliminarFavorito,
+    estaAutenticado,
     obtenerFavoritos,
 } from '../../services/api';
 
@@ -98,26 +100,28 @@ export default function PropiedadDetailScreen() {
     useState(false);
 
     const cargarEstadoFavorito = useCallback(async () => {
-        if (!propiedad?.id) {
+        if (!propiedad?.id) return;
+
+        const autenticado = await estaAutenticado();
+
+        if (!autenticado) {
+            setEsFavorito(false);
             return;
         }
 
         try {
             const response = await obtenerFavoritos();
 
-            if (!response?.success) {
-                return;
-            }
+            if (!response?.success) return;
 
             const favorito = (response.data || []).some(
                 (item: any) =>
-                    Number(item.propiedad_id) ===
-                    Number(propiedad.id)
+                    Number(item.propiedad_id) === Number(propiedad.id)
             );
 
             setEsFavorito(favorito);
-        } catch {
-            // No impedimos mostrar la propiedad si falla favoritos.
+        } catch (error) {
+            console.error('❌ ERROR CARGANDO FAVORITOS:', error);
         }
     }, [propiedad?.id]);
 
@@ -141,60 +145,6 @@ export default function PropiedadDetailScreen() {
         }`;
     };
 
-    const toggleFavorito = async () => {
-        if (!propiedad?.id || actualizandoFavorito) {
-            return;
-        }
-
-        const estadoAnterior = esFavorito;
-        const nuevoEstado = !esFavorito;
-
-        // Cambio visual inmediato
-        setEsFavorito(nuevoEstado);
-        setActualizandoFavorito(true);
-        setMensajeFavorito('');
-
-        // Animación inmediata
-        animarFavorito();
-
-        try {
-            const response = nuevoEstado
-                ? await agregarFavorito(propiedad.id)
-                : await eliminarFavorito(propiedad.id);
-
-            if (!response?.success) {
-                throw new Error(
-                    response?.message ||
-                        'No se pudo actualizar el favorito'
-                );
-            }
-
-            setMensajeFavorito(
-                nuevoEstado
-                    ? '♥ Agregada a favoritos'
-                    : '♡ Eliminada de favoritos'
-            );
-
-            setTimeout(() => {
-                setMensajeFavorito('');
-            }, 2200);
-        } catch (error: any) {
-            // Revertimos el cambio visual
-            setEsFavorito(estadoAnterior);
-
-            setMensajeFavorito(
-                error?.message ||
-                    'No se pudo actualizar el favorito'
-            );
-
-            setTimeout(() => {
-                setMensajeFavorito('');
-            }, 2800);
-        } finally {
-            setActualizandoFavorito(false);
-        }
-    };
-
     const animarFavorito = () => {
         Animated.sequence([
             Animated.timing(escalaFavorito, {
@@ -210,6 +160,73 @@ export default function PropiedadDetailScreen() {
             }),
         ]).start();
     };
+
+    const toggleFavorito = async () => {
+    if (!propiedad?.id || actualizandoFavorito) return;
+
+    const autenticado = await estaAutenticado();
+
+    if (!autenticado) {
+        setMensajeFavorito(
+            'Iniciá sesión para agregar favoritos'
+        );
+
+        setTimeout(() => setMensajeFavorito(''), 2200);
+
+        return;
+    }
+
+    const nuevoEstado = !esFavorito;
+
+    // Cambio visual inmediato
+    setEsFavorito(nuevoEstado);
+    setActualizandoFavorito(true);
+    setMensajeFavorito(
+        nuevoEstado
+            ? '♥ Agregada a favoritos'
+            : '♡ Eliminada de favoritos'
+    );
+
+    animarFavorito();
+
+    try {
+        const response = nuevoEstado
+            ? await agregarFavorito(propiedad.id)
+            : await eliminarFavorito(propiedad.id);
+
+        if (!response?.success) {
+            // Si el backend rechaza la operación,
+            // volvemos al estado anterior.
+            setEsFavorito(!nuevoEstado);
+
+            setMensajeFavorito(
+                response?.error ||
+                response?.message ||
+                'No se pudo actualizar el favorito'
+            );
+
+            return;
+        }
+
+        // El mensaje ya está visible desde el comienzo.
+        setTimeout(() => {
+            setMensajeFavorito('');
+        }, 2200);
+    } catch (error) {
+        console.error(
+            'FAVORITO - error:',
+            error
+        );
+
+        setEsFavorito(!nuevoEstado);
+
+        setMensajeFavorito(
+            'No se pudo actualizar el favorito'
+        );
+    } finally {
+        setActualizandoFavorito(false);
+    }
+};
 
     useEffect(() => {
         cargarEstadoFavorito();

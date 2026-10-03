@@ -4,6 +4,11 @@ import axios from 'axios';
 const TOKEN_KEY = '@alquiler_token';
 const REFRESH_TOKEN_KEY = '@alquiler_refresh_token';
 
+export async function estaAutenticado() {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    return !!token;
+}
+
 const api = axios.create({
     baseURL: 'http://192.168.100.37:8000/api',
 });
@@ -190,12 +195,27 @@ export async function obtenerFavoritos() {
 
     export async function agregarFavorito(propiedadId) {
         try {
+            console.log('FAVORITO propiedadId:', propiedadId);
+
             const response = await api.post('/favoritos', {
                 propiedad_id: propiedadId,
             });
 
+            console.log('FAVORITO status:', response.status);
+            console.log('FAVORITO response:', response.data);
+
             return response.data;
         } catch (error) {
+            console.log(
+                'FAVORITO error status:',
+                error.response?.status
+            );
+
+            console.log(
+                'FAVORITO error data:',
+                error.response?.data
+            );
+
             return error.response?.data || {
                 success: false,
                 message: 'Error de conexión',
@@ -208,6 +228,19 @@ export async function obtenerFavoritos() {
             const response = await api.delete(
                 `/favoritos/propiedad/${propiedadId}`
             );
+
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function obtenerPerfil() {
+        try {
+            const response = await api.get('/usuarios/me');
 
             return response.data;
         } catch (error) {
