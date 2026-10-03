@@ -166,7 +166,7 @@ export default function MyInformationScreen() {
                         style={styles.menuItem}
                         activeOpacity={0.8}
                         onPress={() =>
-                            router.push('/informacion-personal')
+                            router.push('/profile')
                         }
                     >
                         <View style={styles.menuIcon}>
