@@ -62,7 +62,7 @@ const convertirNumero = (valor) => {
 };
 
 const obtenerFechaPublicacion = (propiedad) => {
-    const fecha = propiedad?.created_at;
+    const fecha = propiedad?.fecha_publicacion;
 
     if (!fecha) {
         return 0;
