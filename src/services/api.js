@@ -4,8 +4,13 @@ import axios from 'axios';
 const TOKEN_KEY = '@alquiler_token';
 const REFRESH_TOKEN_KEY = '@alquiler_refresh_token';
 
+export async function estaAutenticado() {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    return !!token;
+}
+
 const api = axios.create({
-    baseURL: 'http://192.168.206.138:8000/api',
+    baseURL: 'http://192.168.100.37:8000/api',
 });
 
 let refreshing = false;
@@ -77,7 +82,10 @@ api.interceptors.response.use(
 
         if (
             error.response?.status !== 401 ||
-            originalRequest?._retry
+            originalRequest?._retry ||
+            originalRequest?.url?.includes('/autenticador/login') ||
+            originalRequest?.url?.includes('/autenticador/register') ||
+            originalRequest?.url?.includes('/autenticador/refresh')
         ) {
             return Promise.reject(error);
         }
@@ -112,10 +120,14 @@ api.interceptors.response.use(
 
             return api(originalRequest);
         } catch (refreshError) {
-            await AsyncStorage.removeItem(TOKEN_KEY);
+           await AsyncStorage.removeItem(TOKEN_KEY);
             await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
 
             notifyRefreshSubscribers(null);
+
+            if (onSessionExpired) {
+                onSessionExpired();
+            }
 
             return Promise.reject(refreshError);
         } finally {
@@ -166,6 +178,84 @@ export async function login(userData) {
             message: 'Error de conexión',
         };
     }
+    
 }
+
+export async function obtenerFavoritos() {
+        try {
+            const response = await api.get('/favoritos');
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function agregarFavorito(propiedadId) {
+        try {
+            console.log('FAVORITO propiedadId:', propiedadId);
+
+            const response = await api.post('/favoritos', {
+                propiedad_id: propiedadId,
+            });
+
+            console.log('FAVORITO status:', response.status);
+            console.log('FAVORITO response:', response.data);
+
+            return response.data;
+        } catch (error) {
+            console.log(
+                'FAVORITO error status:',
+                error.response?.status
+            );
+
+            console.log(
+                'FAVORITO error data:',
+                error.response?.data
+            );
+
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function eliminarFavorito(propiedadId) {
+        try {
+            const response = await api.delete(
+                `/favoritos/propiedad/${propiedadId}`
+            );
+
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function obtenerPerfil() {
+        try {
+            const response = await api.get('/usuarios/me');
+
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+    
+    let onSessionExpired = null;
+
+    export const setSessionExpiredHandler = (handler) => {
+        onSessionExpired = handler;
+    };
+
 
 export default api;

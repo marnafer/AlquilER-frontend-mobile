@@ -78,7 +78,7 @@ const PropertyCard = ({
             onPress={onPress}
             activeOpacity={0.9}
         >
-            <View
+           <View
                 style={[
                     styles.imageContainer,
                     compacto &&
@@ -102,10 +102,19 @@ const PropertyCard = ({
                         >
                             🏠
                         </Text>
+
+                        <Text
+                            style={[
+                                styles.placeholderLabel,
+                                compacto &&
+                                    styles.placeholderLabelCompacto,
+                            ]}
+                        >
+                            Sin imágenes
+                        </Text>
                     </View>
                 )}
             </View>
-
             <View
                 style={[
                     styles.info,
@@ -229,18 +238,22 @@ const styles = StyleSheet.create({
 
     placeholder: {
         flex: 1,
-        alignItems: 'center',
+        width: '100%',
         justifyContent: 'center',
-        backgroundColor:
-            theme.colors.border,
+        alignItems: 'center',
     },
 
-    placeholderText: {
-        fontSize: 48,
+    placeholderLabel: {
+        marginTop: 6,
+        fontSize: 13,
+        fontWeight: '600',
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
     },
 
-    placeholderTextCompacto: {
-        fontSize: 32,
+    placeholderLabelCompacto: {
+        marginTop: 4,
+        fontSize: 11,
     },
 
     info: {

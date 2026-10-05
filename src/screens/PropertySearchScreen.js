@@ -11,6 +11,8 @@ import {
 
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -21,12 +23,11 @@ import {
 
 import PropertyAdvancedFilter from '../components/PropertyAdvancedFilter';
 import PropertyCard from '../components/PropertyCard';
+import ScreenHeader from '../components/ScreenHeader';
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
-import {
-    guardarPropiedadVista,
-} from '../services/recentProperties';
+import { abrirPropiedad } from '../services/propertyNavigation';
 
 const normalizarParametro = (valor) => {
     if (valor === undefined || valor === null) {
@@ -61,7 +62,7 @@ const convertirNumero = (valor) => {
 };
 
 const obtenerFechaPublicacion = (propiedad) => {
-    const fecha = propiedad?.created_at;
+    const fecha = propiedad?.fecha_publicacion;
 
     if (!fecha) {
         return 0;
@@ -458,251 +459,248 @@ export default function PropertySearchScreen() {
         );
     }
 
-    const handlePropiedadVista = async (
-        propiedad
-    ) => {
-        await guardarPropiedadVista(
-            propiedad.id
-        );
-
-        router.push(
-            `/propiedades/${propiedad.id}`
-        );
-    };
-
     return (
-        <ScrollView
+        <KeyboardAvoidingView
             style={styles.container}
-            contentContainerStyle={
-                styles.content
+            behavior={
+                Platform.OS === 'ios'
+                    ? 'padding'
+                    : 'height'
             }
-            showsVerticalScrollIndicator={
-                false
+            keyboardVerticalOffset={
+                Platform.OS === 'ios' ? 90 : 0
             }
         >
-            <View style={styles.hero}>
-                <Text style={styles.heroTitle}>
-                    Encontrá tu próximo hogar
-                </Text>
-
-                <Text
-                    style={
-                        styles.heroDescription
-                    }
-                >
-                    Explorá propiedades y
-                    encontrá la que mejor se
-                    adapte a lo que buscás.
-                </Text>
-            </View>
-
-            <View style={styles.filtersContainer}>
-                <PropertyAdvancedFilter
-                    categorias={categorias}
-                    localidades={localidades}
-                    servicios={servicios}
-                    initialCategorias={
-                        filtrosIniciales.categoria_id
-                    }
-                    initialLocalidades={
-                        filtrosIniciales.localidad_id
-                    }
-                    initialServicios={
-                        filtrosIniciales.servicio_id
-                    }
-                    onSearch={handleBuscar}
+            <ScrollView
+                contentContainerStyle={
+                    styles.content
+                }
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={false}
+            >
+                <ScreenHeader
+                    title="Encontrá tu próximo hogar"
+                    subtitle="Explorá propiedades y encontrá la que mejor se adapte a lo que buscás."
                 />
-            </View>
 
-            {error ? (
-                <View style={styles.errorBox}>
-                    <Text
-                        style={styles.errorText}
-                    >
-                        {error}
-                    </Text>
-                </View>
-            ) : null}
-
-            <View style={styles.resultsSection}>
-                <View
-                    style={styles.resultsHeader}
-                >
-                    <View
-                        style={
-                            styles.resultsHeaderText
+                <View style={styles.filtersContainer}>
+                    <PropertyAdvancedFilter
+                        categorias={categorias}
+                        localidades={localidades}
+                        servicios={servicios}
+                        initialCategorias={
+                            filtrosIniciales.categoria_id
                         }
-                    >
-                        <Text
-                            style={
-                                styles.resultsTitle
-                            }
-                        >
-                            Propiedades
-                        </Text>
+                        initialLocalidades={
+                            filtrosIniciales.localidad_id
+                        }
+                        initialServicios={
+                            filtrosIniciales.servicio_id
+                        }
+                        onSearch={handleBuscar}
+                    />
+                </View>
 
+                {error ? (
+                    <View style={styles.errorBox}>
                         <Text
-                            style={
-                                styles.resultsCount
-                            }
+                            style={styles.errorText}
                         >
-                            {propiedadesOrdenadas.length}{' '}
-                            {propiedadesOrdenadas.length ===
-                            1
-                                ? 'resultado'
-                                : 'resultados'}
+                            {error}
                         </Text>
                     </View>
+                ) : null}
 
+                <View style={styles.resultsSection}>
                     <View
-                        style={
-                            styles.sortContainer
-                        }
+                        style={styles.resultsHeader}
                     >
-                        <TouchableOpacity
+                        <View
                             style={
-                                styles.sortHeader
+                                styles.resultsHeaderText
                             }
-                            onPress={() =>
-                                setOrdenAbierto(
-                                    (actual) =>
-                                        !actual
-                                )
-                            }
-                            activeOpacity={0.8}
                         >
-                            <View
+                            <Text
                                 style={
-                                    styles.sortHeaderText
+                                    styles.resultsTitle
                                 }
                             >
-                                <Text
-                                    style={
-                                        styles.sortLabel
-                                    }
-                                >
-                                    Ordenar por
-                                </Text>
-
-                                <Text
-                                    style={
-                                        styles.sortSummary
-                                    }
-                                    numberOfLines={1}
-                                >
-                                    {
-                                        ordenActual
-                                            ?.etiqueta
-                                    }
-                                </Text>
-                            </View>
+                                Propiedades
+                            </Text>
 
                             <Text
                                 style={
-                                    styles.sortArrow
+                                    styles.resultsCount
                                 }
                             >
-                                {ordenAbierto
-                                    ? '▲'
-                                    : '▼'}
+                                {propiedadesOrdenadas.length}{' '}
+                                {propiedadesOrdenadas.length ===
+                                1
+                                    ? 'resultado'
+                                    : 'resultados'}
                             </Text>
-                        </TouchableOpacity>
+                        </View>
 
-                        {ordenAbierto ? (
-                            <View
+                        <View
+                            style={
+                                styles.sortContainer
+                            }
+                        >
+                            <TouchableOpacity
                                 style={
-                                    styles.sortDropdown
+                                    styles.sortHeader
+                                }
+                                onPress={() =>
+                                    setOrdenAbierto(
+                                        (actual) =>
+                                            !actual
+                                    )
+                                }
+                                activeOpacity={0.8}
+                            >
+                                <View
+                                    style={
+                                        styles.sortHeaderText
+                                    }
+                                >
+                                    <Text
+                                        style={
+                                            styles.sortLabel
+                                        }
+                                    >
+                                        Ordenar por
+                                    </Text>
+
+                                    <Text
+                                        style={
+                                            styles.sortSummary
+                                        }
+                                        numberOfLines={1}
+                                    >
+                                        {
+                                            ordenActual
+                                                ?.etiqueta
+                                        }
+                                    </Text>
+                                </View>
+
+                                <Text
+                                    style={
+                                        styles.sortArrow
+                                    }
+                                >
+                                    {ordenAbierto
+                                        ? '▲'
+                                        : '▼'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {ordenAbierto ? (
+                                <View
+                                    style={
+                                        styles.sortDropdown
+                                    }
+                                >
+                                    {opcionesOrden.map(
+                                        (opcion) => {
+                                            const seleccionada =
+                                                opcion.valor ===
+                                                orden;
+
+                                            return (
+                                                <TouchableOpacity
+                                                    key={
+                                                        opcion.valor
+                                                    }
+                                                    style={[
+                                                        styles.sortOption,
+                                                        seleccionada &&
+                                                            styles.sortOptionSelected,
+                                                    ]}
+                                                    onPress={() =>
+                                                        ordenarSeleccion(
+                                                            opcion.valor
+                                                        )
+                                                    }
+                                                    activeOpacity={
+                                                        0.8
+                                                    }
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.sortOptionText,
+                                                            seleccionada &&
+                                                                styles.sortOptionTextSelected,
+                                                        ]}
+                                                    >
+                                                        {
+                                                            opcion.etiqueta
+                                                        }
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        }
+                                    )}
+                                </View>
+                            ) : null}
+                        </View>
+                    </View>
+
+                    {propiedadesOrdenadas.length ===
+                    0 ? (
+                        <View
+                            style={
+                                styles.emptyContainer
+                            }
+                        >
+                            <Text
+                                style={
+                                    styles.emptyTitle
                                 }
                             >
-                                {opcionesOrden.map(
-                                    (opcion) => {
-                                        const seleccionada =
-                                            opcion.valor ===
-                                            orden;
+                                No se encontraron
+                                propiedades
+                            </Text>
 
-                                        return (
-                                            <TouchableOpacity
-                                                key={
-                                                    opcion.valor
-                                                }
-                                                style={[
-                                                    styles.sortOption,
-                                                    seleccionada &&
-                                                        styles.sortOptionSelected,
-                                                ]}
-                                                onPress={() =>
-                                                    ordenarSeleccion(
-                                                        opcion.valor
-                                                    )
-                                                }
-                                                activeOpacity={
-                                                    0.8
-                                                }
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.sortOptionText,
-                                                        seleccionada &&
-                                                            styles.sortOptionTextSelected,
-                                                    ]}
-                                                >
-                                                    {
-                                                        opcion.etiqueta
-                                                    }
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    }
-                                )}
-                            </View>
-                        ) : null}
-                    </View>
-                </View>
-
-                {propiedadesOrdenadas.length ===
-                0 ? (
-                    <View
-                        style={
-                            styles.emptyContainer
-                        }
-                    >
-                        <Text
-                            style={
-                                styles.emptyTitle
-                            }
-                        >
-                            No se encontraron
-                            propiedades
-                        </Text>
-
-                        <Text
-                            style={
-                                styles.emptyText
-                            }
-                        >
-                            Probá modificando los
-                            filtros de búsqueda.
-                        </Text>
-                    </View>
-                ) : (
-                    <View
-                        style={
-                            styles.propertiesGrid
-                        }
-                    >
-                        {propiedades.map((propiedad) => (
-                            <PropertyCard
-                                key={propiedad.id}
-                                propiedad={propiedad}
-                                onPress={() =>
-                                    handlePropiedadVista(propiedad)
+                            <Text
+                                style={
+                                    styles.emptyText
                                 }
-                            />
-                        ))}
-                    </View>
-                )}
-            </View>
-        </ScrollView>
+                            >
+                                Probá modificando los
+                                filtros de búsqueda.
+                            </Text>
+                        </View>
+                    ) : (
+                        <View
+                            style={
+                                styles.propertiesGrid
+                            }
+                        >
+                            {propiedadesOrdenadas.map(
+                                (propiedad) => (
+                                    <PropertyCard
+                                        key={
+                                            propiedad.id
+                                        }
+                                        propiedad={
+                                            propiedad
+                                        }
+                                        onPress={() =>
+                                            abrirPropiedad(
+                                                router,
+                                                propiedad
+                                            )
+                                        }
+                                    />
+                                )
+                            )}
+                        </View>
+                    )}
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -733,34 +731,6 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         color: theme.colors.textMuted,
         fontSize: 14,
-    },
-
-    hero: {
-        paddingHorizontal:
-            theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom:
-            theme.spacing.lg,
-        backgroundColor:
-            theme.colors.primary,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-    },
-
-    heroTitle: {
-        color: '#ffffff',
-        fontSize: 28,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    heroDescription: {
-        marginTop: theme.spacing.sm,
-        color: '#ffffff',
-        fontSize: 14,
-        lineHeight: 20,
-        textAlign: 'center',
-        opacity: 0.9,
     },
 
     filtersContainer: {

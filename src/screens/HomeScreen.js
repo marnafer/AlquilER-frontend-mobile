@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { abrirPropiedad } from '../services/propertyNavigation';
 import {
-    guardarPropiedadVista,
-    obtenerPropiedadesVistas,
+    obtenerPropiedadesVistas
 } from '../services/recentProperties';
 import { theme } from '../theme/theme';
 
@@ -201,6 +203,8 @@ const crearValoresResponsive = (width, height) => {
 export default function HomeScreen() {
     const router = useRouter();
 
+    const { isAuthenticated } = useAuth();
+
     const { width, height } = useWindowDimensions();
 
     const responsive = useMemo(
@@ -337,7 +341,7 @@ export default function HomeScreen() {
     };
 
     const handlePropiedadVista = async (propiedad) => {
-        await guardarPropiedadVista(propiedad.id);
+        await abrirPropiedad(router, propiedad);
 
         setPropiedadesVistas((actuales) => [
             propiedad,
@@ -345,42 +349,23 @@ export default function HomeScreen() {
                 (actual) => actual.id !== propiedad.id
             ),
         ]);
-
-        router.push(
-            `/propiedades/${propiedad.id}`
-        );
     };
 
     const handleBuscar = () => {
-        const params = [];
+        const params = {};
 
-        categoriasBusqueda.forEach((id) => {
-            params.push(
-                `categoria_id[]=${encodeURIComponent(id)}`
-            );
+        if (categoriasBusqueda.length > 0) {
+            params.categoria_id = categoriasBusqueda;
+        }
+
+        if (localidadesBusqueda.length > 0) {
+            params.localidad_id = localidadesBusqueda;
+        }
+
+        router.push({
+            pathname: '/propiedades',
+            params,
         });
-
-        localidadesBusqueda.forEach((id) => {
-            params.push(
-                `localidad_id[]=${encodeURIComponent(id)}`
-            );
-        });
-
-        const query = params.length > 0
-            ? `?${params.join('&')}`
-            : '';
-
-        router.push(`/propiedades${query}`);
-    };
-
-    const handleCategoriaRapida = (id) => {
-        const categoriaId = String(id);
-
-        router.push(
-            `/propiedades?categoria_id[]=${encodeURIComponent(
-                categoriaId
-            )}`
-        );
     };
 
     if (loading) {
@@ -664,10 +649,7 @@ export default function HomeScreen() {
                                 <PropertyCard
                                     key={propiedad.id}
                                     propiedad={propiedad}
-                                    compacto
-                                    onPress={() =>
-                                        handlePropiedadVista(propiedad)
-                                    }
+                                    onPress={() => handlePropiedadVista(propiedad)}
                                 />
                             ))}
                     </ScrollView>
@@ -724,45 +706,7 @@ export default function HomeScreen() {
                 )}
             </View>
 
-            {/* PUBLICA TU PROPIEDAD */}
-            <View
-                style={[
-                    styles.section,
-                    styles.publishSection,
-                ]}
-            >
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionBadge}>
-                        Publicá
-                    </Text>
-
-                    <Text style={styles.sectionTitle}>
-                        ¿Tenés una propiedad para alquilar?
-                    </Text>
-
-                    <Text style={styles.sectionDescription}>
-                        Sumala a AlquilER y empezá a recibir consultas de personas interesadas.
-                    </Text>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.publishCard}
-                    activeOpacity={0.85}
-                    onPress={() => {}}
-                >
-                    <View style={styles.publishIconContainer}>
-                        <Text style={styles.publishIcon}>
-                            🏠
-                        </Text>
-                    </View>
-
-                    <View style={styles.publishContent}>
-                        <Text style={styles.publishTitle}>
-                            Publicar propiedad      →
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
+                <PublicarPropiedadSection />
 
         </ScrollView>
     );
@@ -1018,58 +962,6 @@ const crearEstilos = (responsive) => {
             fontWeight: '600',
             textAlign: 'center',
         },
-
-        publishCard: {
-            width: "90%",
-            alignSelf: "center",
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: theme.colors.primaryDark,
-            borderRadius: radioMedio,
-            paddingVertical: separacionPequena,
-            paddingHorizontal: separacionPequena,
-            marginTop: separacionPequena,
-        },
-
-    publishIconContainer: {
-        width: categorySize,
-        height: categorySize,
-        borderRadius: categorySize / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colorConOpacidad(
-            theme.colors.background,
-            0.15
-        ),
-        marginRight: separacionPequena,
-    },
-
-    publishIcon: {
-        fontSize: iconCategory,
-    },
-
-    publishContent: {
-        flex: 1,
-    },
-
-    publishTitle: {
-        color: theme.colors.background,
-        fontSize: fontBody + 2,
-        fontWeight: '700',
-        marginBottom: separacionPequena,
-        alignSelf: "center"
-    },
-
-    publishSubtitle: {
-        color: theme.colors.background,
-        opacity: 0.85,
-        fontSize: fontSmall,
-        lineHeight: fontSmall + 5,
-    },
-
-    publishSection: {
-        marginBottom: separacionGrande,
-    },
 
         propertiesScroll: {
             paddingHorizontal,

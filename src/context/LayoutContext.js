@@ -1,9 +1,23 @@
-import { createContext, useContext, useState } from 'react';
+import {
+    createContext,
+    useContext,
+    useState,
+} from 'react';
 
+/**
+ * @typedef {Object} LayoutContextType
+ * @property {number} bottomNavigationHeight
+ * @property {import('react').Dispatch<import('react').SetStateAction<number>>} setBottomNavigationHeight
+ */
+
+/** @type {import('react').Context<LayoutContextType | null>} */
 const LayoutContext = createContext(null);
 
 export function LayoutProvider({ children }) {
-    const [bottomNavigationHeight, setBottomNavigationHeight] = useState(0);
+    const [
+        bottomNavigationHeight,
+        setBottomNavigationHeight,
+    ] = useState(0);
 
     return (
         <LayoutContext.Provider
@@ -17,6 +31,9 @@ export function LayoutProvider({ children }) {
     );
 }
 
+/**
+ * @returns {LayoutContextType}
+ */
 export function useLayout() {
     const context = useContext(LayoutContext);
 
