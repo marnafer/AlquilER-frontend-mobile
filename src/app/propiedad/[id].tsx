@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -20,7 +20,10 @@ import api, {
     eliminarFavorito,
     estaAutenticado,
     obtenerFavoritos,
+    obtenerPerfil,
+    obtenerResenasByPropiedad,
 } from '../../services/api';
+import { extraerItems } from '../../utils/formato';
 
 interface Servicio {
     id: number;
@@ -43,6 +46,28 @@ interface Imagen {
     id: number;
     ruta: string;
     es_principal: boolean;
+}
+
+interface Calificador {
+    id: number;
+    nombre: string;
+    apellido: string;
+}
+
+interface Resena {
+    id: number;
+    calificacion: number;
+    comentario: string;
+    fecha_publicacion: string;
+    calificador_id: number;
+    calificador: Calificador;
+    reserva_id: number;
+}
+
+interface Usuario {
+    id: number;
+    nombre: string;
+    apellido: string;
 }
 
 interface Propiedad {
@@ -73,6 +98,8 @@ export default function PropiedadDetailScreen() {
     const { id } =
         useLocalSearchParams<{ id: string }>();
 
+    const router = useRouter();
+
     const { bottomNavigationHeight } = useLayout();
 
     const { width } = useWindowDimensions();
@@ -90,6 +117,11 @@ export default function PropiedadDetailScreen() {
         useState('');
 
     const [mensajeFavorito, setMensajeFavorito] = useState('');
+
+    const [resenas, setResenas] = useState<Resena[]>([]);
+    const [promedioResenas, setPromedioResenas] = useState(0);
+    const [cargandoResenas, setCargandoResenas] = useState(false);
+    const [perfil, setPerfil] = useState<Usuario | null>(null);
 
     const escalaFavorito = useRef(
         new Animated.Value(1)
@@ -272,6 +304,81 @@ export default function PropiedadDetailScreen() {
 
         cargarPropiedad();
     }, [id]);
+
+    useEffect(() => {
+        const cargarResenas = async () => {
+            if (!id) return;
+
+            setCargandoResenas(true);
+
+            const res = await obtenerResenasByPropiedad(id);
+
+            if (res?.success) {
+                setResenas(extraerItems(res) as Resena[]);
+
+                setPromedioResenas(
+                    Number(res.data?.promedio) || 0
+                );
+            }
+
+            setCargandoResenas(false);
+        };
+
+        const cargarPerfil = async () => {
+            const autenticado = await estaAutenticado();
+
+            if (!autenticado) return;
+
+            const res = await obtenerPerfil();
+
+            if (res?.success && res.data?.id) {
+                setPerfil(res.data as Usuario);
+            }
+        };
+
+        cargarResenas();
+        cargarPerfil();
+    }, [id]);
+
+    const esDuenio =
+        !!perfil &&
+        !!propiedad &&
+        Number(perfil.id) === Number(propiedad.usuario_id);
+
+    const miResena =
+        (perfil &&
+            resenas.find(
+                (r) =>
+                    String(r.calificador_id) ===
+                    String(perfil.id)
+            )) ||
+        null;
+
+    const irAReservar = async () => {
+        const autenticado = await estaAutenticado();
+
+        if (!autenticado) {
+            router.push('/login');
+            return;
+        }
+
+        if (esDuenio || !propiedad) return;
+
+        router.push(`/reservas/nueva/${propiedad.id}`);
+    };
+
+    const irAConsultar = async () => {
+        const autenticado = await estaAutenticado();
+
+        if (!autenticado) {
+            router.push('/login');
+            return;
+        }
+
+        if (esDuenio || !propiedad) return;
+
+        router.push(`/consultas/nueva/${propiedad.id}`);
+    };
 
     if (cargando) {
         return (
@@ -516,6 +623,48 @@ export default function PropiedadDetailScreen() {
                         )}
                     </Text>
                 )}
+
+                <View style={styles.actions}>
+                    <TouchableOpacity
+                        style={[
+                            styles.actionButton,
+                            styles.actionPrimary,
+                            (!propiedad.disponible ||
+                                esDuenio) &&
+                                styles.actionDisabled,
+                        ]}
+                        onPress={irAReservar}
+                        disabled={
+                            !propiedad.disponible || esDuenio
+                        }
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.actionPrimaryText}>
+                            {esDuenio
+                                ? 'Es tu propiedad'
+                                : propiedad.disponible
+                                ? 'Reservar ahora'
+                                : 'No disponible'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.actionButton,
+                            styles.actionSecondary,
+                            esDuenio && styles.actionDisabled,
+                        ]}
+                        onPress={irAConsultar}
+                        disabled={esDuenio}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.actionSecondaryText}>
+                            {esDuenio
+                                ? 'Es tu propiedad'
+                                : 'Consultar'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <Divisor />
@@ -670,6 +819,117 @@ export default function PropiedadDetailScreen() {
                         : 'No disponible'}
                 </Text>
             </View>
+
+            <Divisor />
+
+            {/* RESEÑAS */}
+            <View style={styles.section}>
+                <View style={styles.resenaHeader}>
+                    <Text
+                        style={styles.sectionTitle}
+                    >
+                        Reseñas
+                    </Text>
+
+                    {resenas.length > 0 ? (
+                        <View style={styles.resenaPromedio}>
+                            <Text style={styles.resenaPromedioNum}>
+                                {promedioResenas.toFixed(1)}
+                            </Text>
+
+                            <Text style={styles.resenaPromedioEstrellas}>
+                                {'★'.repeat(
+                                    Math.round(promedioResenas)
+                                )}
+                                {'☆'.repeat(
+                                    5 - Math.round(promedioResenas)
+                                )}
+                            </Text>
+
+                            <Text style={styles.resenaPromedioTotal}>
+                                {resenas.length}{' '}
+                                {resenas.length === 1
+                                    ? 'reseña'
+                                    : 'reseñas'}
+                            </Text>
+                        </View>
+                    ) : null}
+                </View>
+
+                {cargandoResenas ? (
+                    <ActivityIndicator
+                        color={theme.colors.primary}
+                        style={{ marginVertical: theme.spacing.md }}
+                    />
+                ) : resenas.length > 0 ? (
+                    <View style={styles.resenaLista}>
+                        {resenas.map((r) => (
+                            <View
+                                key={r.id}
+                                style={styles.resenaItem}
+                            >
+                                <View style={styles.resenaItemTop}>
+                                    <Text style={styles.resenaAutor}>
+                                        {r.calificador
+                                            ? `${r.calificador.nombre} ${r.calificador.apellido || ''}`.trim()
+                                            : `Usuario #${r.calificador_id}`}
+                                    </Text>
+
+                                    <Text style={styles.resenaEstrellas}>
+                                        {'★'.repeat(
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    5,
+                                                    Number(r.calificacion)
+                                                )
+                                            )
+                                        )}{'☆'.repeat(
+                                            Math.max(
+                                                0,
+                                                5 -
+                                                    Math.min(
+                                                        5,
+                                                        Number(
+                                                            r.calificacion
+                                                        )
+                                                    )
+                                            )
+                                        )}
+                                    </Text>
+                                </View>
+
+                                {miResena &&
+                                String(r.id) ===
+                                    String(miResena.id) ? (
+                                    <Text style={styles.resenaMiaBadge}>
+                                        ★ Tu reseña
+                                    </Text>
+                                ) : null}
+
+                                {r.fecha_publicacion ? (
+                                    <Text style={styles.resenaFecha}>
+                                        {String(
+                                            r.fecha_publicacion
+                                        ).slice(0, 10)}
+                                    </Text>
+                                ) : null}
+
+                                {r.comentario ? (
+                                    <Text style={styles.resenaComentario}>
+                                        {r.comentario}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        ))}
+                    </View>
+                ) : (
+                    <Text style={styles.textMuted}>
+                        Todavía no hay reseñas para esta
+                        propiedad.
+                    </Text>
+                )}
+            </View>
         </ScrollView>
     );
 }
@@ -793,6 +1053,132 @@ const styles = StyleSheet.create({
 
     unavailable: {
         color: theme.colors.textMuted,
+    },
+
+    actions: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.lg,
+    },
+
+    actionButton: {
+        flex: 1,
+        minHeight: 50,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.sm,
+    },
+
+    actionPrimary: {
+        backgroundColor: theme.colors.primary,
+    },
+
+    actionSecondary: {
+        backgroundColor: theme.colors.background,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+    },
+
+    actionDisabled: {
+        backgroundColor: theme.colors.disabled,
+        borderColor: theme.colors.disabled,
+        opacity: 0.7,
+    },
+
+    actionPrimaryText: {
+        color: '#ffffff',
+        fontSize: 15,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+
+    actionSecondaryText: {
+        color: theme.colors.primary,
+        fontSize: 15,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+
+    resenaHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing.sm,
+    },
+
+    resenaPromedio: {
+        alignItems: 'center',
+    },
+
+    resenaPromedioNum: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: theme.colors.textDark,
+    },
+
+    resenaPromedioEstrellas: {
+        color: '#f59e0b',
+        fontSize: 13,
+        letterSpacing: 1,
+    },
+
+    resenaPromedioTotal: {
+        color: theme.colors.textMuted,
+        fontSize: 12,
+    },
+
+    resenaLista: {
+        gap: theme.spacing.sm,
+    },
+
+    resenaItem: {
+        padding: theme.spacing.md,
+        borderRadius: 12,
+        backgroundColor: theme.colors.inputBg,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+
+    resenaItemTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+
+    resenaAutor: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+        fontWeight: '700',
+        flex: 1,
+        marginRight: theme.spacing.sm,
+    },
+
+    resenaEstrellas: {
+        color: '#f59e0b',
+        fontSize: 14,
+        letterSpacing: 1,
+    },
+
+    resenaMiaBadge: {
+        marginTop: 6,
+        alignSelf: 'flex-start',
+        color: theme.colors.primary,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
+    resenaFecha: {
+        marginTop: 6,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+    },
+
+    resenaComentario: {
+        marginTop: 6,
+        color: theme.colors.textDark,
+        fontSize: 14,
+        lineHeight: 20,
     },
 
     carouselContainer: {

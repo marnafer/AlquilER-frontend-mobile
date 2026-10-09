@@ -13,12 +13,15 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
 import ScreenHeader from '../components/ScreenHeader';
-import api from '../services/api';
+import api, {
+    eliminarPropiedad,
+} from '../services/api';
 import { theme } from '../theme/theme';
 
 import { abrirPropiedad } from '../services/propertyNavigation';
@@ -29,6 +32,8 @@ export default function MyPropertiesScreen() {
     const [propiedades, setPropiedades] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [eliminandoId, setEliminandoId] = useState(null);
+    const [mensaje, setMensaje] = useState('');
 
     const cargarPropiedades = async () => {
         try {
@@ -60,6 +65,44 @@ export default function MyPropertiesScreen() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const manejarEliminar = async (propiedad) => {
+        if (
+            typeof window !== 'undefined' &&
+            window.confirm &&
+            !window.confirm(
+                `¿Eliminar la propiedad "${propiedad.titulo}"? Esta acción se podrá revertir desde el administrador.`
+            )
+        ) {
+            return;
+        }
+
+        setEliminandoId(propiedad.id);
+        setMensaje('');
+
+        const result = await eliminarPropiedad(propiedad.id);
+
+        if (result.success) {
+            setMensaje(
+                result.message ||
+                    'Propiedad eliminada correctamente'
+            );
+
+            setPropiedades((prev) =>
+                prev.filter(
+                    (p) => p.id !== propiedad.id
+                )
+            );
+        } else {
+            setMensaje(
+                result.message ||
+                    result.error ||
+                    'No se pudo eliminar la propiedad'
+            );
+        }
+
+        setEliminandoId(null);
     };
 
     useFocusEffect(
@@ -102,6 +145,30 @@ export default function MyPropertiesScreen() {
                 </View>
             ) : null}
 
+            {mensaje ? (
+                <View
+                    style={[
+                        styles.messageBox,
+                        mensaje.toLowerCase().includes('eliminada') ||
+                        mensaje.toLowerCase().includes('correctamente')
+                            ? styles.messageExito
+                            : styles.messageError,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.messageText,
+                            mensaje.toLowerCase().includes('eliminada') ||
+                            mensaje.toLowerCase().includes('correctamente')
+                                ? styles.messageTextExito
+                                : styles.messageTextError,
+                        ]}
+                    >
+                        {mensaje}
+                    </Text>
+                </View>
+            ) : null}
+
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                     Tus propiedades
@@ -121,16 +188,68 @@ export default function MyPropertiesScreen() {
             {propiedades.length > 0 ? (
                 <View style={styles.propertiesGrid}>
                     {propiedades.map((propiedad) => (
-                        <PropertyCard
-                            key={propiedad.id}
-                            propiedad={propiedad}
-                            onPress={() =>
-                                abrirPropiedad(
-                                    router,
-                                    propiedad
-                                )
-                            }
-                        />
+                        <View key={propiedad.id} style={styles.cardWrapper}>
+                            <PropertyCard
+                                propiedad={propiedad}
+                                onPress={() =>
+                                    abrirPropiedad(
+                                        router,
+                                        propiedad
+                                    )
+                                }
+                            />
+
+                            <View style={styles.cardActions}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.actionButton,
+                                        styles.editButton,
+                                    ]}
+                                    onPress={() =>
+                                        router.push(
+                                            `/editar-propiedad/${propiedad.id}`
+                                        )
+                                    }
+                                    activeOpacity={0.85}
+                                >
+                                    <Text
+                                        style={
+                                            styles.editButtonText
+                                        }
+                                    >
+                                        Editar
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.actionButton,
+                                        styles.deleteButton,
+                                    ]}
+                                    onPress={() =>
+                                        manejarEliminar(
+                                            propiedad
+                                        )
+                                    }
+                                    disabled={
+                                        eliminandoId ===
+                                        propiedad.id
+                                    }
+                                    activeOpacity={0.85}
+                                >
+                                    <Text
+                                        style={
+                                            styles.deleteButtonText
+                                        }
+                                    >
+                                        {eliminandoId ===
+                                        propiedad.id
+                                            ? 'Eliminando...'
+                                            : 'Eliminar'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     ))}
                 </View>
             ) : (
@@ -200,6 +319,39 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
+    messageBox: {
+        marginHorizontal:
+            theme.spacing.md,
+        marginTop:
+            theme.spacing.md,
+        padding:
+            theme.spacing.md,
+        borderRadius: 10,
+    },
+
+    messageExito: {
+        backgroundColor: '#dcfce7',
+    },
+
+    messageError: {
+        backgroundColor:
+            theme.colors.errorBg,
+    },
+
+    messageText: {
+        fontSize: 14,
+        textAlign: 'center',
+        fontWeight: '600',
+    },
+
+    messageTextExito: {
+        color: '#16a34a',
+    },
+
+    messageTextError: {
+        color: theme.colors.errorText,
+    },
+
     section: {
         marginTop:
             theme.spacing.lg,
@@ -232,6 +384,50 @@ const styles = StyleSheet.create({
             theme.spacing.md,
         rowGap:
             theme.spacing.md,
+    },
+
+    cardWrapper: {
+        width: '48%',
+        marginBottom: theme.spacing.sm,
+    },
+
+    cardActions: {
+        flexDirection: 'row',
+        gap: theme.spacing.xs ?? 6,
+        marginTop: theme.spacing.xs ?? 6,
+    },
+
+    actionButton: {
+        flex: 1,
+        minHeight: 36,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    editButton: {
+        backgroundColor:
+            theme.colors.primary,
+    },
+
+    editButtonText: {
+        color: '#ffffff',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+
+    deleteButton: {
+        borderWidth: 1,
+        borderColor:
+            theme.colors.errorText,
+        backgroundColor:
+            theme.colors.background,
+    },
+
+    deleteButtonText: {
+        color: theme.colors.errorText,
+        fontSize: 13,
+        fontWeight: '700',
     },
 
     emptyContainer: {

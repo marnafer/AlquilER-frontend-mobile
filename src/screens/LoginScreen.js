@@ -182,6 +182,19 @@ export default function LoginScreen() {
                         </Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    style={styles.forgotButton}
+                    onPress={() =>
+                        router.push('/recuperar-contrasena')
+                    }
+                    disabled={loading}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.forgotText}>
+                        ¿Olvidaste tu contraseña?
+                    </Text>
+                </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -325,6 +338,17 @@ const styles = StyleSheet.create({
     },
 
     link: {
+        color: theme.colors.primary,
+        fontSize: theme.sizes.body,
+        fontWeight: '600',
+    },
+
+    forgotButton: {
+        marginTop: theme.spacing.md,
+        alignItems: 'center',
+    },
+
+    forgotText: {
         color: theme.colors.primary,
         fontSize: theme.sizes.body,
         fontWeight: '600',

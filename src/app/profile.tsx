@@ -12,9 +12,11 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 
+import { useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import {
     obtenerPerfil,
@@ -22,6 +24,8 @@ import {
 import { theme } from '../theme/theme';
 
 export default function ProfileScreen() {
+    const router = useRouter();
+
     const [usuario, setUsuario] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -171,6 +175,44 @@ export default function ProfileScreen() {
                             </Text>
                         </View>
                     </View>
+
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() =>
+                            router.push('/editar-perfil')
+                        }
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.editButtonText}>
+                            Editar perfil
+                        </Text>
+                    </TouchableOpacity>
+
+                    {String(
+                        usuario.rol?.nombre ||
+                            usuario.rol?.valor
+                    ).toLowerCase() === 'administrador' ||
+                    String(usuario.rol?.id) === '1' ? (
+                        <TouchableOpacity
+                            style={[
+                                styles.editButton,
+                                styles.adminButton,
+                            ]}
+                            onPress={() =>
+                                router.push('/admin')
+                            }
+                            activeOpacity={0.85}
+                        >
+                            <Text
+                                style={[
+                                    styles.editButtonText,
+                                    styles.adminButtonText,
+                                ]}
+                            >
+                                Panel de administración
+                            </Text>
+                        </TouchableOpacity>
+                    ) : null}
                 </View>
             ) : null}
         </ScrollView>
@@ -281,5 +323,30 @@ const styles = StyleSheet.create({
         color:
             theme.colors.textDark,
         fontSize: 16,
+    },
+
+    editButton: {
+        minHeight: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop:
+            theme.spacing.lg,
+        borderRadius: 12,
+        backgroundColor:
+            theme.colors.primary,
+    },
+
+    editButtonText: {
+        color: '#ffffff',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+
+    adminButton: {
+        backgroundColor: '#0f172a',
+    },
+
+    adminButtonText: {
+        color: '#ffffff',
     },
 });
