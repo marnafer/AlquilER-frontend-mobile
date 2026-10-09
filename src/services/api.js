@@ -13,6 +13,14 @@ const api = axios.create({
   baseURL: "http://192.168.100.37:8000/api", //192.168.100.37
 });
 
+// Handler global para cuando la sesión expira (refresh token inválido).
+// Se declara ANTES del interceptor que lo usa.
+let onSessionExpired = null;
+
+export const setSessionExpiredHandler = (handler) => {
+  onSessionExpired = handler;
+};
+
 let refreshing = false;
 let refreshSubscribers = [];
 
@@ -245,12 +253,6 @@ export async function actualizarPerfil(id, userData) {
   }
 }
 
-let onSessionExpired = null;
-
-export const setSessionExpiredHandler = (handler) => {
-  onSessionExpired = handler;
-};
-
 export async function obtenerReservas() {
   try {
     const response = await api.get("/reservas");
@@ -265,6 +267,10 @@ export async function obtenerReservas() {
     );
   }
 }
+
+// ============================================
+// NOTIFICACIONES
+// ============================================
 
 export async function obtenerNotificaciones() {
   try {
@@ -310,6 +316,8 @@ export async function marcarTodasNotificacionesLeidas() {
   }
 }
 
+// Endpoint único: GET /notificaciones/no-leidas
+// Devuelve lo que el backend entregue (conteo o lista, según el contrato).
 export async function obtenerCantidadNotificacionesNoLeidas() {
   try {
     const response = await api.get("/notificaciones/no-leidas");
@@ -324,6 +332,11 @@ export async function obtenerCantidadNotificacionesNoLeidas() {
     );
   }
 }
+
+// Alias por compatibilidad: misma llamada, nombre antiguo.
+export const obtenerNotificacionesNoLeidas =
+  obtenerCantidadNotificacionesNoLeidas;
+
 // ============================================
 // RECUPERACIÓN DE CONTRASEÑA
 // ============================================
@@ -662,40 +675,6 @@ export async function obtenerResenasByReserva(reservaId) {
 export async function obtenerResenasByUsuario(usuarioId) {
   try {
     const response = await api.get(`/resenas/usuario/${usuarioId}`);
-
-    return response.data;
-  } catch (error) {
-    return (
-      error.response?.data || {
-        success: false,
-        message: "Error de conexión",
-      }
-    );
-  }
-}
-
-// ============================================
-// NOTIFICACIONES
-// ============================================
-
-export async function obtenerNotificacionesNoLeidas() {
-  try {
-    const response = await api.get("/notificaciones/no-leidas");
-
-    return response.data;
-  } catch (error) {
-    return (
-      error.response?.data || {
-        success: false,
-        message: "Error de conexión",
-      }
-    );
-  }
-}
-
-export async function marcarTodasNotificacionesLeidas() {
-  try {
-    const response = await api.put("/notificaciones/leer-todas");
 
     return response.data;
   } catch (error) {
