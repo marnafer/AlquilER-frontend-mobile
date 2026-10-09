@@ -413,24 +413,6 @@ export async function eliminarPropiedad(id) {
 // RESERVAS
 // ============================================
 
-// GET /api/reservas devuelve las reservas del usuario autenticado ya
-// clasificadas por el backend en mis_reservas y
-// reservas_de_mis_propiedades (los admins además reciben "todas").
-export async function obtenerReservas() {
-  try {
-    const response = await api.get("/reservas");
-
-    return response.data;
-  } catch (error) {
-    return (
-      error.response?.data || {
-        success: false,
-        message: "Error de conexión",
-      }
-    );
-  }
-}
-
 // Normaliza la respuesta clasificada de /api/reservas. Devuelve siempre las
 // tres listas, con "todas" como concatenación de las otras dos cuando el
 // backend no la manda (usuarios comunes).
@@ -696,39 +678,9 @@ export async function obtenerResenasByUsuario(usuarioId) {
 // NOTIFICACIONES
 // ============================================
 
-export async function obtenerNotificaciones() {
-  try {
-    const response = await api.get("/notificaciones");
-
-    return response.data;
-  } catch (error) {
-    return (
-      error.response?.data || {
-        success: false,
-        message: "Error de conexión",
-      }
-    );
-  }
-}
-
 export async function obtenerNotificacionesNoLeidas() {
   try {
     const response = await api.get("/notificaciones/no-leidas");
-
-    return response.data;
-  } catch (error) {
-    return (
-      error.response?.data || {
-        success: false,
-        message: "Error de conexión",
-      }
-    );
-  }
-}
-
-export async function marcarNotificacionLeida(id) {
-  try {
-    const response = await api.put(`/notificaciones/${id}/leer`);
 
     return response.data;
   } catch (error) {
