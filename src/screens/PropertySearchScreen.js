@@ -135,6 +135,9 @@ export default function PropertySearchScreen() {
     const [ordenAbierto, setOrdenAbierto] =
         useState(false);
 
+    const [aceptaMascotas, setAceptaMascotas] = useState(false);
+    const [aceptaHijos, setAceptaHijos] = useState(false);
+
     const categoriasIniciales = useMemo(
         () => normalizarParametro(categoria_id),
         [categoria_id]
@@ -149,6 +152,9 @@ export default function PropertySearchScreen() {
         () => normalizarParametro(servicio_id),
         [servicio_id]
     );
+
+    const aceptaMascotasInicial = searchParams.get('acepta_mascotas');
+    const aceptaHijosInicial = searchParams.get('acepta_hijos');
 
     const filtrosIniciales = useMemo(
         () => ({
@@ -178,6 +184,12 @@ export default function PropertySearchScreen() {
 
             capacidad:
                 capacidad ?? '',
+
+            acepta_mascotas:
+                aceptaMascotasInicial,
+
+            acepta_hijos:
+                aceptaHijosInicial,
         }),
         [
             categoriasIniciales,
@@ -189,6 +201,8 @@ export default function PropertySearchScreen() {
             cantidad_dormitorios,
             cantidad_banos,
             capacidad,
+            aceptaMascotasInicial,
+            aceptaHijosInicial,
         ]
     );
 
@@ -265,6 +279,14 @@ export default function PropertySearchScreen() {
             'servicio_id',
             filtros.servicio_id
         );
+
+        if (filtros.acepta_mascotas) {
+            params.push('acepta_mascotas=1');
+        }
+
+        if (filtros.acepta_hijos) {
+            params.push('acepta_hijos=1');
+        }
 
         const camposSimples = [
             'precio_min',
@@ -500,6 +522,24 @@ export default function PropertySearchScreen() {
                         }
                         onSearch={handleBuscar}
                     />
+                    <View style={styles.filtroAdicional}>
+                        <TouchableOpacity
+                            style={styles.filtroAdicionalItem}
+                            onPress={() => setFiltroMascotas(!aceptaMascotas)}
+                        >
+                            <Text style={styles.filtroAdicionalTexto}>
+                                {aceptaMascotas ? 'Dejá de filtrar mascotas' : 'Filtrar mascotas'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.filtroAdicionalItem}
+                            onPress={() => setFiltroHijos(!aceptaHijos)}
+                        >
+                            <Text style={styles.filtroAdicionalTexto}>
+                                {aceptaHijos ? 'Dejá de filtrar hijos' : 'Filtrar hijos'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {error ? (

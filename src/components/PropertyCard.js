@@ -188,16 +188,32 @@ const PropertyCard = ({
                             0}
                     </Text>
 
-                    <Text
-                        style={[
-                            styles.feature,
-                            compacto &&
-                                styles.featureCompacto,
-                        ]}
-                    >
+<Text
+                    style={[
+                        styles.feature,
+                        compacto &&
+                            styles.featureCompacto,
+                    ]}
+>
                         👥{' '}
                         {propiedad.capacidad || 0}
                     </Text>
+
+                    {propiedad.acepta_mascotas && (
+                        <Text
+                            style={styles.feature}
+                        >
+                            🏠✓ Acepta mascotas
+                        </Text>
+                    )}
+
+                    {propiedad.acepta_hijos && (
+                        <Text
+                            style={styles.feature}
+                        >
+                            ✓ Acepta hijos
+                        </Text>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
