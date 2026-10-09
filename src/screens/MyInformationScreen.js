@@ -102,7 +102,9 @@ export default function MyInformationScreen() {
             <ScreenHeader
                 title="Mi información"
                 subtitle="Gestioná tu cuenta y tu actividad"
+                showBackButton
             />
+            
 
             {error ? (
                 <View style={styles.errorBox}>

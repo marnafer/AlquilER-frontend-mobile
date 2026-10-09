@@ -13,7 +13,9 @@ import {
 import PropertyCard from '../components/PropertyCard';
 import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, {
+    obtenerCantidadNotificacionesNoLeidas,
+} from '../services/api';
 import { abrirPropiedad } from '../services/propertyNavigation';
 import {
     obtenerPropiedadesVistas
@@ -239,6 +241,9 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const [notificacionesNoLeidas, setNotificacionesNoLeidas] =
+    useState(0);
+
     useEffect(() => {
         cargarDatos();
     }, []);
@@ -308,12 +313,46 @@ export default function HomeScreen() {
         }
     };
 
+    const cargarNotificacionesNoLeidas = async () => {
+        try {
+            if (!isAuthenticated) {
+                setNotificacionesNoLeidas(0);
+                return;
+            }
+
+            const response =
+                await obtenerCantidadNotificacionesNoLeidas();
+
+            if (!response?.success) {
+                setNotificacionesNoLeidas(0);
+                return;
+            }
+
+            setNotificacionesNoLeidas(
+                Number(response.data?.no_leidas || 0)
+            );
+        } catch (error) {
+            console.error(
+                'HOME: error al cargar notificaciones',
+                error
+            );
+
+            setNotificacionesNoLeidas(0);
+        }
+    };
+
     useFocusEffect(
         useCallback(() => {
             if (propiedades.length > 0) {
                 cargarPropiedadesVistas();
             }
         }, [propiedades])
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            cargarNotificacionesNoLeidas();
+        }, [isAuthenticated])
     );
 
     const toggleCategoria = (id) => {
@@ -391,9 +430,33 @@ export default function HomeScreen() {
         >
             {/* HERO */}
             <View style={styles.hero}>
-                <Text style={styles.heroTitle}>
-                    AlquilER
-                </Text>
+                <View style={styles.heroHeader}>
+                    <Text style={styles.heroTitle}>
+                        AlquilER
+                    </Text>
+
+                    {isAuthenticated ? (
+                        <TouchableOpacity
+                            style={styles.notificationButton}
+                            onPress={() => router.push('/notifications')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.notificationIcon}>
+                                🔔
+                            </Text>
+
+                            {notificacionesNoLeidas > 0 ? (
+                                <View style={styles.notificationBadge}>
+                                    <Text style={styles.notificationBadgeText}>
+                                        {notificacionesNoLeidas > 9
+                                            ? '9+'
+                                            : notificacionesNoLeidas}
+                                    </Text>
+                                </View>
+                            ) : null}
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
 
                 <View style={styles.descriptionCard}>
                     <Text style={styles.descriptionTitle}>
@@ -776,6 +839,56 @@ const crearEstilos = (responsive) => {
             textAlign: 'center',
             paddingVertical: separacionMedia,
         },
+
+    notificationButton: {
+        position: 'absolute',
+        right: 0,
+        top: '50%',
+        transform: [
+            {
+                translateY: -20,
+            },
+        ],
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: colorConOpacidad(
+            '#FFFFFF',
+            0.15
+        ),
+        borderWidth: 1,
+        borderColor: colorConOpacidad(
+            '#FFFFFF',
+            0.25
+        ),
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    notificationIcon: {
+        fontSize: 21,
+    },
+
+    notificationBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 20,
+        height: 20,
+        paddingHorizontal: 4,
+        borderRadius: 10,
+        backgroundColor: '#ef4444',
+        borderWidth: 2,
+        borderColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    notificationBadgeText: {
+        color: '#ffffff',
+        fontSize: 10,
+        fontWeight: '700',
+    },
 
         descriptionCard: {
         width: '90%',
