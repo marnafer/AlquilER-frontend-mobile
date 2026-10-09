@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     },
 
     messageExito: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageError: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     },
 
     messageTextExito: {
-        color: '#16a34a',
+        color: theme.colors.successText,
     },
 
     messageTextError: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     },
 
     editButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 13,
         fontWeight: '700',
     },

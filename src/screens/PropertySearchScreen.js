@@ -822,7 +822,7 @@ const styles = StyleSheet.create({
 
     sortArrow: {
         marginLeft: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         fontSize: 12,
     },
 
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     },
 
     sortOptionTextSelected: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontWeight: '600',
     },
 

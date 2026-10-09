@@ -107,7 +107,6 @@ export default function RegisterScreen() {
             } else {
                 setError(
                     primerErrorValidacion(result) ||
-                    result.error ||
                     result.message ||
                     'Error al registrarse'
                 );
@@ -161,7 +160,7 @@ export default function RegisterScreen() {
                         <TextInput
                             style={styles.input}
                             placeholder="Tu nombre"
-                            placeholderTextColor={theme.colors.placeholder}
+                            placeholderTextColor={theme.colors.textMuted}
                             value={formData.nombre}
                             onChangeText={(text) =>
                                 handleChange('nombre', text)
@@ -176,7 +175,7 @@ export default function RegisterScreen() {
                         <TextInput
                             style={styles.input}
                             placeholder="Tu apellido"
-                            placeholderTextColor={theme.colors.placeholder}
+                            placeholderTextColor={theme.colors.textMuted}
                             value={formData.apellido}
                             onChangeText={(text) =>
                                 handleChange('apellido', text)
@@ -192,7 +191,7 @@ export default function RegisterScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="ejemplo@correo.com"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.email}
                         onChangeText={(text) =>
                             handleChange('email', text)
@@ -209,7 +208,7 @@ export default function RegisterScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Mínimo 6 caracteres"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.password}
                         onChangeText={(text) =>
                             handleChange('password', text)
@@ -224,7 +223,7 @@ export default function RegisterScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Repetí tu contraseña"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.password_confirm}
                         onChangeText={(text) =>
                             handleChange('password_confirm', text)
@@ -239,7 +238,7 @@ export default function RegisterScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Ej: 341 1234567"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.telefono}
                         onChangeText={(text) =>
                             handleChange('telefono', text)
@@ -254,7 +253,7 @@ export default function RegisterScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Ej: Av. San Martín 123"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.domicilio}
                         onChangeText={(text) =>
                             handleChange('domicilio', text)
@@ -272,7 +271,7 @@ export default function RegisterScreen() {
                     activeOpacity={0.8}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#ffffff" />
+                        <ActivityIndicator color={theme.colors.white} />
                     ) : (
                         <Text style={styles.buttonText}>
                             Crear cuenta
@@ -318,10 +317,10 @@ const styles = StyleSheet.create({
 
     subtitle: {
     fontSize: theme.sizes.body,
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-},
+        color: theme.colors.textMuted,
+        textAlign: 'center',
+        marginBottom: theme.spacing.md,
+    },
 
     alertError: {
         backgroundColor: theme.colors.errorBg,
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
         width: 280, 
         minHeight: 140, 
         zIndex: 1000, 
-        backgroundColor: '#DCFCE7', 
+        backgroundColor: theme.colors.successBg, 
         borderRadius: 12, 
         justifyContent: 'center', 
         alignItems: 'center', 
@@ -355,7 +354,7 @@ const styles = StyleSheet.create({
     },
 
     successToastText: {
-        color: '#166534',
+        color: theme.colors.successText,
         textAlign: 'center',
         fontWeight: '600',
         fontSize: theme.sizes.body,
@@ -406,7 +405,7 @@ const styles = StyleSheet.create({
     },
 
     buttonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: theme.sizes.body,
         fontWeight: '600',
     },
@@ -419,7 +418,7 @@ const styles = StyleSheet.create({
 },
 
     footerText: {
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         fontSize: theme.sizes.body,
     },
 

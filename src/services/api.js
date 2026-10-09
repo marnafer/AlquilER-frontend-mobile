@@ -10,7 +10,7 @@ export async function estaAutenticado() {
 }
 
 const api = axios.create({
-  baseURL: "http://192.168.100.37:8000/api", //192.168.100.37
+  baseURL: "http://192.168.1.38:8000/api",
 });
 
 // Handler global para cuando la sesión expira (refresh token inválido).

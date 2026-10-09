@@ -819,7 +819,7 @@ const crearEstilos = (responsive) => {
 
         loadingText: {
             marginTop: separacionMedia,
-            color: theme.colors.text,
+            color: theme.colors.textMuted,
             fontSize: fontBody,
         },
 
@@ -833,7 +833,7 @@ const crearEstilos = (responsive) => {
         },
 
         heroTitle: {
-            color: '#ffffff',
+            color: theme.colors.white,
             fontSize: fontHeroTitle,
             fontWeight: '700',
             textAlign: 'center',
@@ -853,12 +853,12 @@ const crearEstilos = (responsive) => {
         height: 42,
         borderRadius: 21,
         backgroundColor: colorConOpacidad(
-            '#FFFFFF',
+            theme.colors.white,
             0.15
         ),
         borderWidth: 1,
         borderColor: colorConOpacidad(
-            '#FFFFFF',
+            theme.colors.white,
             0.25
         ),
         justifyContent: 'center',
@@ -877,7 +877,7 @@ const crearEstilos = (responsive) => {
         height: 20,
         paddingHorizontal: 4,
         borderRadius: 10,
-        backgroundColor: '#ef4444',
+        backgroundColor: theme.colors.errorText,
         borderWidth: 2,
         borderColor: theme.colors.primary,
         justifyContent: 'center',
@@ -885,7 +885,7 @@ const crearEstilos = (responsive) => {
     },
 
     notificationBadgeText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 10,
         fontWeight: '700',
     },
@@ -899,18 +899,18 @@ const crearEstilos = (responsive) => {
         paddingVertical: separacionMedia,
         borderRadius: radioMedio,
         backgroundColor: colorConOpacidad(
-            '#FFFFFF',
+            theme.colors.white,
             0.12
         ),
         borderWidth: 1,
         borderColor: colorConOpacidad(
-            '#FFFFFF',
+            theme.colors.white,
             0.22
         ),
     },
 
     descriptionTitle: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontSize: fontBody + 2,
         fontWeight: '700',
         textAlign: 'center',
@@ -918,7 +918,7 @@ const crearEstilos = (responsive) => {
     },
 
     descriptionText: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         opacity: 0.9,
         fontSize: fontSmall,
         lineHeight: fontSmall + 6,
@@ -926,7 +926,7 @@ const crearEstilos = (responsive) => {
     },
 
         searchBox: {
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.colors.white,
             borderRadius: radioMedio,
             paddingHorizontal: separacionGrande,
             paddingVertical: separacionMedia,
@@ -972,7 +972,7 @@ const crearEstilos = (responsive) => {
         },
 
         filterOptionTextSelected: {
-            color: '#ffffff',
+            color: theme.colors.white,
             fontWeight: '600',
         },
 
@@ -985,7 +985,7 @@ const crearEstilos = (responsive) => {
         },
 
         searchButtonText: {
-            color: '#ffffff',
+            color: theme.colors.white,
             fontSize: fontBody,
             fontWeight: '600',
             textAlign: 'center',
@@ -1082,7 +1082,7 @@ const crearEstilos = (responsive) => {
         },
 
         emptyText: {
-            color: theme.colors.text,
+            color: theme.colors.textMuted,
             textAlign: 'center',
             paddingHorizontal,
             paddingVertical: separacionGrande,
@@ -1116,7 +1116,7 @@ const crearEstilos = (responsive) => {
     dropdownSummary: {
         marginTop: 2,
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     dropdownArrow: {

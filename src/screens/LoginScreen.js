@@ -79,7 +79,6 @@ export default function LoginScreen() {
             } else {
                 setError(
                     result.message ||
-                    result.error ||
                     'Correo o contraseña incorrectos'
                 );
             }
@@ -129,7 +128,7 @@ export default function LoginScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="ejemplo@correo.com"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.email}
                         onChangeText={(text) => handleChange('email', text)}
                         keyboardType="email-address"
@@ -145,7 +144,7 @@ export default function LoginScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Tu contraseña"
-                        placeholderTextColor={theme.colors.placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
                         value={formData.password}
                         onChangeText={(text) => handleChange('password', text)}
                         secureTextEntry
@@ -160,7 +159,7 @@ export default function LoginScreen() {
                     activeOpacity={0.8}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#ffffff" />
+                        <ActivityIndicator color={theme.colors.white} />
                     ) : (
                         <Text style={styles.buttonText}>
                             Iniciar sesión
@@ -226,7 +225,7 @@ const styles = StyleSheet.create({
 
     subtitle: {
         fontSize: theme.sizes.body,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         textAlign: 'center',
         marginBottom: theme.spacing.lg,
     },
@@ -258,7 +257,7 @@ const styles = StyleSheet.create({
         minHeight: 140,
         zIndex: 1000,
 
-        backgroundColor: '#DCFCE7',
+        backgroundColor: theme.colors.successBg,
         borderRadius: 12,
 
         justifyContent: 'center',
@@ -278,7 +277,7 @@ const styles = StyleSheet.create({
     },
 
     successToastText: {
-        color: '#166534',
+        color: theme.colors.successText,
         textAlign: 'center',
         fontWeight: '600',
         fontSize: theme.sizes.body,
@@ -320,7 +319,7 @@ const styles = StyleSheet.create({
     },
 
     buttonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: theme.sizes.body,
         fontWeight: '600',
     },
@@ -333,7 +332,7 @@ const styles = StyleSheet.create({
     },
 
     footerText: {
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         fontSize: theme.sizes.body,
     },
 

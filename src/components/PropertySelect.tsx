@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     },
 
     chipTextActive: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontWeight: '600',
     },
 });

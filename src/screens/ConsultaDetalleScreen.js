@@ -121,7 +121,6 @@ export default function ConsultaDetalleScreen() {
                 setMensajes(extraerItems(mensajesRes));
             } else {
                 setErrorRespuesta(
-                    result.error ||
                     result.message ||
                     'No se pudo enviar el mensaje.'
                 );
@@ -340,14 +339,14 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 20,
         fontWeight: '700',
     },
 
     headerLink: {
         marginTop: 6,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 13,
         fontWeight: '600',
         opacity: 0.95,
@@ -406,7 +405,7 @@ const styles = StyleSheet.create({
     },
 
     burbujaAutorMio: {
-        color: '#e0e7ff',
+        color: theme.colors.primarySoft,
     },
 
     burbujaFecha: {
@@ -415,7 +414,7 @@ const styles = StyleSheet.create({
     },
 
     burbujaFechaMia: {
-        color: '#dbeafe',
+        color: theme.colors.infoBg,
     },
 
     burbujaTexto: {
@@ -425,7 +424,7 @@ const styles = StyleSheet.create({
     },
 
     burbujaTextoMio: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 
     sinMensajes: {
@@ -484,7 +483,7 @@ const styles = StyleSheet.create({
     },
 
     enviarText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },

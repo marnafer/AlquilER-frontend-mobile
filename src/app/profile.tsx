@@ -1,5 +1,6 @@
 import {
     useFocusEffect,
+    useRouter,
 } from 'expo-router';
 
 import {
@@ -16,7 +17,6 @@ import {
     View,
 } from 'react-native';
 
-import { useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import {
     obtenerPerfil,
@@ -43,7 +43,6 @@ export default function ProfileScreen() {
                 setUsuario(null);
 
                 setError(
-                    response?.error ||
                     response?.message ||
                     'No se pudo cargar tu perfil'
                 );
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
     },
 
     avatarText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 30,
         fontWeight: '700',
     },
@@ -337,16 +336,16 @@ const styles = StyleSheet.create({
     },
 
     editButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 15,
         fontWeight: '700',
     },
 
     adminButton: {
-        backgroundColor: '#0f172a',
+        backgroundColor: theme.colors.textDark,
     },
 
     adminButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 });

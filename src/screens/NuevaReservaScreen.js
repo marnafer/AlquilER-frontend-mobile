@@ -151,7 +151,6 @@ export default function NuevaReservaScreen() {
                 } else {
                     setError(
                         result.message ||
-                        result.error ||
                         'No se pudo crear la reserva.'
                     );
                 }
@@ -345,7 +344,7 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 28,
         fontWeight: '700',
         textAlign: 'center',
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
 
     headerSubtitle: {
         marginTop: theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         textAlign: 'center',
         opacity: 0.9,
@@ -437,12 +436,12 @@ const styles = StyleSheet.create({
     successBox: {
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
         marginBottom: theme.spacing.md,
     },
 
     successText: {
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontSize: 14,
         fontWeight: '600',
         textAlign: 'center',
@@ -462,7 +461,7 @@ const styles = StyleSheet.create({
     },
 
     bookButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },

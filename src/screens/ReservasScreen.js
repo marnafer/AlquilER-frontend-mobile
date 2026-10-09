@@ -50,11 +50,11 @@ const ESTADOS = [
 ];
 
 const ESTADO_INFO = {
-    pendiente: { etiqueta: 'Pendiente', color: '#92400e', bg: '#fef3c7' },
-    confirmada: { etiqueta: 'Confirmada', color: '#065f46', bg: '#a7f3d0' },
-    rechazada: { etiqueta: 'Rechazada', color: '#991b1b', bg: '#fecaca' },
-    cancelada: { etiqueta: 'Cancelada', color: '#475569', bg: '#e2e8f0' },
-    finalizada: { etiqueta: 'Finalizada', color: '#1e3a8a', bg: '#bfdbfe' },
+    pendiente: { etiqueta: 'Pendiente', color: theme.colors.warningText, bg: theme.colors.warningBg },
+    confirmada: { etiqueta: 'Confirmada', color: theme.colors.successText, bg: theme.colors.successBg },
+    rechazada: { etiqueta: 'Rechazada', color: theme.colors.errorText, bg: theme.colors.errorBg },
+    cancelada: { etiqueta: 'Cancelada', color: theme.colors.neutralText, bg: theme.colors.neutralBorder },
+    finalizada: { etiqueta: 'Finalizada', color: theme.colors.finalizedText, bg: theme.colors.finalizedBg },
 };
 
 const ORIGENES = [
@@ -230,7 +230,6 @@ export default function ReservasScreen() {
                 tipo: 'error',
                 texto:
                     result?.message ||
-                    result?.error ||
                     'No se pudo actualizar la reserva.',
             });
         }
@@ -322,7 +321,6 @@ export default function ReservasScreen() {
             } else {
                 setErrorResena(
                     result.message ||
-                    result.error ||
                     'No se pudo publicar la reseña.'
                 );
             }
@@ -524,8 +522,8 @@ export default function ReservasScreen() {
                                         reserva.estado
                                     ] || {
                                         etiqueta: reserva.estado,
-                                        color: '#475569',
-                                        bg: '#f1f5f9',
+                                        color: theme.colors.neutralText,
+                                        bg: theme.colors.neutralBg,
                                     };
 
                                 const vencida =
@@ -1055,7 +1053,7 @@ const styles = StyleSheet.create({
     },
 
     messageExito: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageText: {
@@ -1069,7 +1067,7 @@ const styles = StyleSheet.create({
     },
 
     messageTextExito: {
-        color: '#16a34a',
+        color: theme.colors.successText,
     },
 
     filtersSection: {
@@ -1110,7 +1108,7 @@ const styles = StyleSheet.create({
     },
 
     filterChipTextActivo: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 
     filterChipCount: {
@@ -1165,11 +1163,11 @@ const styles = StyleSheet.create({
     },
 
     itemTagPropia: {
-        backgroundColor: '#64748b',
+        backgroundColor: theme.colors.textMuted,
     },
 
     itemTagText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 11,
         fontWeight: '700',
     },
@@ -1208,10 +1206,10 @@ const styles = StyleSheet.create({
 
     badgeVencida: {
         marginLeft: theme.spacing.sm,
-        color: '#92400e',
-        backgroundColor: '#fef3c7',
+        color: theme.colors.warningText,
+        backgroundColor: theme.colors.warningBg,
         borderWidth: 1,
-        borderColor: '#fcd34d',
+        borderColor: theme.colors.warningBorder,
     },
 
     yaCalificado: {
@@ -1219,7 +1217,7 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.sm,
         fontSize: 13,
         fontWeight: '600',
-        color: '#475569',
+        color: theme.colors.neutralText,
     },
 
     accionesRow: {
@@ -1245,7 +1243,7 @@ const styles = StyleSheet.create({
     },
 
     botonPrimarioText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -1256,7 +1254,7 @@ const styles = StyleSheet.create({
     },
 
     botonDangerText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -1317,7 +1315,7 @@ const styles = StyleSheet.create({
         maxWidth: 420,
         padding: theme.spacing.lg,
         borderRadius: 18,
-        backgroundColor: '#ffffff',
+        backgroundColor: theme.colors.white,
     },
 
     modalTitle: {
@@ -1344,7 +1342,7 @@ const styles = StyleSheet.create({
 
     star: {
         fontSize: 34,
-        color: '#cbd5e1',
+        color: theme.colors.border,
     },
 
     starActiva: {

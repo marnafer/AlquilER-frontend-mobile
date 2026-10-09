@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
 
   bar: {
     minHeight: 68,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.white,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
 
   iconActivo: {
-    color: '#ffffff',
+    color: theme.colors.white,
   },
 
   label: {

@@ -94,7 +94,6 @@ export default function RestablecerContrasenaScreen() {
         } else {
             setError(
                 result.message ||
-                    result.error ||
                     'No se pudo restablecer la contraseña.'
             );
 
@@ -298,14 +297,14 @@ const styles = StyleSheet.create({
     successBox: {
         padding: theme.spacing.lg,
         borderRadius: 16,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
         borderWidth: 1,
-        borderColor: '#86efac',
+        borderColor: theme.colors.successBorder,
     },
 
     successText: {
         fontSize: 14,
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontWeight: '600',
         textAlign: 'center',
         lineHeight: 20,
@@ -325,7 +324,7 @@ const styles = StyleSheet.create({
     },
 
     enviarButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },

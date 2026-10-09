@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 28,
         fontWeight: '700',
         textAlign: 'center',
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     subtitle: {
         marginTop:
             theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         lineHeight: 20,
         textAlign: 'center',
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     },
 
     backButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 35,
         fontWeight: '500',
         lineHeight: 25,

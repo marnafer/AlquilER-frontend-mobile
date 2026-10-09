@@ -61,8 +61,7 @@ export default function EditarPerfilScreen() {
                 setDomicilio(response.data.domicilio || '');
             } else {
                 setError(
-                    response?.error ||
-                        response?.message ||
+                    response?.message ||
                         'No se pudo cargar tu perfil'
                 );
             }
@@ -127,7 +126,6 @@ export default function EditarPerfilScreen() {
         } else {
             setError(
                 result.message ||
-                    result.error ||
                     'No se pudo guardar los cambios.'
             );
 
@@ -416,12 +414,12 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     successText: {
         fontSize: 14,
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -441,7 +439,7 @@ const styles = StyleSheet.create({
     },
 
     saveButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },

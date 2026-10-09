@@ -312,7 +312,6 @@ export default function EditarPropiedadScreen() {
         if (!result.success) {
             setError(
                 result.message ||
-                    result.error ||
                     'No se pudo guardar los cambios.'
             );
 
@@ -829,7 +828,7 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 28,
         fontWeight: '700',
         textAlign: 'center',
@@ -837,7 +836,7 @@ const styles = StyleSheet.create({
 
     headerSubtitle: {
         marginTop: theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         textAlign: 'center',
         opacity: 0.9,
@@ -918,12 +917,12 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     successText: {
         fontSize: 14,
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -947,7 +946,7 @@ const styles = StyleSheet.create({
 
     toggleChipActivo: {
         borderColor: theme.colors.primary,
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     toggleChipText: {
@@ -1018,7 +1017,7 @@ const styles = StyleSheet.create({
     },
 
     saveButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },

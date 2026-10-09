@@ -232,7 +232,6 @@ export default function PropiedadDetailScreen() {
             setEsFavorito(!nuevoEstado);
 
             setMensajeFavorito(
-                response?.error ||
                 response?.message ||
                 'No se pudo actualizar el favorito'
             );
@@ -1087,7 +1086,7 @@ const styles = StyleSheet.create({
     },
 
     actionPrimaryText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 15,
         fontWeight: '700',
         textAlign: 'center',
@@ -1243,8 +1242,7 @@ const styles = StyleSheet.create({
         width: 9,
         height: 9,
         borderRadius: 5,
-        backgroundColor:
-            '#ffffff',
+        backgroundColor: theme.colors.white,
     },
 
     favoriteButton: {
@@ -1254,7 +1252,7 @@ const styles = StyleSheet.create({
         width: 46,
         height: 46,
         borderRadius: 23,
-        backgroundColor: '#ffffffdd',
+        backgroundColor: theme.colors.inputBg,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 3,

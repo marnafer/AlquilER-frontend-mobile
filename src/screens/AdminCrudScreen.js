@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../components/ScreenHeader';
-import { CONFIGURACIONES } from '../admin/config';
+import { CONFIGURACIONES } from '../services/adminConfig';
 import { obtenerPerfil } from '../services/api';
 import { theme } from '../theme/theme';
 import { extraerItems } from '../utils/formato';
@@ -341,7 +341,6 @@ export default function AdminCrudScreen() {
             if (!resultado?.success) {
                 setErrorForm(
                     resultado?.message ||
-                        resultado?.error ||
                         'No se pudieron guardar los cambios.'
                 );
 
@@ -389,7 +388,6 @@ export default function AdminCrudScreen() {
         } else {
             setMensaje(
                 resultado?.message ||
-                    resultado?.error ||
                     'No se pudo eliminar.'
             );
         }
@@ -408,7 +406,6 @@ export default function AdminCrudScreen() {
         } else {
             setMensaje(
                 resultado?.message ||
-                    resultado?.error ||
                     'No se pudo restaurar.'
             );
         }
@@ -425,7 +422,6 @@ export default function AdminCrudScreen() {
         if (!resultado?.success) {
             setMensaje(
                 resultado?.message ||
-                    resultado?.error ||
                     'No se pudo ejecutar la acción.'
             );
         }
@@ -1301,12 +1297,12 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageText: {
         fontSize: 14,
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -1332,7 +1328,7 @@ const styles = StyleSheet.create({
 
     toolbarButtonActivo: {
         borderColor: theme.colors.primary,
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     toolbarButtonText: {
@@ -1353,7 +1349,7 @@ const styles = StyleSheet.create({
     },
 
     nuevoButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -1407,7 +1403,7 @@ const styles = StyleSheet.create({
 
     chipActivo: {
         borderColor: theme.colors.primary,
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     chipText: {
@@ -1540,13 +1536,13 @@ const styles = StyleSheet.create({
     },
 
     backButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '600',
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 24,
         fontWeight: '700',
         textAlign: 'center',
@@ -1554,7 +1550,7 @@ const styles = StyleSheet.create({
 
     headerSubtitle: {
         marginTop: theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 13,
         textAlign: 'center',
         opacity: 0.9,
@@ -1624,7 +1620,7 @@ const styles = StyleSheet.create({
     },
 
     saveButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },

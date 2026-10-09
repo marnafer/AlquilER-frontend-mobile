@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../components/ScreenHeader';
-import { MODULOS } from '../admin/config';
+import { MODULOS } from '../services/adminConfig';
 import { obtenerPerfil } from '../services/api';
 import { theme } from '../theme/theme';
 
@@ -58,7 +58,7 @@ export default function AdminHomeScreen() {
             setAutorizado(false);
 
             setError(
-                res.error ||
+                res.message ||
                     'No se pudo verificar tu acceso al panel.'
             );
         }
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
         borderRadius: 23,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     cardEmoji: {

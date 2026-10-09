@@ -52,7 +52,7 @@ export default function NotificationsScreen() {
             setItems(extraerItems(res));
         } else {
             setError(
-                res.error ||
+                res.message ||
                     'No se pudieron cargar las notificaciones.'
             );
         }
@@ -81,7 +81,7 @@ export default function NotificationsScreen() {
             setMensaje({
                 tipo: 'error',
                 texto:
-                    res.error ||
+                    res.message ||
                     'No se pudo marcar como leída',
             });
         }
@@ -107,7 +107,7 @@ export default function NotificationsScreen() {
             setMensaje({
                 tipo: 'error',
                 texto:
-                    res.error ||
+                    res.message ||
                     'No se pudieron marcar como leídas',
             });
         }
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     },
 
     messageExito: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageText: {
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     },
 
     messageTextExito: {
-        color: '#16a34a',
+        color: theme.colors.successText,
     },
 
     toolbar: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     },
 
     notaTodasText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 13,
         fontWeight: '700',
     },
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     },
 
     itemNoLeida: {
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
         borderColor: theme.colors.primarySoft,
     },
 
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     },
 
     itemMarcarText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },

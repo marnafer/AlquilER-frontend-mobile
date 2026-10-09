@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
     },
 
     badgeText: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontSize: 12,
         fontWeight: '700',
     },
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     },
 
     chipTextActive: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontWeight: '600',
     },
 
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
     },
 
     searchText: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
         textAlign: 'center',

@@ -37,11 +37,11 @@ import {
 } from '../utils/formato';
 
 const ESTADO_INFO = {
-    pendiente: { etiqueta: 'Pendiente', color: '#92400e', bg: '#fef3c7' },
-    confirmada: { etiqueta: 'Confirmada', color: '#065f46', bg: '#a7f3d0' },
-    rechazada: { etiqueta: 'Rechazada', color: '#991b1b', bg: '#fecaca' },
-    cancelada: { etiqueta: 'Cancelada', color: '#475569', bg: '#e2e8f0' },
-    finalizada: { etiqueta: 'Finalizada', color: '#1e3a8a', bg: '#bfdbfe' },
+    pendiente: { etiqueta: 'Pendiente', color: theme.colors.warningText, bg: theme.colors.warningBg },
+    confirmada: { etiqueta: 'Confirmada', color: theme.colors.successText, bg: theme.colors.successBg },
+    rechazada: { etiqueta: 'Rechazada', color: theme.colors.errorText, bg: theme.colors.errorBg },
+    cancelada: { etiqueta: 'Cancelada', color: theme.colors.neutralText, bg: theme.colors.neutralBorder },
+    finalizada: { etiqueta: 'Finalizada', color: theme.colors.finalizedText, bg: theme.colors.finalizedBg },
 };
 
 export default function ReservaDetalleScreen() {
@@ -79,7 +79,6 @@ export default function ReservaDetalleScreen() {
                     tipo: 'error',
                     texto:
                         res.message ||
-                        res.error ||
                         'No se pudo cargar la reserva.',
                 });
             }
@@ -123,7 +122,6 @@ export default function ReservaDetalleScreen() {
                     tipo: 'error',
                     texto:
                         result?.message ||
-                        result?.error ||
                         'No se pudo actualizar la reserva.',
                 });
             }
@@ -181,8 +179,8 @@ export default function ReservaDetalleScreen() {
     const info =
         ESTADO_INFO[reserva.estado] || {
             etiqueta: reserva.estado,
-            color: '#475569',
-            bg: '#f1f5f9',
+            color: theme.colors.neutralText,
+            bg: theme.colors.neutralBg,
         };
 
     const vencida =
@@ -646,7 +644,7 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 24,
         fontWeight: '700',
         textAlign: 'center',
@@ -654,7 +652,7 @@ const styles = StyleSheet.create({
 
     headerSubtitle: {
         marginTop: theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         lineHeight: 20,
         textAlign: 'center',
@@ -678,10 +676,10 @@ const styles = StyleSheet.create({
     },
 
     badgeVencida: {
-        color: '#92400e',
-        backgroundColor: '#fef3c7',
+        color: theme.colors.warningText,
+        backgroundColor: theme.colors.warningBg,
         borderWidth: 1,
-        borderColor: '#fcd34d',
+        borderColor: theme.colors.warningBorder,
     },
 
     messageBox: {
@@ -691,11 +689,11 @@ const styles = StyleSheet.create({
     },
 
     messageError: {
-        backgroundColor: 'rgba(254, 226, 226, 0.9)',
+        backgroundColor: theme.colors.errorBg,
     },
 
     messageExito: {
-        backgroundColor: 'rgba(220, 252, 231, 0.9)',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageText: {
@@ -709,7 +707,7 @@ const styles = StyleSheet.create({
     },
 
     messageTextExito: {
-        color: '#16a34a',
+        color: theme.colors.successText,
     },
 
     body: {
@@ -774,7 +772,7 @@ const styles = StyleSheet.create({
     },
 
     botonPrimarioText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -785,7 +783,7 @@ const styles = StyleSheet.create({
     },
 
     botonDangerText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },
@@ -905,7 +903,7 @@ const styles = StyleSheet.create({
 
     resenaTipo: {
         marginTop: 6,
-        color: '#475569',
+        color: theme.colors.neutralText,
         fontSize: 13,
     },
 

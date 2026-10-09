@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     },
 
     avatarText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 22,
         fontWeight: '700',
     },
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
         backgroundColor:
             theme.colors.primary,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 25,
         lineHeight: 42,
     },

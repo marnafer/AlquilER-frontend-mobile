@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     },
 
     filterChipTextActivo: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 
     filterChipCount: {
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '700',
         textTransform: 'uppercase',
-        color: '#64748b',
+        color: theme.colors.textMuted,
     },
 
     itemOrigenRecibida: {

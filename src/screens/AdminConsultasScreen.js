@@ -123,7 +123,7 @@ export default function AdminConsultasScreen() {
 
                 if (res?.success === false) {
                     setError(
-                        res.error ||
+                        res.message ||
                             'No se pudieron cargar las consultas.'
                     );
                 } else {
@@ -213,8 +213,7 @@ export default function AdminConsultasScreen() {
             setMensajes(extraerItems(res));
         } else {
             setErrorRespuesta(
-                resultado?.error ||
-                    resultado?.message ||
+                resultado?.message ||
                     'No se pudo enviar el mensaje.'
             );
         }
@@ -249,7 +248,7 @@ export default function AdminConsultasScreen() {
                 : {
                       tipo: 'error',
                       texto:
-                          resultado?.error ||
+                          resultado?.message ||
                           'No se pudo eliminar la consulta.',
                   }
         );
@@ -272,7 +271,7 @@ export default function AdminConsultasScreen() {
                 : {
                       tipo: 'error',
                       texto:
-                          resultado?.error ||
+                          resultado?.message ||
                           'No se pudo restaurar la consulta.',
                   }
         );
@@ -793,7 +792,7 @@ const styles = StyleSheet.create({
 
     papeleraButtonActivo: {
         borderColor: theme.colors.primary,
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     papeleraButtonText: {
@@ -811,14 +810,14 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#eff6ff',
+        backgroundColor: theme.colors.infoBg,
         borderWidth: 1,
-        borderColor: '#bfdbfe',
+        borderColor: theme.colors.finalizedBg,
     },
 
     infoText: {
         fontSize: 13,
-        color: '#1d4ed8',
+        color: theme.colors.infoText,
         textAlign: 'center',
     },
 
@@ -834,7 +833,7 @@ const styles = StyleSheet.create({
     },
 
     messageExito: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     messageText: {
@@ -903,7 +902,7 @@ const styles = StyleSheet.create({
 
     itemActivo: {
         borderColor: theme.colors.primary,
-        backgroundColor: '#eef2ff',
+        backgroundColor: theme.colors.primaryBg,
     },
 
     itemIcon: {
@@ -1081,7 +1080,7 @@ const styles = StyleSheet.create({
     },
 
     burbujaNombreMio: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 
     burbujaFecha: {
@@ -1101,7 +1100,7 @@ const styles = StyleSheet.create({
     },
 
     burbujaTextoMio: {
-        color: '#ffffff',
+        color: theme.colors.white,
     },
 
     hiloVacio: {
@@ -1146,7 +1145,7 @@ const styles = StyleSheet.create({
     formExito: {
         marginTop: 5,
         fontSize: 12,
-        color: '#16a34a',
+        color: theme.colors.successText,
     },
 
     enviarButton: {
@@ -1163,7 +1162,7 @@ const styles = StyleSheet.create({
     },
 
     enviarButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         fontWeight: '700',
     },

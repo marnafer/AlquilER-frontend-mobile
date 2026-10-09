@@ -27,6 +27,7 @@ export const theme = {
         primaryBg: '#EEF2FF',
 
         background: '#ffffff',
+        white: '#ffffff',
         textDark: '#0f172a',
         textMuted: '#64748b',
         border: '#cbd5e1',
@@ -34,6 +35,19 @@ export const theme = {
         errorBg: '#fee2e2',
         errorText: '#ef4444',
         disabled: '#94a3b8',
+        successBg: '#dcfce7',
+        successText: '#16a34a',
+        successBorder: '#86efac',
+        warningBg: '#fef3c7',
+        warningText: '#92400e',
+        warningBorder: '#fcd34d',
+        infoBg: '#dbeafe',
+        infoText: '#1d4ed8',
+        neutralBg: '#f1f5f9',
+        neutralText: '#475569',
+        neutralBorder: '#e2e8f0',
+        finalizedBg: '#bfdbfe',
+        finalizedText: '#1e3a8a',
     },
 
     sizes: {

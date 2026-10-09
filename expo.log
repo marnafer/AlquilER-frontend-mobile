@@ -1,0 +1,90 @@
+Starting project at C:\xampp\htdocs\AlquilER-frontend-mobile
+Using src/app as the root directory for Expo Router.
+React Compiler enabled
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+
+Logs for your project will appear below.
+Android Bundled 1577ms node_modules\expo-router\entry.js (1825 modules)
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null
+ LOG  📤 LOGIN - enviando: {"contrasena": "123446", "email": "teta@teta.com"}
+ ERROR  ❌ LOGIN - error: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  AxiosError#constructor (node_modules\axios\dist\esm\axios.js:1893:10)
+  settle (node_modules\axios\dist\esm\axios.js:2976:28)
+  onloadend (node_modules\axios\dist\esm\axios.js:3734:15)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js:424:29)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js:310:11)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js:246:13)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js:63:51)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js:702:27)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js:438:25)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js:602:35)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js:137:36)
+  apply (<native>)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js:34:17)
+  Axios#request (node_modules\axios\dist\esm\axios.js:5249:60)
+  throw (<native>)
+  anonymous (address at (InternalBytecode.js:1:9013)
+  step (address at (InternalBytecode.js:1:6731)
+  anonymous (address at (InternalBytecode.js:1:7923)
+  tryCallOne (address at (InternalBytecode.js:1:1296)
+  anonymous (address at (InternalBytecode.js:1:4984)
+ ERROR  ❌ LOGIN - mensaje: Request failed with status code 401 
+
+Code: api.js
+[0m [90m 157 |[39m   } [36mcatch[39m (error) {
+ [90m 158 |[39m     console[33m.[39merror([32m"❌ LOGIN - error:"[39m[33m,[39m error)[33m;[39m
+[31m[1m>[22m[39m[90m 159 |[39m     console[33m.[39merror([32m"❌ LOGIN - mensaje:"[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+ [90m     |[39m                  [31m[1m^[22m[39m
+ [90m 160 |[39m     console[33m.[39merror([32m"❌ LOGIN - respuesta backend:"[39m[33m,[39m error[33m.[39mresponse[33m?[39m[33m.[39mdata)[33m;[39m
+ [90m 161 |[39m
+ [90m 162 |[39m     [36mreturn[39m ([0m
+Call Stack
+  login (src\services\api.js:159:18)
+ ERROR  ❌ LOGIN - respuesta backend: {"error": "Credenciales inválidas", "success": false} 
+
+Code: api.js
+[0m [90m 158 |[39m     console[33m.[39merror([32m"❌ LOGIN - error:"[39m[33m,[39m error)[33m;[39m
+ [90m 159 |[39m     console[33m.[39merror([32m"❌ LOGIN - mensaje:"[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+[31m[1m>[22m[39m[90m 160 |[39m     console[33m.[39merror([32m"❌ LOGIN - respuesta backend:"[39m[33m,[39m error[33m.[39mresponse[33m?[39m[33m.[39mdata)[33m;[39m
+ [90m     |[39m                  [31m[1m^[22m[39m
+ [90m 161 |[39m
+ [90m 162 |[39m     [36mreturn[39m (
+ [90m 163 |[39m       error[33m.[39mresponse[33m?[39m[33m.[39mdata [33m||[39m {[0m
+Call Stack
+  login (src\services\api.js:160:18)
+Android Bundled 1556ms node_modules\expo-router\entry.js (1 module)
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null
+ LOG  PROPERTY CARD: 1 imagen_url: /uploads/propiedades/1781884445_0b842d678997.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884445_0b842d678997.webp
+ LOG  PROPERTY CARD: 4 imagen_url: /uploads/propiedades/1781884431_4b52f57fff6e.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884431_4b52f57fff6e.webp
+ LOG  PROPERTY CARD: 5 imagen_url: /uploads/propiedades/1781884415_ec345ebf4332.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1781884415_ec345ebf4332.webp
+ LOG  PROPERTY CARD: 8 imagen_url: /uploads/propiedades/1789347846_a1fe69f8a29f.webp URL final: http://192.168.1.38:8000/uploads/propiedades/1789347846_a1fe69f8a29f.webp
+ LOG  PROPERTY CARD: 9 imagen_url: null URL final: null

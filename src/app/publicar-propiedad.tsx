@@ -1227,7 +1227,7 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 28,
         fontWeight: '700',
         textAlign: 'center',
@@ -1235,7 +1235,7 @@ const styles = StyleSheet.create({
 
     headerSubtitle: {
         marginTop: theme.spacing.sm,
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 14,
         textAlign: 'center',
         opacity: 0.9,
@@ -1425,7 +1425,7 @@ const styles = StyleSheet.create({
     },
 
     mainImageBadgeText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 10,
         fontWeight: '700',
     },
@@ -1443,7 +1443,7 @@ const styles = StyleSheet.create({
     },
 
     removeImageText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 20,
         lineHeight: 22,
         fontWeight: '700',
@@ -1488,12 +1488,12 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
     },
 
     successText: {
         fontSize: 14,
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -1522,7 +1522,7 @@ const styles = StyleSheet.create({
     },
 
     publishButtonText: {
-        color: '#ffffff',
+        color: theme.colors.white,
         fontSize: 16,
         fontWeight: '700',
     },
@@ -1569,7 +1569,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.lg,
         paddingVertical: theme.spacing.lg,
         borderRadius: 18,
-        backgroundColor: '#ffffff',
+        backgroundColor: theme.colors.white,
         elevation: 8,
         shadowColor: '#000000',
         shadowOffset: {
@@ -1586,12 +1586,12 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#dcfce7',
+        backgroundColor: theme.colors.successBg,
         marginBottom: theme.spacing.md,
     },
 
     successIconText: {
-        color: '#16a34a',
+        color: theme.colors.successText,
         fontSize: 32,
         fontWeight: '700',
     },
