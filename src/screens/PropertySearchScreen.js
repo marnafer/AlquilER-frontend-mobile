@@ -4,6 +4,7 @@ import {
 } from 'expo-router';
 
 import {
+    useCallback,
     useEffect,
     useMemo,
     useState,
@@ -17,7 +18,6 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useWindowDimensions,
     View,
 } from 'react-native';
 
@@ -107,9 +107,18 @@ export default function PropertySearchScreen() {
         cantidad_dormitorios,
         cantidad_banos,
         capacidad,
+        acepta_mascotas,
+        acepta_hijos,
     } = useLocalSearchParams();
 
-    const { width } = useWindowDimensions();
+    const aceptaMascotasInicial =
+        (Array.isArray(acepta_mascotas)
+            ? acepta_mascotas[0]
+            : acepta_mascotas) ?? '';
+    const aceptaHijosInicial =
+        (Array.isArray(acepta_hijos)
+            ? acepta_hijos[0]
+            : acepta_hijos) ?? '';
 
     const [propiedades, setPropiedades] =
         useState([]);
@@ -135,8 +144,16 @@ export default function PropertySearchScreen() {
     const [ordenAbierto, setOrdenAbierto] =
         useState(false);
 
-    const [aceptaMascotas, setAceptaMascotas] = useState(false);
-    const [aceptaHijos, setAceptaHijos] = useState(false);
+    const [aceptaMascotas, setAceptaMascotas] = useState(
+        () =>
+            aceptaMascotasInicial === '1' ||
+            aceptaMascotasInicial === 'true'
+    );
+    const [aceptaHijos, setAceptaHijos] = useState(
+        () =>
+            aceptaHijosInicial === '1' ||
+            aceptaHijosInicial === 'true'
+    );
 
     const categoriasIniciales = useMemo(
         () => normalizarParametro(categoria_id),
@@ -152,9 +169,6 @@ export default function PropertySearchScreen() {
         () => normalizarParametro(servicio_id),
         [servicio_id]
     );
-
-    const aceptaMascotasInicial = searchParams.get('acepta_mascotas');
-    const aceptaHijosInicial = searchParams.get('acepta_hijos');
 
     const filtrosIniciales = useMemo(
         () => ({
@@ -206,7 +220,7 @@ export default function PropertySearchScreen() {
         ]
     );
 
-    const cargarCatalogos = async () => {
+    const cargarCatalogos = useCallback(async () => {
         const [
             categoriasResponse,
             localidadesResponse,
@@ -237,9 +251,9 @@ export default function PropertySearchScreen() {
             serviciosResponse.data ||
             []
         );
-    };
+    }, []);
 
-    const construirQuery = (filtros) => {
+    const construirQuery = useCallback((filtros) => {
         const params = [];
 
         const agregarIds = (
@@ -316,9 +330,9 @@ export default function PropertySearchScreen() {
         return params.length > 0
             ? `?${params.join('&')}`
             : '';
-    };
+    }, []);
 
-    const cargarPropiedades = async (
+    const cargarPropiedades = useCallback(async (
         filtros = {}
     ) => {
         try {
@@ -357,7 +371,7 @@ export default function PropertySearchScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [construirQuery]);
 
     useEffect(() => {
         const cargarDatos = async () => {
@@ -390,11 +404,15 @@ export default function PropertySearchScreen() {
         };
 
         cargarDatos();
-    }, []);
+    }, [cargarCatalogos, cargarPropiedades, filtrosIniciales]);
 
-    const handleBuscar = async (filtros) => {
-        await cargarPropiedades(filtros);
-    };
+    const handleBuscar = useCallback(async (filtros) => {
+        await cargarPropiedades({
+            ...filtros,
+            acepta_mascotas: aceptaMascotas,
+            acepta_hijos: aceptaHijos,
+        });
+    }, [aceptaMascotas, aceptaHijos, cargarPropiedades]);
 
     const propiedadesOrdenadas = useMemo(() => {
         const resultado = [
@@ -508,6 +526,7 @@ export default function PropertySearchScreen() {
 
                 <View style={styles.filtersContainer}>
                     <PropertyAdvancedFilter
+                        key={JSON.stringify(filtrosIniciales)}
                         categorias={categorias}
                         localidades={localidades}
                         servicios={servicios}
@@ -520,12 +539,32 @@ export default function PropertySearchScreen() {
                         initialServicios={
                             filtrosIniciales.servicio_id
                         }
+                        initialPrecioMin={
+                            filtrosIniciales.precio_min
+                        }
+                        initialPrecioMax={
+                            filtrosIniciales.precio_max
+                        }
+                        initialCantidadAmbientes={
+                            filtrosIniciales.cantidad_ambientes
+                        }
+                        initialCantidadDormitorios={
+                            filtrosIniciales.cantidad_dormitorios
+                        }
+                        initialCantidadBanos={
+                            filtrosIniciales.cantidad_banos
+                        }
+                        initialCapacidad={
+                            filtrosIniciales.capacidad
+                        }
                         onSearch={handleBuscar}
                     />
                     <View style={styles.filtroAdicional}>
                         <TouchableOpacity
                             style={styles.filtroAdicionalItem}
-                            onPress={() => setFiltroMascotas(!aceptaMascotas)}
+                            onPress={() =>
+                                setAceptaMascotas((actual) => !actual)
+                            }
                         >
                             <Text style={styles.filtroAdicionalTexto}>
                                 {aceptaMascotas ? 'Dejá de filtrar mascotas' : 'Filtrar mascotas'}
@@ -533,7 +572,9 @@ export default function PropertySearchScreen() {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.filtroAdicionalItem}
-                            onPress={() => setFiltroHijos(!aceptaHijos)}
+                            onPress={() =>
+                                setAceptaHijos((actual) => !actual)
+                            }
                         >
                             <Text style={styles.filtroAdicionalTexto}>
                                 {aceptaHijos ? 'Dejá de filtrar hijos' : 'Filtrar hijos'}

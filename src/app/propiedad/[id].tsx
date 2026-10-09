@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Animated,
@@ -94,6 +94,8 @@ interface Propiedad {
     imagen_principal: Imagen | null;
 }
 
+const Divisor = () => <View style={styles.divider} />;
+
 export default function PropiedadDetailScreen() {
     const { id } =
         useLocalSearchParams<{ id: string }>();
@@ -123,39 +125,15 @@ export default function PropiedadDetailScreen() {
     const [cargandoResenas, setCargandoResenas] = useState(false);
     const [perfil, setPerfil] = useState<Usuario | null>(null);
 
-    const escalaFavorito = useRef(
-        new Animated.Value(1)
-    ).current;
+    const [escalaFavorito] = useState(
+        () => new Animated.Value(1)
+    );
 
     const [esFavorito, setEsFavorito] = useState(false);
     const [actualizandoFavorito, setActualizandoFavorito] =
     useState(false);
 
-    const cargarEstadoFavorito = useCallback(async () => {
-        if (!propiedad?.id) return;
-
-        const autenticado = await estaAutenticado();
-
-        if (!autenticado) {
-            setEsFavorito(false);
-            return;
-        }
-
-        try {
-            const response = await obtenerFavoritos();
-
-            if (!response?.success) return;
-
-            const favorito = (response.data || []).some(
-                (item: any) =>
-                    Number(item.propiedad_id) === Number(propiedad.id)
-            );
-
-            setEsFavorito(favorito);
-        } catch (error) {
-            console.error('❌ ERROR CARGANDO FAVORITOS:', error);
-        }
-    }, [propiedad?.id]);
+    const propiedadId = propiedad?.id;
 
     const construirUrlImagen = (
         ruta: string | null
@@ -260,8 +238,45 @@ export default function PropiedadDetailScreen() {
 };
 
     useEffect(() => {
+        if (!propiedadId) return;
+
+        let activo = true;
+
+        const cargarEstadoFavorito = async () => {
+            try {
+                const autenticado = await estaAutenticado();
+
+                if (!activo) return;
+
+                if (!autenticado) {
+                    setEsFavorito(false);
+                    return;
+                }
+
+                const response = await obtenerFavoritos();
+
+                if (!activo || !response?.success) return;
+
+                const favorito = (response.data || []).some(
+                    (item: any) =>
+                        Number(item.propiedad_id) === Number(propiedadId)
+                );
+
+                setEsFavorito(favorito);
+            } catch (error) {
+                console.error(
+                    '❌ ERROR CARGANDO FAVORITOS:',
+                    error
+                );
+            }
+        };
+
         cargarEstadoFavorito();
-    }, [cargarEstadoFavorito]);
+
+        return () => {
+            activo = false;
+        };
+    }, [propiedadId]);
 
 
     useEffect(() => {
@@ -404,10 +419,6 @@ export default function PropiedadDetailScreen() {
             </View>
         );
     }
-
-    const Divisor = () => (
-        <View style={styles.divider} />
-    );
 
     const imagenes =
         propiedad.imagenes ?? [];

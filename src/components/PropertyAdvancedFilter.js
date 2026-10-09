@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
     ScrollView,
@@ -23,6 +23,12 @@ const PropertyAdvancedFilter = ({
     initialCategorias = [],
     initialLocalidades = [],
     initialServicios = [],
+    initialPrecioMin = '',
+    initialPrecioMax = '',
+    initialCantidadAmbientes = '',
+    initialCantidadDormitorios = '',
+    initialCantidadBanos = '',
+    initialCapacidad = '',
     onSearch,
 }) => {
     const [abierto, setAbierto] = useState(false);
@@ -51,38 +57,24 @@ const PropertyAdvancedFilter = ({
             normalizarIniciales(initialServicios)
         );
 
-    const [precioMin, setPrecioMin] = useState('');
-    const [precioMax, setPrecioMax] = useState('');
+    const [precioMin, setPrecioMin] = useState(
+        String(initialPrecioMin ?? '')
+    );
+    const [precioMax, setPrecioMax] = useState(
+        String(initialPrecioMax ?? '')
+    );
 
     const [cantidadAmbientes, setCantidadAmbientes] =
-        useState('');
+        useState(String(initialCantidadAmbientes ?? ''));
 
     const [cantidadDormitorios, setCantidadDormitorios] =
-        useState('');
+        useState(String(initialCantidadDormitorios ?? ''));
 
     const [cantidadBanos, setCantidadBanos] =
-        useState('');
+        useState(String(initialCantidadBanos ?? ''));
 
     const [capacidad, setCapacidad] =
-        useState('');
-
-    useEffect(() => {
-        setCategoriasSeleccionadas(
-            normalizarIniciales(initialCategorias)
-        );
-    }, [initialCategorias]);
-
-    useEffect(() => {
-        setLocalidadesSeleccionadas(
-            normalizarIniciales(initialLocalidades)
-        );
-    }, [initialLocalidades]);
-
-    useEffect(() => {
-        setServiciosSeleccionados(
-            normalizarIniciales(initialServicios)
-        );
-    }, [initialServicios]);
+        useState(String(initialCapacidad ?? ''));
 
     const toggleSeleccion = (
         id,

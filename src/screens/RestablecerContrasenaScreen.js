@@ -6,7 +6,6 @@ import {
 import { useState } from 'react';
 
 import {
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,

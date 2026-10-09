@@ -22,8 +22,6 @@ import { MODULOS } from '../services/adminConfig';
 import { obtenerPerfil } from '../services/api';
 import { theme } from '../theme/theme';
 
-const ES_ADMIN = 'Administrador';
-
 export default function AdminHomeScreen() {
     const router = useRouter();
 

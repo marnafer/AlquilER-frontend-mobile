@@ -6,6 +6,7 @@ import {
     eliminarRecurso,
     finalizarReserva,
     obtenerRecurso,
+    obtenerReservas,
     rechazarReserva,
     restaurarRecurso,
     separarReservas,

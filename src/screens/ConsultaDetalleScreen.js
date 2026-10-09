@@ -1,4 +1,5 @@
 import {
+    useFocusEffect,
     useLocalSearchParams,
     useRouter,
 } from 'expo-router';
@@ -125,7 +126,7 @@ export default function ConsultaDetalleScreen() {
                     'No se pudo enviar el mensaje.'
                 );
             }
-        } catch (error) {
+        } catch (_error) {
             setErrorRespuesta(
                 'Error de conexión al enviar el mensaje.'
             );
@@ -133,6 +134,12 @@ export default function ConsultaDetalleScreen() {
             setEnviando(false);
         }
     };
+
+    useFocusEffect(
+        useCallback(() => {
+            cargar();
+        }, [cargar])
+    );
 
     const nombreDe = (m) =>
         m?.nombre ||

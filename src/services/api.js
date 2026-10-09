@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import axios, { create } from "axios";
 
 const TOKEN_KEY = "@alquiler_token";
 const REFRESH_TOKEN_KEY = "@alquiler_refresh_token";
@@ -9,7 +9,7 @@ export async function estaAutenticado() {
   return !!token;
 }
 
-const api = axios.create({
+const api = create({
   baseURL: "http://192.168.1.38:8000/api",
 });
 

@@ -30,6 +30,7 @@ export default function AuthNavigation() {
         isAuthenticated,
         loading,
         pathname,
+        router,
     ]);
 
     return null;

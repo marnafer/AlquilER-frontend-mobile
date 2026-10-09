@@ -3,15 +3,11 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useWindowDimensions,
     View,
 } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/theme';
-
-const limitar = (valor, minimo, maximo) =>
-    Math.min(Math.max(valor, minimo), maximo);
 
 const colorConOpacidad = (color, opacidad) => {
     if (!color) {
@@ -34,57 +30,6 @@ const colorConOpacidad = (color, opacidad) => {
 export default function PublicarPropiedadSection() {
     const router = useRouter();
     const { isAuthenticated } = useAuth();
-    const { width } = useWindowDimensions();
-
-    const escala = limitar(width / 375, 0.88, 1.2);
-
-    const separacionPequena = limitar(
-        6 * escala,
-        5,
-        8
-    );
-
-    const separacionMedia = limitar(
-        12 * escala,
-        10,
-        16
-    );
-
-    const separacionGrande = limitar(
-        18 * escala,
-        14,
-        24
-    );
-
-    const radioMedio = limitar(
-        16 * escala,
-        14,
-        20
-    );
-
-    const fontBody = limitar(
-        14 * escala,
-        13,
-        16
-    );
-
-    const fontSmall = limitar(
-        12 * escala,
-        11,
-        14
-    );
-
-    const iconCategory = limitar(
-        30 * escala,
-        26,
-        36
-    );
-
-    const categorySize = limitar(
-        68 * escala,
-        60,
-        78
-    );
 
     const handlePublicarPropiedad = () => {
         if (isAuthenticated) {

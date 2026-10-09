@@ -141,18 +141,6 @@ const crearValoresResponsive = (width, height) => {
         36
     );
 
-    const fontHeroHighlight = limitar(
-        32 * escala,
-        28,
-        38
-    );
-
-    const fontStatNumber = limitar(
-        28 * escala,
-        24,
-        34
-    );
-
     const iconCategory = limitar(
         30 * escala,
         26,
@@ -193,8 +181,6 @@ const crearValoresResponsive = (width, height) => {
         fontFilter,
         fontSectionTitle,
         fontHeroTitle,
-        fontHeroHighlight,
-        fontStatNumber,
         iconCategory,
         categorySize,
         categoryWidth,
@@ -244,11 +230,7 @@ export default function HomeScreen() {
     const [notificacionesNoLeidas, setNotificacionesNoLeidas] =
     useState(0);
 
-    useEffect(() => {
-        cargarDatos();
-    }, []);
-
-    const cargarPropiedadesVistas = async () => {
+    const cargarPropiedadesVistas = useCallback(async () => {
         const idsVistos = await obtenerPropiedadesVistas();
 
         const vistas = idsVistos
@@ -261,59 +243,69 @@ export default function HomeScreen() {
             .filter(Boolean);
 
         setPropiedadesVistas(vistas);
-    };
+    }, [propiedades]);
 
-    const cargarDatos = async () => {
-        try {
-            setLoading(true);
-            setError('');
+    useEffect(() => {
+        let activo = true;
 
-            const [
-                propiedadesResponse,
-                categoriasResponse,
-                localidadesResponse,
-            ] = await Promise.all([
-                api.get('/propiedades'),
-                api.get('/categorias'),
-                api.get('/localidades'),
-            ]);
+        const cargarDatos = async () => {
+            try {
+                const [
+                    propiedadesResponse,
+                    categoriasResponse,
+                    localidadesResponse,
+                ] = await Promise.all([
+                    api.get('/propiedades'),
+                    api.get('/categorias'),
+                    api.get('/localidades'),
+                ]);
 
-            setCategorias(
-                categoriasResponse.data?.data?.items ||
-                categoriasResponse.data?.data ||
-                categoriasResponse.data ||
-                []
-            );
+                if (!activo) return;
 
-            setLocalidades(
-                localidadesResponse.data?.data?.items ||
-                localidadesResponse.data?.data ||
-                localidadesResponse.data ||
-                []
-            );
+                setCategorias(
+                    categoriasResponse.data?.data?.items ||
+                    categoriasResponse.data?.data ||
+                    categoriasResponse.data ||
+                    []
+                );
 
-            const propiedadesData =
-                propiedadesResponse.data?.data?.items || [];
+                setLocalidades(
+                    localidadesResponse.data?.data?.items ||
+                    localidadesResponse.data?.data ||
+                    localidadesResponse.data ||
+                    []
+                );
 
-            setPropiedades(propiedadesData);
-        } catch (error) {
-            console.error('HOME: ERROR', error);
-            console.error('HOME: código', error.code);
-            console.error('HOME: mensaje', error.message);
-            console.error(
-                'HOME: respuesta',
-                error.response?.data
-            );
+                setPropiedades(
+                    propiedadesResponse.data?.data?.items || []
+                );
+            } catch (error) {
+                console.error('HOME: ERROR', error);
+                console.error('HOME: código', error.code);
+                console.error('HOME: mensaje', error.message);
+                console.error(
+                    'HOME: respuesta',
+                    error.response?.data
+                );
 
-            setError(
-                'No se pudieron cargar los datos'
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+                if (activo) {
+                    setError('No se pudieron cargar los datos');
+                }
+            } finally {
+                if (activo) {
+                    setLoading(false);
+                }
+            }
+        };
 
-    const cargarNotificacionesNoLeidas = async () => {
+        cargarDatos();
+
+        return () => {
+            activo = false;
+        };
+    }, []);
+
+    const cargarNotificacionesNoLeidas = useCallback(async () => {
         try {
             if (!isAuthenticated) {
                 setNotificacionesNoLeidas(0);
@@ -339,20 +331,20 @@ export default function HomeScreen() {
 
             setNotificacionesNoLeidas(0);
         }
-    };
+    }, [isAuthenticated]);
 
     useFocusEffect(
         useCallback(() => {
             if (propiedades.length > 0) {
                 cargarPropiedadesVistas();
             }
-        }, [propiedades])
+        }, [propiedades.length, cargarPropiedadesVistas])
     );
 
     useFocusEffect(
         useCallback(() => {
             cargarNotificacionesNoLeidas();
-        }, [isAuthenticated])
+        }, [cargarNotificacionesNoLeidas])
     );
 
     const toggleCategoria = (id) => {
@@ -791,8 +783,6 @@ const crearEstilos = (responsive) => {
         fontFilter,
         fontSectionTitle,
         fontHeroTitle,
-        fontHeroHighlight,
-        fontStatNumber,
         iconCategory,
         categorySize,
         categoryWidth,

@@ -72,57 +72,107 @@ export default function AdminCrudScreen() {
     const [guardando, setGuardando] = useState(false);
     const [errorForm, setErrorForm] = useState('');
 
-    const verificarAcceso = useCallback(async () => {
-        setVerificando(true);
+    useEffect(() => {
+        let activo = true;
 
-        const res = await obtenerPerfil();
+        const verificarAcceso = async () => {
+            try {
+                const res = await obtenerPerfil();
 
-        if (res.success) {
-            const rol =
-                res.data?.rol?.nombre ||
-                res.data?.rol?.valor ||
-                res.data?.rol?.id;
+                if (!activo) return;
 
-            setAutorizado(
-                String(rol).toLowerCase() ===
-                    'administrador' || String(rol) === '1'
-            );
-        } else {
-            setAutorizado(false);
-        }
+                if (res.success) {
+                    const rol =
+                        res.data?.rol?.nombre ||
+                        res.data?.rol?.valor ||
+                        res.data?.rol?.id;
 
-        setVerificando(false);
+                    setAutorizado(
+                        String(rol).toLowerCase() ===
+                            'administrador' || String(rol) === '1'
+                    );
+                } else {
+                    setAutorizado(false);
+                }
+            } catch (err) {
+                console.error(
+                    'ADMIN CRUD: error al verificar acceso',
+                    err
+                );
+                if (activo) {
+                    setAutorizado(false);
+                }
+            } finally {
+                if (activo) {
+                    setVerificando(false);
+                }
+            }
+        };
+
+        verificarAcceso();
+
+        return () => {
+            activo = false;
+        };
     }, []);
 
     useEffect(() => {
-        verificarAcceso();
-    }, [verificarAcceso]);
-
-    const cargarExternos = useCallback(async () => {
         if (!config?.externos) return;
 
-        const resultado = {};
+        let activo = true;
 
-        await Promise.all(
-            config.externos.map(async (ext) => {
-                try {
-                    const res = await ext.cargar();
+        const cargarExternos = async () => {
+            const resultado = {};
 
-                    resultado[ext.clave] = extraerItems(res);
-                } catch (e) {
-                    resultado[ext.clave] = [];
-                }
-            })
-        );
+            await Promise.all(
+                config.externos.map(async (ext) => {
+                    try {
+                        const res = await ext.cargar();
 
-        setExternos(resultado);
+                        resultado[ext.clave] = extraerItems(res);
+                    } catch (err) {
+                        console.error(
+                            `ADMIN CRUD: error al cargar ${ext.clave}`,
+                            err
+                        );
+                        resultado[ext.clave] = [];
+                    }
+                })
+            );
+
+            if (activo) {
+                setExternos(resultado);
+            }
+        };
+
+        cargarExternos();
+
+        return () => {
+            activo = false;
+        };
     }, [config]);
 
-    useEffect(() => {
-        if (config) {
-            cargarExternos();
-        }
-    }, [config, cargarExternos]);
+    const obtenerItems = useCallback(async () => {
+        if (!config) return [];
+
+        const filtrosAplicados = Object.entries(filtros).reduce(
+            (acc, [k, v]) => {
+                if (v !== '' && v !== null && v !== undefined) {
+                    acc[k] = v;
+                }
+
+                return acc;
+            },
+            {}
+        );
+
+        const res = await config.obtener({
+            papelera,
+            filtros: filtrosAplicados,
+        });
+
+        return extraerItems(res);
+    }, [config, papelera, filtros]);
 
     const cargar = useCallback(async () => {
         if (!config) return;
@@ -132,23 +182,7 @@ export default function AdminCrudScreen() {
         setMensaje('');
 
         try {
-            const filtrosAplicados = Object.entries(filtros).reduce(
-                (acc, [k, v]) => {
-                    if (v !== '' && v !== null && v !== undefined) {
-                        acc[k] = v;
-                    }
-
-                    return acc;
-                },
-                {}
-            );
-
-            const res = await config.obtener({
-                papelera,
-                filtros: filtrosAplicados,
-            });
-
-            setItems(extraerItems(res));
+            setItems(await obtenerItems());
         } catch (err) {
             console.error('ADMIN CRUD: error al cargar', err);
 
@@ -158,18 +192,41 @@ export default function AdminCrudScreen() {
         } finally {
             setLoading(false);
         }
-    }, [config, papelera, filtros]);
+    }, [config, obtenerItems]);
 
     useEffect(() => {
-        cargar();
-    }, [cargar]);
+        if (!config) return;
 
-    useEffect(() => {
-        if (!config) {
-            setLoading(false);
-            setError('El módulo seleccionado no existe.');
-        }
-    }, [config]);
+        let activo = true;
+
+        const cargarInicial = async () => {
+            try {
+                const nuevosItems = await obtenerItems();
+
+                if (activo) {
+                    setItems(nuevosItems);
+                }
+            } catch (err) {
+                console.error('ADMIN CRUD: error al cargar', err);
+
+                if (activo) {
+                    setError(
+                        'No se pudieron cargar los datos. Verificá tu conexión.'
+                    );
+                }
+            } finally {
+                if (activo) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        cargarInicial();
+
+        return () => {
+            activo = false;
+        };
+    }, [config, obtenerItems]);
 
     const camposAplicables = (modo) =>
         (config?.campos || []).filter(

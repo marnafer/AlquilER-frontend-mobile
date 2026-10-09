@@ -26,22 +26,6 @@ export function AuthProvider({ children }) {
         setRefreshToken(null);
     };
 
-    const cargarSesion = async () => {
-        try {
-            const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
-            const storedRefreshToken = await AsyncStorage.getItem(
-                REFRESH_TOKEN_KEY
-            );
-
-            setToken(storedToken);
-            setRefreshToken(storedRefreshToken);
-        } catch (error) {
-            console.error('Error al cargar la sesión:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const login = async (newToken, newRefreshToken = null) => {
         await AsyncStorage.setItem(TOKEN_KEY, newToken);
 
@@ -59,7 +43,34 @@ export function AuthProvider({ children }) {
     };
 
     useEffect(() => {
+        let activo = true;
+
+        const cargarSesion = async () => {
+            try {
+                const [storedToken, storedRefreshToken] =
+                    await Promise.all([
+                        AsyncStorage.getItem(TOKEN_KEY),
+                        AsyncStorage.getItem(REFRESH_TOKEN_KEY),
+                    ]);
+
+                if (!activo) return;
+
+                setToken(storedToken);
+                setRefreshToken(storedRefreshToken);
+            } catch (error) {
+                console.error('Error al cargar la sesión:', error);
+            } finally {
+                if (activo) {
+                    setLoading(false);
+                }
+            }
+        };
+
         cargarSesion();
+
+        return () => {
+            activo = false;
+        };
     }, []);
 
     useEffect(() => {

@@ -65,7 +65,7 @@ export default function EditarPerfilScreen() {
                         'No se pudo cargar tu perfil'
                 );
             }
-        } catch (err) {
+        } catch (_err) {
             setError('No se pudo cargar tu perfil');
         } finally {
             setLoading(false);

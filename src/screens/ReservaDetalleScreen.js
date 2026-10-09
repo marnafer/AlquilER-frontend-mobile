@@ -23,7 +23,6 @@ import {
     aprobarReserva,
     cancelarReserva,
     finalizarReserva,
-    obtenerPerfil,
     obtenerResenasByReserva,
     obtenerReserva,
     rechazarReserva,
@@ -82,7 +81,7 @@ export default function ReservaDetalleScreen() {
                         'No se pudo cargar la reserva.',
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             setMensaje({
                 tipo: 'error',
                 texto: 'Error de conexión al cargar la reserva.',
@@ -125,7 +124,7 @@ export default function ReservaDetalleScreen() {
                         'No se pudo actualizar la reserva.',
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             setMensaje({
                 tipo: 'error',
                 texto: 'Error de conexión.',

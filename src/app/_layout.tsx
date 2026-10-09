@@ -5,7 +5,6 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 
 import {
-  useColorScheme,
   View,
 } from 'react-native';
 
@@ -23,8 +22,6 @@ import { LayoutProvider } from '../context/LayoutContext';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <SafeAreaProvider>
     <AuthProvider>

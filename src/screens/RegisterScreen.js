@@ -111,7 +111,7 @@ export default function RegisterScreen() {
                     'Error al registrarse'
                 );
             }
-        } catch (error) {
+        } catch (_error) {
             setError('Error de conexión');
         } finally {
             setLoading(false);

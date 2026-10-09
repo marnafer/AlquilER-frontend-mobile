@@ -60,7 +60,7 @@ export default function ConsultasScreen() {
                 origen: 'enviada',
                 propiedad: c.propiedad || null,
             }));
-        } catch (e) {
+        } catch (_e) {
             problemas++;
         }
 
@@ -82,7 +82,7 @@ export default function ConsultasScreen() {
                             origen: 'recibida',
                             propiedad: p,
                         }));
-                    } catch (e) {
+                    } catch (_e) {
                         problemas++;
 
                         return [];
@@ -91,7 +91,7 @@ export default function ConsultasScreen() {
             );
 
             resultados.forEach((r) => recibidas.push(...r));
-        } catch (e) {
+        } catch (_e) {
             problemas++;
         }
 

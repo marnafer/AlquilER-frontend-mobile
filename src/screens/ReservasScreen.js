@@ -12,7 +12,6 @@ import {
     ActivityIndicator,
     Image,
     Modal,
-    Pressable,
     ScrollView,
     StyleSheet,
     Text,
@@ -66,7 +65,6 @@ const ORIGENES = [
 export default function ReservasScreen() {
     const router = useRouter();
 
-    const [usuarioId, setUsuarioId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [reservas, setReservas] = useState([]);
     const [misResenasHechas, setMisResenasHechas] = useState([]);
@@ -90,8 +88,6 @@ export default function ReservasScreen() {
             const perfilRes = await obtenerPerfil();
 
             if (perfilRes?.success) {
-                setUsuarioId(perfilRes.data?.id ?? null);
-
                 const hechasRes = await obtenerResenasByUsuario(
                     perfilRes.data.id
                 );
@@ -324,7 +320,7 @@ export default function ReservasScreen() {
                     'No se pudo publicar la reseña.'
                 );
             }
-        } catch (error) {
+        } catch (_error) {
             setErrorResena(
                 'Error de conexión al publicar la reseña.'
             );

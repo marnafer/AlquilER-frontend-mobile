@@ -115,7 +115,7 @@ export default function NuevaConsultaScreen() {
                     'No se pudo enviar la consulta.'
                 );
             }
-        } catch (err) {
+        } catch (_err) {
             setError(
                 'Error de conexión al enviar la consulta.'
             );

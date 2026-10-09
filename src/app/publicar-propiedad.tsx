@@ -104,7 +104,7 @@ export default function PublicarPropiedad() {
     >([]);
 
     const [cargandoImagenes, setCargandoImagenes] = useState(false);
-    const [imagenesCargando, setImagenesCargando] = useState<Set<string>>(
+    const [, setImagenesCargando] = useState<Set<string>>(
         new Set()
     );
 
@@ -176,58 +176,66 @@ export default function PublicarPropiedad() {
     };
 
 
-    const cargarCatalogos = async () => {
-        try {
-            setLoadingCatalogos(true);
-            setErrorCatalogos('');
-
-            const [
-                categoriasResponse,
-                localidadesResponse,
-                serviciosResponse,
-            ] = await Promise.all([
-                api.get('/categorias'),
-                api.get('/localidades'),
-                api.get('/servicios'),
-            ]);
-
-            setCategorias(
-                categoriasResponse.data?.data?.items ||
-                categoriasResponse.data?.data ||
-                categoriasResponse.data ||
-                []
-            );
-
-            setLocalidades(
-                localidadesResponse.data?.data?.items ||
-                localidadesResponse.data?.data ||
-                localidadesResponse.data ||
-                []
-            );
-
-            setServicios(
-                serviciosResponse.data?.data?.items ||
-                serviciosResponse.data?.data ||
-                serviciosResponse.data ||
-                []
-            );
-        } catch (error) {
-            console.error(
-                'Error al cargar los catálogos:',
-                error
-            );
-
-            setErrorCatalogos(
-                'No se pudieron cargar los datos necesarios.'
-            );
-        } finally {
-            setLoadingCatalogos(false);
-        }
-    };
-
-
     useEffect(() => {
+        let activo = true;
+
+        const cargarCatalogos = async () => {
+            try {
+                const [
+                    categoriasResponse,
+                    localidadesResponse,
+                    serviciosResponse,
+                ] = await Promise.all([
+                    api.get('/categorias'),
+                    api.get('/localidades'),
+                    api.get('/servicios'),
+                ]);
+
+                if (!activo) return;
+
+                setCategorias(
+                    categoriasResponse.data?.data?.items ||
+                    categoriasResponse.data?.data ||
+                    categoriasResponse.data ||
+                    []
+                );
+
+                setLocalidades(
+                    localidadesResponse.data?.data?.items ||
+                    localidadesResponse.data?.data ||
+                    localidadesResponse.data ||
+                    []
+                );
+
+                setServicios(
+                    serviciosResponse.data?.data?.items ||
+                    serviciosResponse.data?.data ||
+                    serviciosResponse.data ||
+                    []
+                );
+            } catch (error) {
+                console.error(
+                    'Error al cargar los catálogos:',
+                    error
+                );
+
+                if (activo) {
+                    setErrorCatalogos(
+                        'No se pudieron cargar los datos necesarios.'
+                    );
+                }
+            } finally {
+                if (activo) {
+                    setLoadingCatalogos(false);
+                }
+            }
+        };
+
         cargarCatalogos();
+
+        return () => {
+            activo = false;
+        };
     }, []);
 
 
@@ -689,6 +697,14 @@ export default function PublicarPropiedad() {
                 ) : null}
 
                 <View style={styles.content}>
+                    {errorPublicacion ? (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>
+                                {errorPublicacion}
+                            </Text>
+                        </View>
+                    ) : null}
+
 
                     {/* Información básica */}
 

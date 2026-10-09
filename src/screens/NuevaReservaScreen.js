@@ -5,6 +5,7 @@ import {
 
 import {
     useEffect,
+    useRef,
     useState,
 } from 'react';
 
@@ -28,13 +29,60 @@ import {
     fechaLocalHoy,
 } from '../utils/formato';
 
+const esFechaIsoValida = (valor) => {
+    const coincidencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+
+    if (!coincidencia) {
+        return false;
+    }
+
+    const anio = Number(coincidencia[1]);
+    const mes = Number(coincidencia[2]);
+    const dia = Number(coincidencia[3]);
+
+    if (anio < 1 || mes < 1 || mes > 12) {
+        return false;
+    }
+
+    const esBisiesto =
+        anio % 4 === 0 &&
+        (anio % 100 !== 0 || anio % 400 === 0);
+    const diasPorMes = [
+        31,
+        esBisiesto ? 29 : 28,
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
+
+    return dia >= 1 && dia <= diasPorMes[mes - 1];
+};
+
 export default function NuevaReservaScreen() {
     const { propiedadId } = useLocalSearchParams();
 
     const router = useRouter();
+    const parametroPropiedadId = Array.isArray(propiedadId)
+        ? propiedadId[0]
+        : propiedadId;
+    const idPropiedad =
+        typeof parametroPropiedadId === 'string' &&
+        /^\d+$/.test(parametroPropiedadId) &&
+        Number.isSafeInteger(Number(parametroPropiedadId)) &&
+        Number(parametroPropiedadId) > 0
+            ? Number(parametroPropiedadId)
+            : null;
 
     const [propiedad, setPropiedad] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [intentoCarga, setIntentoCarga] = useState(0);
     const [error, setError] = useState('');
 
     const [fechaInicio, setFechaInicio] = useState('');
@@ -42,60 +90,136 @@ export default function NuevaReservaScreen() {
     const [enviando, setEnviando] = useState(false);
     const [mensajeExito, setMensajeExito] = useState('');
     const [erroresCampos, setErroresCampos] = useState({});
+    const envioEnCurso = useRef(false);
+    const redireccionTimeout = useRef(null);
 
     useEffect(() => {
+        let activo = true;
+
         const cargarPropiedad = async () => {
-            if (!propiedadId) {
-                setError('No se indicó una propiedad.');
+            setLoading(true);
+            setError('');
+            setPropiedad(null);
+
+            if (!idPropiedad) {
+                setError('No se indicó una propiedad válida.');
                 setLoading(false);
                 return;
             }
 
             try {
-                setLoading(true);
-                setError('');
-
                 const res = await api.get(
-                    `/propiedades/${propiedadId}`
+                    `/propiedades/${idPropiedad}`
                 );
 
-                setPropiedad(res.data?.data ?? null);
+                const propiedadCargada = res.data?.data;
+
+                if (!propiedadCargada) {
+                    if (activo) {
+                        setError(
+                            'No se encontró la información de la propiedad.'
+                        );
+                    }
+
+                    return;
+                }
+
+                if (activo) {
+                    setPropiedad(propiedadCargada);
+                }
             } catch (err) {
                 console.error(
                     'NUEVA RESERVA: error al cargar propiedad',
                     err
                 );
 
-                setError(
-                    'No se pudo cargar la información de la propiedad.'
-                );
+                if (activo) {
+                    setError(
+                        'No se pudo cargar la información de la propiedad.'
+                    );
+                }
             } finally {
-                setLoading(false);
+                if (activo) {
+                    setLoading(false);
+                }
             }
         };
 
         cargarPropiedad();
-    }, [propiedadId]);
+
+        return () => {
+            activo = false;
+        };
+    }, [idPropiedad, intentoCarga]);
+
+    useEffect(
+        () => () => {
+            if (redireccionTimeout.current) {
+                clearTimeout(redireccionTimeout.current);
+            }
+        },
+        []
+    );
+
+    const actualizarFecha = (campo, valor) => {
+        if (campo === 'fechaInicio') {
+            setFechaInicio(valor);
+        } else {
+            setFechaFin(valor);
+        }
+
+        setErroresCampos((actuales) => ({
+            ...actuales,
+            [campo]: undefined,
+        }));
+        setError('');
+    };
+
+    const propiedadNoDisponible =
+        propiedad?.disponible === false ||
+        propiedad?.disponible === 0 ||
+        propiedad?.disponible === '0';
 
     const enviarReserva = async () => {
+        if (
+            envioEnCurso.current ||
+            mensajeExito ||
+            propiedadNoDisponible ||
+            !idPropiedad ||
+            !propiedad
+        ) {
+            return;
+        }
+
         const hoy = fechaLocalHoy();
+        const inicio = fechaInicio.trim();
+        const fin = fechaFin.trim();
+        const inicioValido = esFechaIsoValida(inicio);
+        const finValido = esFechaIsoValida(fin);
 
         const errores = {};
 
-        if (!fechaInicio.trim()) {
+        if (!inicio) {
             errores.fechaInicio =
                 'La fecha de inicio es requerida';
-        } else if (fechaInicio.trim() < hoy) {
+        } else if (!inicioValido) {
+            errores.fechaInicio =
+                'Ingresá una fecha válida con el formato AAAA-MM-DD';
+        } else if (inicio < hoy) {
             errores.fechaInicio =
                 'La fecha de inicio no puede ser anterior a hoy';
         }
 
-        if (!fechaFin.trim()) {
+        if (!fin) {
             errores.fechaFin =
                 'La fecha de fin es requerida';
+        } else if (!finValido) {
+            errores.fechaFin =
+                'Ingresá una fecha válida con el formato AAAA-MM-DD';
         } else if (
-            fechaInicio.trim() &&
-            fechaFin.trim() <= fechaInicio.trim()
+            inicioValido &&
+            finValido &&
+            fin <= inicio
         ) {
             errores.fechaFin =
                 'La fecha de fin debe ser posterior a la de inicio';
@@ -108,58 +232,73 @@ export default function NuevaReservaScreen() {
         }
 
         setErroresCampos({});
+        setError('');
+        envioEnCurso.current = true;
         setEnviando(true);
         setMensajeExito('');
 
         try {
             const result = await crearReserva({
-                propiedad_id: Number(propiedadId),
-                fecha_inicio_alquiler: fechaInicio.trim(),
-                fecha_fin_alquiler: fechaFin.trim(),
+                propiedad_id: idPropiedad,
+                fecha_inicio_alquiler: inicio,
+                fecha_fin_alquiler: fin,
             });
 
-            if (result.success) {
+            if (result?.success) {
                 setMensajeExito(
                     result.message ||
                         'Reserva solicitada correctamente. El propietario la revisará en tu panel de reservas.'
                 );
 
-                setTimeout(() => {
+                redireccionTimeout.current = setTimeout(() => {
                     router.replace('/reservas');
                 }, 1800);
             } else {
-                const validationErrors =
-                    result.validation_errors;
+                const validationErrors = result?.validation_errors;
 
                 if (
                     validationErrors &&
                     typeof validationErrors === 'object'
                 ) {
                     const erroresMap = {};
+                    const camposFecha = {
+                        fecha_inicio_alquiler: 'fechaInicio',
+                        fechaInicio: 'fechaInicio',
+                        fecha_fin_alquiler: 'fechaFin',
+                        fechaFin: 'fechaFin',
+                    };
 
                     Object.entries(validationErrors).forEach(
                         ([campo, mensajes]) => {
-                            erroresMap[campo] = Array.isArray(
-                                mensajes
-                            )
+                            const claveVisible = camposFecha[campo];
+                            const texto = Array.isArray(mensajes)
                                 ? mensajes.join('\n')
-                                : String(mensajes);
+                                : String(mensajes ?? '');
+
+                            if (claveVisible) {
+                                erroresMap[claveVisible] = texto;
+                            }
                         }
                     );
 
                     setErroresCampos(erroresMap);
-                } else {
-                    setError(
-                        result.message ||
-                        'No se pudo crear la reserva.'
-                    );
                 }
+
+                setError(
+                    result?.message ||
+                        'No se pudo crear la reserva. Revisá los datos e intentá nuevamente.'
+                );
             }
         } catch (err) {
+            console.error(
+                'NUEVA RESERVA: error al crear la reserva',
+                err
+            );
             setError(
                 'Error de conexión al crear la reserva.'
             );
         } finally {
+            envioEnCurso.current = false;
             setEnviando(false);
         }
     };
@@ -175,6 +314,30 @@ export default function NuevaReservaScreen() {
                 <Text style={styles.loadingText}>
                     Cargando propiedad...
                 </Text>
+            </View>
+        );
+    }
+
+    if (!propiedad) {
+        return (
+            <View style={styles.centerContainer}>
+                <Text style={styles.emptyStateTitle}>
+                    {error || 'No se pudo cargar la propiedad.'}
+                </Text>
+
+                {idPropiedad ? (
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={() =>
+                            setIntentoCarga((actual) => actual + 1)
+                        }
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.retryButtonText}>
+                            Reintentar
+                        </Text>
+                    </TouchableOpacity>
+                ) : null}
             </View>
         );
     }
@@ -204,35 +367,37 @@ export default function NuevaReservaScreen() {
                 </View>
 
                 <View style={styles.content}>
-                    {propiedad ? (
-                        <View style={styles.propertyCard}>
-                            <Text
-                                style={styles.propertyTitle}
-                                numberOfLines={2}
-                            >
-                                {propiedad.titulo}
-                            </Text>
+                    <View style={styles.propertyCard}>
+                        <Text
+                            style={styles.propertyTitle}
+                            numberOfLines={2}
+                        >
+                            {propiedad.titulo}
+                        </Text>
 
-                            <Text style={styles.propertyPrice}>
-                                ${Number(propiedad.precio || 0).toLocaleString(
-                                    'es-AR'
-                                )}
-                            </Text>
+                        <Text style={styles.propertyPrice}>
+                            ${Number(propiedad.precio || 0).toLocaleString(
+                                'es-AR'
+                            )}
+                        </Text>
 
-                            {propiedad.expensas > 0 ? (
-                                <Text
-                                    style={styles.propertyExpensas}
-                                >
-                                    Expensas: $
-                                    {Number(
-                                        propiedad.expensas
-                                    ).toLocaleString('es-AR')}
-                                </Text>
-                            ) : null}
+                        {propiedad.expensas > 0 ? (
+                            <Text style={styles.propertyExpensas}>
+                                Expensas: $
+                                {Number(
+                                    propiedad.expensas
+                                ).toLocaleString('es-AR')}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    {propiedadNoDisponible ? (
+                        <View style={styles.errorBox}>
+                            <Text style={styles.errorText}>
+                                Esta propiedad no está disponible para reservas.
+                            </Text>
                         </View>
-                    ) : null}
-
-                    {error ? (
+                    ) : error ? (
                         <View style={styles.errorBox}>
                             <Text style={styles.errorText}>
                                 {error}
@@ -252,8 +417,17 @@ export default function NuevaReservaScreen() {
                                 theme.colors.textMuted
                             }
                             value={fechaInicio}
-                            onChangeText={setFechaInicio}
+                            onChangeText={(valor) =>
+                                actualizarFecha('fechaInicio', valor)
+                            }
+                            keyboardType="numbers-and-punctuation"
+                            maxLength={10}
                             autoCapitalize="none"
+                            editable={
+                                !enviando &&
+                                !mensajeExito &&
+                                !propiedadNoDisponible
+                            }
                         />
 
                         {erroresCampos.fechaInicio ? (
@@ -275,8 +449,17 @@ export default function NuevaReservaScreen() {
                                 theme.colors.textMuted
                             }
                             value={fechaFin}
-                            onChangeText={setFechaFin}
+                            onChangeText={(valor) =>
+                                actualizarFecha('fechaFin', valor)
+                            }
+                            keyboardType="numbers-and-punctuation"
+                            maxLength={10}
                             autoCapitalize="none"
+                            editable={
+                                !enviando &&
+                                !mensajeExito &&
+                                !propiedadNoDisponible
+                            }
                         />
 
                         {erroresCampos.fechaFin ? (
@@ -297,10 +480,17 @@ export default function NuevaReservaScreen() {
                     <TouchableOpacity
                         style={[
                             styles.bookButton,
-                            enviando && styles.bookButtonDisabled,
+                            (enviando ||
+                                Boolean(mensajeExito) ||
+                                propiedadNoDisponible) &&
+                                styles.bookButtonDisabled,
                         ]}
                         onPress={enviarReserva}
-                        disabled={enviando}
+                        disabled={
+                            enviando ||
+                            Boolean(mensajeExito) ||
+                            propiedadNoDisponible
+                        }
                         activeOpacity={0.85}
                     >
                         <Text style={styles.bookButtonText}>
@@ -332,6 +522,29 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         color: theme.colors.textMuted,
         fontSize: 14,
+    },
+
+    emptyStateTitle: {
+        marginHorizontal: theme.spacing.lg,
+        color: theme.colors.textDark,
+        fontSize: 16,
+        textAlign: 'center',
+    },
+
+    retryButton: {
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: 12,
+        backgroundColor: theme.colors.primary,
+    },
+
+    retryButtonText: {
+        color: theme.colors.white,
+        fontSize: 15,
+        fontWeight: '700',
     },
 
     header: {
