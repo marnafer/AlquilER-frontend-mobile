@@ -644,6 +644,36 @@ export async function obtenerResenasByPropiedad(propiedadId) {
   }
 }
 
+export async function actualizarResena(resenaId, data) {
+  try {
+    const response = await api.put(`/resenas/${resenaId}`, data);
+
+    return response.data;
+  } catch (error) {
+    return (
+      error.response?.data || {
+        success: false,
+        message: "Error de conexión",
+      }
+    );
+  }
+}
+
+export async function eliminarResena(resenaId) {
+  try {
+    const response = await api.delete(`/resenas/${resenaId}`);
+
+    return response.data;
+  } catch (error) {
+    return (
+      error.response?.data || {
+        success: false,
+        message: "Error de conexión",
+      }
+    );
+  }
+}
+
 export async function obtenerResenasByReserva(reservaId) {
   try {
     const response = await api.get(`/resenas/reserva/${reservaId}`);

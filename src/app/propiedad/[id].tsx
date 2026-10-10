@@ -1,12 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+    Alert,
     ActivityIndicator,
     Animated,
     Image,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     useWindowDimensions,
     View
@@ -17,7 +19,9 @@ import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
 import api, {
     agregarFavorito,
+    actualizarResena,
     eliminarFavorito,
+    eliminarResena,
     estaAutenticado,
     obtenerFavoritos,
     obtenerPerfil,
@@ -62,6 +66,7 @@ interface Resena {
     calificador_id: number;
     calificador: Calificador;
     reserva_id: number;
+    tipo: string;
 }
 
 interface Usuario {
@@ -132,6 +137,12 @@ export default function PropiedadDetailScreen() {
     const [promedioResenas, setPromedioResenas] = useState(0);
     const [cargandoResenas, setCargandoResenas] = useState(false);
     const [perfil, setPerfil] = useState<Usuario | null>(null);
+    const [editandoResena, setEditandoResena] = useState(false);
+    const [calificacionResena, setCalificacionResena] = useState(0);
+    const [comentarioResena, setComentarioResena] = useState('');
+    const [guardandoResena, setGuardandoResena] = useState(false);
+    const [mensajeResena, setMensajeResena] = useState('');
+    const [errorResena, setErrorResena] = useState('');
 
     const [escalaFavorito] = useState(
         () => new Animated.Value(1)
@@ -328,25 +339,36 @@ export default function PropiedadDetailScreen() {
         cargarPropiedad();
     }, [id]);
 
-    useEffect(() => {
-        const cargarResenas = async () => {
-            if (!id) return;
+    const cargarResenas = useCallback(async () => {
+        if (!id) return;
 
-            setCargandoResenas(true);
-
+        setCargandoResenas(true);
+        setErrorResena('');
+        try {
             const res = await obtenerResenasByPropiedad(id);
-
-            if (res?.success) {
-                setResenas(extraerItems(res) as Resena[]);
-
-                setPromedioResenas(
-                    Number(res.data?.promedio) || 0
+            if (!res?.success) {
+                throw new Error(
+                    res?.error ||
+                        res?.message ||
+                        'No se pudieron cargar las reseñas.'
                 );
             }
 
+            setResenas(extraerItems(res) as Resena[]);
+            setPromedioResenas(Number(res.data?.promedio) || 0);
+        } catch (error) {
+            console.error('PROPERTY DETAIL: error al cargar reseñas', error);
+            setErrorResena(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudieron cargar las reseñas.'
+            );
+        } finally {
             setCargandoResenas(false);
-        };
+        }
+    }, [id]);
 
+    useEffect(() => {
         const cargarPerfil = async () => {
             const autenticado = await estaAutenticado();
 
@@ -359,9 +381,12 @@ export default function PropiedadDetailScreen() {
             }
         };
 
-        cargarResenas();
-        cargarPerfil();
-    }, [id]);
+        const cargarDatos = async () => {
+            await Promise.all([cargarPerfil(), cargarResenas()]);
+        };
+
+        void cargarDatos();
+    }, [cargarResenas]);
 
     const esDuenio =
         !!perfil &&
@@ -373,9 +398,133 @@ export default function PropiedadDetailScreen() {
             resenas.find(
                 (r) =>
                     String(r.calificador_id) ===
-                    String(perfil.id)
+                        String(perfil.id) &&
+                    r.tipo === 'propiedad'
             )) ||
         null;
+
+    const abrirEdicionResena = () => {
+        if (!miResena) return;
+        setCalificacionResena(Number(miResena.calificacion) || 0);
+        setComentarioResena(miResena.comentario || '');
+        setErrorResena('');
+        setMensajeResena('');
+        setEditandoResena(true);
+    };
+
+    const guardarResena = async () => {
+        if (!miResena || guardandoResena) return;
+
+        setErrorResena('');
+        setMensajeResena('');
+        const comentario = comentarioResena.trim();
+
+        if (
+            !Number.isInteger(calificacionResena) ||
+            calificacionResena < 1 ||
+            calificacionResena > 5
+        ) {
+            setErrorResena('Seleccioná una calificación de 1 a 5 estrellas.');
+            return;
+        }
+
+        if (comentario && comentario.length < 3) {
+            setErrorResena('El comentario debe tener al menos 3 caracteres.');
+            return;
+        }
+
+        if (miResena.comentario?.trim() && !comentario) {
+            setErrorResena(
+                'La API no permite borrar solo el comentario. Escribí otro texto o conservá el actual.'
+            );
+            return;
+        }
+
+        if (
+            calificacionResena === Number(miResena.calificacion) &&
+            comentario === (miResena.comentario || '').trim()
+        ) {
+            setEditandoResena(false);
+            setMensajeResena('No realizaste cambios en tu reseña.');
+            return;
+        }
+
+        setGuardandoResena(true);
+        try {
+            const response = await actualizarResena(miResena.id, {
+                calificacion: calificacionResena,
+                comentario,
+            });
+
+            if (!response?.success) {
+                throw new Error(
+                    response?.error ||
+                        response?.message ||
+                        'No se pudo actualizar tu reseña.'
+                );
+            }
+
+            setEditandoResena(false);
+            setMensajeResena('Tu reseña se actualizó correctamente.');
+            await cargarResenas();
+        } catch (error) {
+            console.error('PROPERTY DETAIL: error al actualizar reseña', error);
+            setErrorResena(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo actualizar tu reseña.'
+            );
+        } finally {
+            setGuardandoResena(false);
+        }
+    };
+
+    const eliminarMiResena = async () => {
+        if (!miResena || guardandoResena) return;
+
+        setGuardandoResena(true);
+        setErrorResena('');
+        setMensajeResena('');
+        try {
+            const response = await eliminarResena(miResena.id);
+
+            if (!response?.success) {
+                throw new Error(
+                    response?.error ||
+                        response?.message ||
+                        'No se pudo eliminar tu reseña.'
+                );
+            }
+
+            setEditandoResena(false);
+            setMensajeResena('Tu reseña fue eliminada.');
+            await cargarResenas();
+        } catch (error) {
+            console.error('PROPERTY DETAIL: error al eliminar reseña', error);
+            setErrorResena(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo eliminar tu reseña.'
+            );
+        } finally {
+            setGuardandoResena(false);
+        }
+    };
+
+    const confirmarEliminarResena = () => {
+        Alert.alert(
+            '¿Eliminar tu reseña?',
+            'No se puede recuperar después de eliminarla.',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Sí, eliminar',
+                    style: 'destructive',
+                    onPress: eliminarMiResena,
+                },
+            ]
+        );
+    };
 
     const irAReservar = async () => {
         const autenticado = await estaAutenticado();
@@ -921,12 +1070,20 @@ export default function PropiedadDetailScreen() {
                     ) : null}
                 </View>
 
+                {errorResena ? (
+                    <Text style={styles.resenaError}>{errorResena}</Text>
+                ) : null}
+
+                {mensajeResena ? (
+                    <Text style={styles.resenaExito}>{mensajeResena}</Text>
+                ) : null}
+
                 {cargandoResenas ? (
                     <ActivityIndicator
                         color={theme.colors.primary}
                         style={{ marginVertical: theme.spacing.md }}
                     />
-                ) : resenas.length > 0 ? (
+                ) : errorResena && resenas.length === 0 ? null : resenas.length > 0 ? (
                     <View style={styles.resenaLista}>
                         {resenas.map((r) => (
                             <View
@@ -985,15 +1142,123 @@ export default function PropiedadDetailScreen() {
                                         {r.comentario}
                                     </Text>
                                 ) : null}
+
+                                {miResena &&
+                                String(r.id) === String(miResena.id) ? (
+                                    editandoResena ? (
+                                        <View style={styles.resenaEditor}>
+                                            <Text style={styles.resenaEditorLabel}>
+                                                Tu calificación
+                                            </Text>
+                                            <View style={styles.resenaEditorEstrellas}>
+                                                {[1, 2, 3, 4, 5].map((estrella) => (
+                                                    <TouchableOpacity
+                                                        key={estrella}
+                                                        accessibilityRole="button"
+                                                        accessibilityLabel={`${estrella} ${estrella === 1 ? 'estrella' : 'estrellas'}`}
+                                                        disabled={guardandoResena}
+                                                        onPress={() =>
+                                                            setCalificacionResena(estrella)
+                                                        }
+                                                        style={styles.resenaEstrellaBoton}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.resenaEstrellaOpcion,
+                                                                estrella <= calificacionResena &&
+                                                                    styles.resenaEstrellaSeleccionada,
+                                                            ]}
+                                                        >
+                                                            ★
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                            <TextInput
+                                                value={comentarioResena}
+                                                onChangeText={setComentarioResena}
+                                                placeholder="Compartí tu experiencia (opcional)"
+                                                placeholderTextColor={theme.colors.textMuted}
+                                                multiline
+                                                maxLength={1000}
+                                                editable={!guardandoResena}
+                                                style={styles.resenaEditorInput}
+                                                accessibilityLabel="Comentario de la reseña"
+                                            />
+                                            <View style={styles.resenaAcciones}>
+                                                <TouchableOpacity
+                                                    disabled={guardandoResena}
+                                                    onPress={() => {
+                                                        setEditandoResena(false);
+                                                        setErrorResena('');
+                                                    }}
+                                                    style={[
+                                                        styles.resenaAccionSecundaria,
+                                                        guardandoResena && styles.resenaAccionDeshabilitada,
+                                                    ]}
+                                                >
+                                                    <Text style={styles.resenaAccionSecundariaTexto}>
+                                                        Cancelar
+                                                    </Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    disabled={guardandoResena}
+                                                    onPress={guardarResena}
+                                                    style={[
+                                                        styles.resenaAccionPrimaria,
+                                                        guardandoResena && styles.resenaAccionDeshabilitada,
+                                                    ]}
+                                                >
+                                                    {guardandoResena ? (
+                                                        <ActivityIndicator color={theme.colors.white} />
+                                                    ) : (
+                                                        <Text style={styles.resenaAccionPrimariaTexto}>
+                                                            Guardar
+                                                        </Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <View style={styles.resenaAcciones}>
+                                            <TouchableOpacity
+                                                disabled={guardandoResena || cargandoResenas}
+                                                onPress={abrirEdicionResena}
+                                                style={[
+                                                    styles.resenaAccionSecundaria,
+                                                    (guardandoResena || cargandoResenas) &&
+                                                        styles.resenaAccionDeshabilitada,
+                                                ]}
+                                            >
+                                                <Text style={styles.resenaAccionSecundariaTexto}>
+                                                    Editar
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                disabled={guardandoResena || cargandoResenas}
+                                                onPress={confirmarEliminarResena}
+                                                style={[
+                                                    styles.resenaAccionEliminar,
+                                                    (guardandoResena || cargandoResenas) &&
+                                                        styles.resenaAccionDeshabilitada,
+                                                ]}
+                                            >
+                                                <Text style={styles.resenaAccionEliminarTexto}>
+                                                    Eliminar
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )
+                                ) : null}
                             </View>
                         ))}
                     </View>
-                ) : (
+                ) : !errorResena ? (
                     <Text style={styles.textMuted}>
                         Todavía no hay reseñas para esta
                         propiedad.
                     </Text>
-                )}
+                ) : null}
             </View>
         </ScrollView>
     );
@@ -1278,6 +1543,120 @@ const styles = StyleSheet.create({
         color: theme.colors.textDark,
         fontSize: 14,
         lineHeight: 20,
+    },
+
+    resenaError: {
+        marginBottom: theme.spacing.sm,
+        color: theme.colors.errorText,
+        fontSize: 14,
+    },
+
+    resenaExito: {
+        marginBottom: theme.spacing.sm,
+        color: theme.colors.successText,
+        fontSize: 14,
+    },
+
+    resenaEditor: {
+        marginTop: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+
+    resenaEditorLabel: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
+    resenaEditorEstrellas: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
+    resenaEstrellaBoton: {
+        paddingHorizontal: 3,
+        paddingVertical: 2,
+    },
+
+    resenaEstrellaOpcion: {
+        color: theme.colors.border,
+        fontSize: 30,
+    },
+
+    resenaEstrellaSeleccionada: {
+        color: '#f59e0b',
+    },
+
+    resenaEditorInput: {
+        minHeight: 90,
+        padding: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        color: theme.colors.textDark,
+        backgroundColor: theme.colors.background,
+        fontSize: 14,
+        textAlignVertical: 'top',
+    },
+
+    resenaAcciones: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.md,
+    },
+
+    resenaAccionPrimaria: {
+        minHeight: 42,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: 10,
+        backgroundColor: theme.colors.primary,
+    },
+
+    resenaAccionPrimariaTexto: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    resenaAccionSecundaria: {
+        minHeight: 42,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+        borderRadius: 10,
+    },
+
+    resenaAccionSecundariaTexto: {
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    resenaAccionEliminar: {
+        minHeight: 42,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.errorText,
+        borderRadius: 10,
+    },
+
+    resenaAccionEliminarTexto: {
+        color: theme.colors.errorText,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    resenaAccionDeshabilitada: {
+        opacity: 0.5,
     },
 
     carouselContainer: {
