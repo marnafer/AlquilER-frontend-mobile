@@ -27,6 +27,7 @@ import api, {
     actualizarPropiedad,
 } from '../services/api';
 import { theme } from '../theme/theme';
+import { esFechaISO, GARANTIAS } from '../utils/precalificacion';
 
 const MAX_IMAGENES_POR_PROPIEDAD = 10;
 const TIPOS_IMAGEN_PERMITIDOS = [
@@ -86,6 +87,9 @@ export default function EditarPropiedadScreen() {
     const [disponible, setDisponible] = useState(true);
     const [aceptaMascotas, setAceptaMascotas] = useState(false);
     const [aceptaHijos, setAceptaHijos] = useState(false);
+    const [fechaDisponibleDesde, setFechaDisponibleDesde] = useState('');
+    const [maxOcupantes, setMaxOcupantes] = useState('');
+    const [garantiasAceptadas, setGarantiasAceptadas] = useState([]);
 
     const [categoriaId, setCategoriaId] = useState(null);
     const [localidadId, setLocalidadId] = useState(null);
@@ -182,6 +186,21 @@ export default function EditarPropiedadScreen() {
                 );
                 setAceptaHijos(
                     esAceptado(propiedad.acepta_hijos)
+                );
+                const requisitos =
+                    propiedad.requisitos_interesados || {};
+                setFechaDisponibleDesde(
+                    requisitos.fecha_disponible_desde || ''
+                );
+                setMaxOcupantes(
+                    requisitos.max_ocupantes != null
+                        ? String(requisitos.max_ocupantes)
+                        : ''
+                );
+                setGarantiasAceptadas(
+                    Array.isArray(requisitos.garantias_aceptadas)
+                        ? requisitos.garantias_aceptadas
+                        : []
                 );
                 setCategoriaId(
                     propiedad.categoria_id != null
@@ -606,6 +625,23 @@ export default function EditarPropiedadScreen() {
                 'Debés seleccionar una localidad.';
         }
 
+        if (
+            fechaDisponibleDesde &&
+            !esFechaISO(fechaDisponibleDesde)
+        ) {
+            errores.fecha_disponible_desde =
+                'Usá el formato AAAA-MM-DD.';
+        }
+
+        if (
+            maxOcupantes &&
+            (!Number.isInteger(Number(maxOcupantes)) ||
+                Number(maxOcupantes) < 1)
+        ) {
+            errores.max_ocupantes =
+                'El máximo de ocupantes debe ser un entero mayor a 0.';
+        }
+
         if (Object.keys(errores).length > 0) {
             setErroresCampos(errores);
 
@@ -630,6 +666,13 @@ export default function EditarPropiedadScreen() {
             capacidad: capacidad ? Number(capacidad) : null,
             acepta_mascotas: Number(aceptaMascotas),
             acepta_hijos: Number(aceptaHijos),
+            requisitos_interesados: {
+                fecha_disponible_desde: fechaDisponibleDesde || null,
+                max_ocupantes: maxOcupantes
+                    ? Number(maxOcupantes)
+                    : null,
+                garantias_aceptadas: garantiasAceptadas,
+            },
             disponible: Number(disponible),
             categoria_id: Number(categoriaId),
             localidad_id: Number(localidadId),
@@ -677,6 +720,14 @@ export default function EditarPropiedadScreen() {
         setTimeout(() => {
             router.back();
         }, 1600);
+    };
+
+    const alternarGarantiaAceptada = (garantia) => {
+        setGarantiasAceptadas((actuales) =>
+            actuales.includes(garantia)
+                ? actuales.filter((item) => item !== garantia)
+                : [...actuales, garantia]
+        );
     };
 
     if (loading) {
@@ -1300,6 +1351,98 @@ export default function EditarPropiedadScreen() {
                         </View>
                     </View>
 
+                    <Text style={styles.sectionTitle}>
+                        Requisitos para interesados
+                    </Text>
+
+                    <Text style={styles.helperText}>
+                        Son orientativos: ayudan a ordenar consultas, pero no
+                        descartan a nadie automáticamente.
+                    </Text>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Disponible para mudarse desde
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="AAAA-MM-DD"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={fechaDisponibleDesde}
+                            onChangeText={setFechaDisponibleDesde}
+                            editable={!guardando}
+                        />
+                        {erroresCampos.fecha_disponible_desde ? (
+                            <Text style={styles.fieldError}>
+                                {erroresCampos.fecha_disponible_desde}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Máximo de ocupantes (opcional)
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ej: 4"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={maxOcupantes}
+                            onChangeText={setMaxOcupantes}
+                            keyboardType="number-pad"
+                            editable={!guardando}
+                        />
+                        {erroresCampos.max_ocupantes ? (
+                            <Text style={styles.fieldError}>
+                                {erroresCampos.max_ocupantes}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            Garantías que aceptás
+                        </Text>
+                        {GARANTIAS.map(({ valor, etiqueta }) => {
+                            const seleccionada =
+                                garantiasAceptadas.includes(valor);
+                            return (
+                                <TouchableOpacity
+                                    key={valor}
+                                    style={styles.criteriaOption}
+                                    onPress={() =>
+                                        alternarGarantiaAceptada(valor)
+                                    }
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{
+                                        checked: seleccionada,
+                                    }}
+                                    disabled={guardando}
+                                    activeOpacity={0.85}
+                                >
+                                    <View
+                                        style={[
+                                            styles.criteriaCheckbox,
+                                            seleccionada &&
+                                                styles.criteriaCheckboxSelected,
+                                        ]}
+                                    >
+                                        {seleccionada ? (
+                                            <Text
+                                                style={styles.criteriaCheckboxMark}
+                                            >
+                                                ✓
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                    <Text style={styles.criteriaOptionText}>
+                                        {etiqueta}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
                     <View style={styles.availabilityContainer}>
                         <View style={styles.availabilityText}>
                             <Text style={styles.label}>
@@ -1515,6 +1658,39 @@ const styles = StyleSheet.create({
 
     preferenceOptionTextSelected: {
         color: theme.colors.primary,
+    },
+
+    criteriaOption: {
+        minHeight: 42,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+
+    criteriaCheckbox: {
+        width: 22,
+        height: 22,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    criteriaCheckboxSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+    },
+
+    criteriaCheckboxMark: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    criteriaOptionText: {
+        color: theme.colors.textDark,
+        fontSize: 14,
     },
 
     availabilityContainer: {

@@ -89,6 +89,11 @@ interface Propiedad {
     capacidad: number | null;
     acepta_mascotas: boolean | number | string;
     acepta_hijos: boolean | number | string;
+    requisitos_interesados?: {
+        fecha_disponible_desde?: string | null;
+        max_ocupantes?: number | null;
+        garantias_aceptadas?: string[];
+    } | null;
     disponible: boolean;
     destacada: boolean;
     categoria_id: number;
@@ -958,6 +963,50 @@ export default function PropiedadDetailScreen() {
                         </Text>
                     </View>
                 </View>
+
+                {propiedad.requisitos_interesados &&
+                (propiedad.requisitos_interesados.fecha_disponible_desde ||
+                    propiedad.requisitos_interesados.max_ocupantes ||
+                    propiedad.requisitos_interesados.garantias_aceptadas?.length) ? (
+                    <View style={styles.interestedRequirements}>
+                        <Text style={styles.interestedRequirementsTitle}>
+                            Requisitos para interesados
+                        </Text>
+                        {propiedad.requisitos_interesados
+                            .fecha_disponible_desde ? (
+                            <Text style={styles.interestedRequirement}>
+                                Mudanza desde:{' '}
+                                {propiedad.requisitos_interesados.fecha_disponible_desde}
+                            </Text>
+                        ) : null}
+                        {propiedad.requisitos_interesados.max_ocupantes ? (
+                            <Text style={styles.interestedRequirement}>
+                                Hasta{' '}
+                                {propiedad.requisitos_interesados.max_ocupantes}{' '}
+                                ocupantes
+                            </Text>
+                        ) : null}
+                        {propiedad.requisitos_interesados
+                            .garantias_aceptadas?.length ? (
+                            <Text style={styles.interestedRequirement}>
+                                Garantías aceptadas:{' '}
+                                {propiedad.requisitos_interesados.garantias_aceptadas
+                                    .map((garantia) => ({
+                                        recibo_sueldo: 'Recibo de sueldo',
+                                        garantia_propietaria:
+                                            'Garantía propietaria',
+                                        seguro_caucion: 'Seguro de caución',
+                                        garante: 'Garante',
+                                    })[garantia] || garantia)
+                                    .join(', ')}
+                            </Text>
+                        ) : null}
+                        <Text style={styles.interestedRequirementsNote}>
+                            Estos requisitos son orientativos y no generan
+                            rechazos automáticos.
+                        </Text>
+                    </View>
+                ) : null}
             </View>
 
             <Divisor />
@@ -1435,6 +1484,35 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: theme.spacing.sm,
         marginTop: theme.spacing.md,
+    },
+
+    interestedRequirements: {
+        marginTop: theme.spacing.md,
+        padding: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 12,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    interestedRequirementsTitle: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: theme.spacing.xs,
+    },
+
+    interestedRequirement: {
+        marginTop: 4,
+        color: theme.colors.textDark,
+        fontSize: 13,
+    },
+
+    interestedRequirementsNote: {
+        marginTop: theme.spacing.sm,
+        color: theme.colors.textMuted,
+        fontSize: 11,
+        lineHeight: 16,
     },
 
     policyBadge: {

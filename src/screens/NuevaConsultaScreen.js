@@ -24,6 +24,7 @@ import api, {
     crearConsulta,
 } from '../services/api';
 import { theme } from '../theme/theme';
+import { esFechaISO, GARANTIAS } from '../utils/precalificacion';
 
 export default function NuevaConsultaScreen() {
     const { propiedadId } = useLocalSearchParams();
@@ -35,9 +36,22 @@ export default function NuevaConsultaScreen() {
     const [error, setError] = useState('');
 
     const [mensaje, setMensaje] = useState('');
+    const [fechaMudanza, setFechaMudanza] = useState('');
+    const [cantidadOcupantes, setCantidadOcupantes] = useState('');
+    const [tieneMascotas, setTieneMascotas] = useState(null);
+    const [cantidadMascotas, setCantidadMascotas] = useState('');
+    const [garantias, setGarantias] = useState([]);
     const [enviando, setEnviando] = useState(false);
     const [exito, setExito] = useState('');
-    const [errorCampo, setErrorCampo] = useState('');
+    const [errores, setErrores] = useState({});
+
+    const alternarGarantia = (garantia) => {
+        setGarantias((actuales) =>
+            actuales.includes(garantia)
+                ? actuales.filter((item) => item !== garantia)
+                : [...actuales, garantia]
+        );
+    };
 
     useEffect(() => {
         const cargarPropiedad = async () => {
@@ -75,22 +89,45 @@ export default function NuevaConsultaScreen() {
 
     const enviarConsulta = async () => {
         const texto = mensaje.trim();
+        const erroresValidacion = {};
 
         if (!texto) {
-            setErrorCampo('El mensaje es requerido');
+            erroresValidacion.mensaje = 'El mensaje es requerido';
+        } else if (texto.length < 5) {
+            erroresValidacion.mensaje =
+                'El mensaje debe tener al menos 5 caracteres';
+        }
+        if (!esFechaISO(fechaMudanza)) {
+            erroresValidacion.fecha_mudanza =
+                'Ingresá una fecha válida con formato AAAA-MM-DD';
+        }
+        const ocupantes = Number(cantidadOcupantes);
+        if (
+            !Number.isInteger(ocupantes) ||
+            ocupantes < 1 ||
+            ocupantes > 50
+        ) {
+            erroresValidacion.cantidad_ocupantes =
+                'Indicá entre 1 y 50 ocupantes';
+        }
+        if (tieneMascotas === null) {
+            erroresValidacion.tiene_mascotas =
+                'Indicá si tenés mascotas';
+        }
+        const mascotas = Number(cantidadMascotas);
+        if (
+            tieneMascotas &&
+            (!Number.isInteger(mascotas) || mascotas < 1 || mascotas > 20)
+        ) {
+            erroresValidacion.cantidad_mascotas =
+                'Indicá entre 1 y 20 mascotas';
+        }
 
+        setErrores(erroresValidacion);
+        if (Object.keys(erroresValidacion).length > 0) {
             return;
         }
 
-        if (texto.length < 5) {
-            setErrorCampo(
-                'El mensaje debe tener al menos 5 caracteres'
-            );
-
-            return;
-        }
-
-        setErrorCampo('');
         setEnviando(true);
         setExito('');
 
@@ -98,6 +135,13 @@ export default function NuevaConsultaScreen() {
             const result = await crearConsulta({
                 propiedad_id: Number(propiedadId),
                 mensaje: texto,
+                perfil_interesado: {
+                    fecha_mudanza: fechaMudanza,
+                    cantidad_ocupantes: ocupantes,
+                    tiene_mascotas: tieneMascotas,
+                    cantidad_mascotas: tieneMascotas ? mascotas : 0,
+                    garantias,
+                },
             });
 
             if (result.success) {
@@ -160,7 +204,7 @@ export default function NuevaConsultaScreen() {
                     </Text>
 
                     <Text style={styles.headerSubtitle}>
-                        Escribile al propietario tu consulta
+                            Completá estos datos para que el propietario pueda revisar tu consulta.
                     </Text>
                 </View>
 
@@ -188,13 +232,126 @@ export default function NuevaConsultaScreen() {
                         </View>
                     ) : null}
 
+                    <Text style={styles.helperText}>
+                        Estos datos se comparten con el propietario para gestionar
+                        la consulta. Sirven como referencia y no generan un
+                        rechazo automático.
+                    </Text>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>¿Cuándo querés mudarte? *</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="AAAA-MM-DD"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={fechaMudanza}
+                            onChangeText={setFechaMudanza}
+                            autoCapitalize="none"
+                        />
+                        {errores.fecha_mudanza ? (
+                            <Text style={styles.fieldError}>{errores.fecha_mudanza}</Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Cantidad de ocupantes *</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="Ej: 2"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={cantidadOcupantes}
+                            onChangeText={setCantidadOcupantes}
+                            keyboardType="number-pad"
+                        />
+                        {errores.cantidad_ocupantes ? (
+                            <Text style={styles.fieldError}>{errores.cantidad_ocupantes}</Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>¿Tenés mascotas? *</Text>
+                        <View style={styles.choiceRow}>
+                            {[true, false].map((valor) => (
+                                <TouchableOpacity
+                                    key={String(valor)}
+                                    style={[
+                                        styles.choiceButton,
+                                        tieneMascotas === valor && styles.choiceButtonSelected,
+                                    ]}
+                                    onPress={() => {
+                                        setTieneMascotas(valor);
+                                        if (!valor) setCantidadMascotas('');
+                                    }}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: tieneMascotas === valor }}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.choiceText,
+                                            tieneMascotas === valor && styles.choiceTextSelected,
+                                        ]}
+                                    >
+                                        {valor ? 'Sí' : 'No'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {errores.tiene_mascotas ? (
+                            <Text style={styles.fieldError}>{errores.tiene_mascotas}</Text>
+                        ) : null}
+                        {tieneMascotas ? (
+                            <View style={styles.petCountField}>
+                                <Text style={styles.label}>¿Cuántas? *</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    placeholder="Ej: 1"
+                                    placeholderTextColor={theme.colors.textMuted}
+                                    value={cantidadMascotas}
+                                    onChangeText={setCantidadMascotas}
+                                    keyboardType="number-pad"
+                                />
+                                {errores.cantidad_mascotas ? (
+                                    <Text style={styles.fieldError}>{errores.cantidad_mascotas}</Text>
+                                ) : null}
+                            </View>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>¿Qué garantías podrías presentar?</Text>
+                        {GARANTIAS.map(({ valor, etiqueta }) => {
+                            const seleccionada = garantias.includes(valor);
+                            return (
+                                <TouchableOpacity
+                                    key={valor}
+                                    style={styles.guaranteeOption}
+                                    onPress={() => alternarGarantia(valor)}
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{ checked: seleccionada }}
+                                >
+                                    <View
+                                        style={[
+                                            styles.checkbox,
+                                            seleccionada && styles.checkboxSelected,
+                                        ]}
+                                    >
+                                        {seleccionada ? (
+                                            <Text style={styles.checkboxMark}>✓</Text>
+                                        ) : null}
+                                    </View>
+                                    <Text style={styles.guaranteeText}>{etiqueta}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
                     <View style={styles.field}>
                         <Text style={styles.label}>
                             Tu consulta
                         </Text>
 
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, errores.mensaje && styles.inputError]}
                             placeholder="Ej: ¿Está disponible para mudarse en marzo?"
                             placeholderTextColor={
                                 theme.colors.textMuted
@@ -205,9 +362,9 @@ export default function NuevaConsultaScreen() {
                             textAlignVertical="top"
                         />
 
-                        {errorCampo ? (
+                        {errores.mensaje ? (
                             <Text style={styles.fieldError}>
-                                {errorCampo}
+                                {errores.mensaje}
                             </Text>
                         ) : null}
                     </View>
@@ -315,6 +472,13 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
     },
 
+    helperText: {
+        color: theme.colors.textMuted,
+        fontSize: 13,
+        lineHeight: 19,
+        marginBottom: theme.spacing.md,
+    },
+
     label: {
         fontSize: 14,
         fontWeight: '600',
@@ -333,6 +497,89 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
         color: theme.colors.textDark,
         fontSize: 15,
+    },
+
+    textInput: {
+        minHeight: 48,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+        paddingHorizontal: 14,
+        color: theme.colors.textDark,
+        fontSize: 15,
+    },
+
+    inputError: {
+        borderColor: theme.colors.errorText,
+    },
+
+    choiceRow: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+    },
+
+    choiceButton: {
+        flex: 1,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    choiceButtonSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primaryBg,
+    },
+
+    choiceText: {
+        color: theme.colors.textMuted,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
+    choiceTextSelected: {
+        color: theme.colors.primary,
+    },
+
+    petCountField: {
+        marginTop: theme.spacing.md,
+    },
+
+    guaranteeOption: {
+        minHeight: 42,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+
+    checkbox: {
+        width: 22,
+        height: 22,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    checkboxSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+    },
+
+    checkboxMark: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    guaranteeText: {
+        color: theme.colors.textDark,
+        fontSize: 14,
     },
 
     fieldError: {

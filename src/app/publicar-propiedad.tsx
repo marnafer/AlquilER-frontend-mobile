@@ -22,6 +22,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import PropertySelect from '../components/PropertySelect';
 import api from '../services/api';
 import { theme } from '../theme/theme';
+import { esFechaISO, GARANTIAS } from '../utils/precalificacion';
 
 const MAX_IMAGENES_POR_PROPIEDAD = 10;
 
@@ -92,6 +93,9 @@ export default function PublicarPropiedad() {
     const [disponible, setDisponible] = useState(true);
     const [aceptaMascotas, setAceptaMascotas] = useState(false);
     const [aceptaHijos, setAceptaHijos] = useState(false);
+    const [fechaDisponibleDesde, setFechaDisponibleDesde] = useState('');
+    const [maxOcupantes, setMaxOcupantes] = useState('');
+    const [garantiasAceptadas, setGarantiasAceptadas] = useState<string[]>([]);
 
     const [categoriaId, setCategoriaId] = useState<string | null>(null);
     const [localidadId, setLocalidadId] = useState<string | null>(null);
@@ -128,6 +132,14 @@ export default function PublicarPropiedad() {
     const escalaExito = useState(
         new Animated.Value(0.7)
     )[0];
+
+    const alternarGarantiaAceptada = (garantia: string) => {
+        setGarantiasAceptadas((actuales) =>
+            actuales.includes(garantia)
+                ? actuales.filter((item) => item !== garantia)
+                : [...actuales, garantia]
+        );
+    };
 
     const centrarSector = (sector: string) => {
         const posicion = posicionesSectores.current[sector];
@@ -479,6 +491,23 @@ export default function PublicarPropiedad() {
                 'Debés seleccionar una localidad.';
         }
 
+        if (
+            fechaDisponibleDesde &&
+            !esFechaISO(fechaDisponibleDesde)
+        ) {
+            erroresLocales.fecha_disponible_desde =
+                'Usá el formato AAAA-MM-DD.';
+        }
+
+        if (
+            maxOcupantes &&
+            (!Number.isInteger(Number(maxOcupantes)) ||
+                Number(maxOcupantes) < 1)
+        ) {
+            erroresLocales.max_ocupantes =
+                'El máximo de ocupantes debe ser un entero mayor a 0.';
+        }
+
         if (Object.keys(erroresLocales).length > 0) {
             setErroresCampos(erroresLocales);
             centrarPrimerError(erroresLocales);
@@ -507,6 +536,13 @@ export default function PublicarPropiedad() {
                     : null,
                 acepta_mascotas: Number(aceptaMascotas),
                 acepta_hijos: Number(aceptaHijos),
+                requisitos_interesados: {
+                    fecha_disponible_desde: fechaDisponibleDesde || null,
+                    max_ocupantes: maxOcupantes
+                        ? Number(maxOcupantes)
+                        : null,
+                    garantias_aceptadas: garantiasAceptadas,
+                },
                 disponible,
                 categoria_id: Number(categoriaId),
                 localidad_id: Number(localidadId),
@@ -1093,6 +1129,97 @@ export default function PublicarPropiedad() {
                         </View>
                     </View>
 
+                    <Text style={styles.sectionTitle}>
+                        Requisitos para interesados
+                    </Text>
+
+                    <Text style={styles.helperText}>
+                        Son orientativos: ayudan a ordenar consultas, pero no
+                        descartan a nadie automáticamente.
+                    </Text>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Disponible para mudarse desde
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="AAAA-MM-DD"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={fechaDisponibleDesde}
+                            onChangeText={setFechaDisponibleDesde}
+                            editable={!publicando}
+                        />
+                        {erroresCampos.fecha_disponible_desde ? (
+                            <Text style={styles.fieldError}>
+                                {erroresCampos.fecha_disponible_desde}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Máximo de ocupantes (opcional)
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ej: 4"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={maxOcupantes}
+                            onChangeText={setMaxOcupantes}
+                            keyboardType="number-pad"
+                            editable={!publicando}
+                        />
+                        {erroresCampos.max_ocupantes ? (
+                            <Text style={styles.fieldError}>
+                                {erroresCampos.max_ocupantes}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            Garantías que aceptás
+                        </Text>
+                        {GARANTIAS.map(({ valor, etiqueta }) => {
+                            const seleccionada =
+                                garantiasAceptadas.includes(valor);
+                            return (
+                                <Pressable
+                                    key={valor}
+                                    style={styles.criteriaOption}
+                                    onPress={() =>
+                                        alternarGarantiaAceptada(valor)
+                                    }
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{
+                                        checked: seleccionada,
+                                    }}
+                                    disabled={publicando}
+                                >
+                                    <View
+                                        style={[
+                                            styles.criteriaCheckbox,
+                                            seleccionada &&
+                                                styles.criteriaCheckboxSelected,
+                                        ]}
+                                    >
+                                        {seleccionada ? (
+                                            <Text
+                                                style={styles.criteriaCheckboxMark}
+                                            >
+                                                ✓
+                                            </Text>
+                                        ) : null}
+                                    </View>
+                                    <Text style={styles.criteriaOptionText}>
+                                        {etiqueta}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
                     {/* Imágenes */}
 
                     <Text style={styles.sectionTitle}>
@@ -1419,6 +1546,39 @@ const styles = StyleSheet.create({
 
     preferenceOptionTextSelected: {
         color: theme.colors.primary,
+    },
+
+    criteriaOption: {
+        minHeight: 42,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.sm,
+    },
+
+    criteriaCheckbox: {
+        width: 22,
+        height: 22,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    criteriaCheckboxSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+    },
+
+    criteriaCheckboxMark: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    criteriaOptionText: {
+        color: theme.colors.textDark,
+        fontSize: 14,
     },
 
     availabilityContainer: {

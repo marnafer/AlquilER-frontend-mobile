@@ -29,6 +29,10 @@ import {
     construirUrlImagen,
     extraerItems,
 } from '../utils/formato';
+import {
+    ETIQUETAS_PRECALIFICACION,
+    evaluarPrecalificacion,
+} from '../utils/precalificacion';
 
 const FILTROS = [
     { valor: 'todas', etiqueta: 'Todas' },
@@ -81,6 +85,7 @@ export default function ConsultasScreen() {
                             consulta: c,
                             origen: 'recibida',
                             propiedad: p,
+                            compatibilidad: evaluarPrecalificacion(c, p),
                         }));
                     } catch (_e) {
                         problemas++;
@@ -101,13 +106,40 @@ export default function ConsultasScreen() {
             );
         }
 
+        const ordenCompatibilidad = {
+            coincide: 0,
+            revisar: 1,
+            sin_criterios: 2,
+            sin_datos: 3,
+        };
         setItems(
-            [...recibidas, ...enviadas].sort((a, b) =>
-                String(b.consulta?.fecha_consulta || '')
+            [...recibidas, ...enviadas].sort((a, b) => {
+                if (a.origen !== b.origen) {
+                    return a.origen === 'recibida' ? -1 : 1;
+                }
+
+                if (
+                    a.origen === 'recibida' &&
+                    b.origen === 'recibida' &&
+                    a.compatibilidad?.estado !==
+                        b.compatibilidad?.estado
+                ) {
+                    const prioridadA =
+                        ordenCompatibilidad[
+                            a.compatibilidad?.estado
+                        ] ?? 4;
+                    const prioridadB =
+                        ordenCompatibilidad[
+                            b.compatibilidad?.estado
+                        ] ?? 4;
+                    return prioridadA - prioridadB;
+                }
+
+                return String(b.consulta?.fecha_consulta || '')
                     .localeCompare(
                         String(a.consulta?.fecha_consulta || '')
-                    )
-            )
+                    );
+            })
         );
 
         setLoading(false);
@@ -254,7 +286,7 @@ export default function ConsultasScreen() {
                                         style={styles.item}
                                         onPress={() =>
                                             router.push(
-                                                `/consultas/${c.id}`
+                                                `/consultas/${c.id}?propiedadId=${item.propiedad?.id || ''}&origen=${item.origen}`
                                             )
                                         }
                                         activeOpacity={0.85}
@@ -337,6 +369,35 @@ export default function ConsultasScreen() {
                                                       )}`
                                                     : 'Consulta enviada'}
                                             </Text>
+                                            {item.origen === 'recibida' ? (
+                                                <View
+                                                    style={[
+                                                        styles.compatibilityBadge,
+                                                        item.compatibilidad?.estado ===
+                                                            'coincide' &&
+                                                            styles.compatibilityMatch,
+                                                        item.compatibilidad?.estado ===
+                                                            'revisar' &&
+                                                            styles.compatibilityReview,
+                                                    ]}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.compatibilityText,
+                                                            item.compatibilidad?.estado ===
+                                                                'coincide' &&
+                                                                styles.compatibilityMatchText,
+                                                            item.compatibilidad?.estado ===
+                                                                'revisar' &&
+                                                                styles.compatibilityReviewText,
+                                                        ]}
+                                                    >
+                                                        {ETIQUETAS_PRECALIFICACION[
+                                                            item.compatibilidad?.estado
+                                                        ] || 'Sin datos'}
+                                                    </Text>
+                                                </View>
+                                            ) : null}
                                         </View>
 
                                         <Text
@@ -549,6 +610,41 @@ const styles = StyleSheet.create({
         marginTop: 2,
         color: theme.colors.textMuted,
         fontSize: 12,
+    },
+
+    compatibilityBadge: {
+        alignSelf: 'flex-start',
+        marginTop: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+
+    compatibilityMatch: {
+        backgroundColor: theme.colors.successBg,
+        borderColor: theme.colors.successText,
+    },
+
+    compatibilityReview: {
+        backgroundColor: theme.colors.errorBg,
+        borderColor: theme.colors.errorText,
+    },
+
+    compatibilityText: {
+        color: theme.colors.textMuted,
+        fontSize: 10,
+        fontWeight: '700',
+    },
+
+    compatibilityMatchText: {
+        color: theme.colors.successText,
+    },
+
+    compatibilityReviewText: {
+        color: theme.colors.errorText,
     },
 
     itemArrow: {

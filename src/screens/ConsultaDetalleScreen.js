@@ -22,22 +22,29 @@ import {
 } from 'react-native';
 
 import { useLayout } from '../context/LayoutContext';
-import {
+import api, {
     enviarMensajeConsulta,
     obtenerConsultas,
+    obtenerConsultasByPropiedad,
     obtenerMensajesConsulta,
     obtenerPerfil,
 } from '../services/api';
 import { theme } from '../theme/theme';
 import { extraerItems } from '../utils/formato';
+import {
+    ETIQUETAS_GARANTIAS,
+    ETIQUETAS_PRECALIFICACION,
+    evaluarPrecalificacion,
+} from '../utils/precalificacion';
 
 export default function ConsultaDetalleScreen() {
-    const { id } = useLocalSearchParams();
+    const { id, propiedadId, origen } = useLocalSearchParams();
 
     const router = useRouter();
     const { bottomNavigationHeight } = useLayout();
 
     const [consulta, setConsulta] = useState(null);
+    const [propiedad, setPropiedad] = useState(null);
     const [mensajes, setMensajes] = useState([]);
     const [usuarioId, setUsuarioId] = useState(null);
     const [cargando, setCargando] = useState(true);
@@ -61,13 +68,38 @@ export default function ConsultaDetalleScreen() {
                 setUsuarioId(perfilRes.data?.id ?? null);
             }
 
-            const consultasRes = await obtenerConsultas();
+            let encontrada = null;
+            const idPropiedad = Array.isArray(propiedadId)
+                ? propiedadId[0]
+                : propiedadId;
+            const esRecibida = origen === 'recibida';
 
-            const encontrada = extraerItems(
-                consultasRes
-            ).find(
-                (c) => String(c.id) === String(id)
-            );
+            if (esRecibida && idPropiedad) {
+                const recibidasRes =
+                    await obtenerConsultasByPropiedad(idPropiedad);
+                encontrada = extraerItems(recibidasRes).find(
+                    (c) => String(c.id) === String(id)
+                );
+
+                try {
+                    const propiedadRes = await api.get(
+                        `/propiedades/${idPropiedad}`
+                    );
+                    setPropiedad(propiedadRes.data?.data || null);
+                } catch (errorPropiedad) {
+                    console.error(
+                        'CONSULTA: error al cargar propiedad para precalificación',
+                        errorPropiedad
+                    );
+                }
+            }
+
+            if (!encontrada) {
+                const consultasRes = await obtenerConsultas();
+                encontrada = extraerItems(consultasRes).find(
+                    (c) => String(c.id) === String(id)
+                );
+            }
 
             if (encontrada) {
                 setConsulta(encontrada);
@@ -85,7 +117,7 @@ export default function ConsultaDetalleScreen() {
         } finally {
             setCargando(false);
         }
-    }, [id]);
+    }, [id, origen, propiedadId]);
 
     const responder = async () => {
         const texto = respuesta.trim();
@@ -155,6 +187,22 @@ export default function ConsultaDetalleScreen() {
     };
 
     const titulo = consulta?.propiedad?.titulo || 'Consulta';
+    const perfilInteresado = consulta?.perfil_interesado;
+    const propiedadContexto = propiedad || consulta?.propiedad;
+    const precalificacion = evaluarPrecalificacion(
+        consulta,
+        propiedadContexto
+    );
+    const garantiasInteresado = Array.isArray(perfilInteresado?.garantias)
+        ? perfilInteresado.garantias
+            .map((garantia) => ETIQUETAS_GARANTIAS[garantia] || garantia)
+            .join(', ')
+        : 'No indicó';
+    const interesadoTieneMascotas =
+        perfilInteresado?.tiene_mascotas === true ||
+        perfilInteresado?.tiene_mascotas === 1 ||
+        perfilInteresado?.tiene_mascotas === '1' ||
+        perfilInteresado?.tiene_mascotas === 'true';
 
     return (
         <KeyboardAvoidingView
@@ -215,6 +263,58 @@ export default function ConsultaDetalleScreen() {
                         }}
                         showsVerticalScrollIndicator={false}
                     >
+                        {origen === 'recibida' && perfilInteresado ? (
+                            <View style={styles.profileCard}>
+                                <View style={styles.profileHeader}>
+                                    <Text style={styles.profileTitle}>
+                                        Perfil del interesado
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.profileStatus,
+                                            precalificacion.estado ===
+                                                'coincide' &&
+                                                styles.profileStatusMatch,
+                                            precalificacion.estado ===
+                                                'revisar' &&
+                                                styles.profileStatusReview,
+                                        ]}
+                                    >
+                                        {ETIQUETAS_PRECALIFICACION[
+                                            precalificacion.estado
+                                        ]}
+                                    </Text>
+                                </View>
+                                <Text style={styles.profileDetail}>
+                                    Mudanza: {perfilInteresado.fecha_mudanza || 'No indicó'}
+                                </Text>
+                                <Text style={styles.profileDetail}>
+                                    Ocupantes: {perfilInteresado.cantidad_ocupantes ?? 'No indicó'}
+                                </Text>
+                                <Text style={styles.profileDetail}>
+                                    Mascotas: {interesadoTieneMascotas ? 'Sí' : 'No'}
+                                    {interesadoTieneMascotas
+                                        ? ` (${perfilInteresado.cantidad_mascotas || 0})`
+                                        : ''}
+                                </Text>
+                                <Text style={styles.profileDetail}>
+                                    Garantías: {garantiasInteresado}
+                                </Text>
+                                {precalificacion.motivos.map((motivo) => (
+                                    <Text
+                                        key={motivo}
+                                        style={styles.profileReason}
+                                    >
+                                        • {motivo}
+                                    </Text>
+                                ))}
+                                <Text style={styles.profileNote}>
+                                    La compatibilidad es orientativa y no
+                                    implica un rechazo automático.
+                                </Text>
+                            </View>
+                        ) : null}
+
                         {mensajes.length > 0 ? (
                             mensajes.map((m) => {
                                 const esMio =
@@ -374,6 +474,63 @@ const styles = StyleSheet.create({
 
     thread: {
         flex: 1,
+    },
+
+    profileCard: {
+        marginBottom: theme.spacing.md,
+        padding: theme.spacing.md,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: theme.spacing.xs,
+        marginBottom: theme.spacing.sm,
+    },
+
+    profileTitle: {
+        color: theme.colors.textDark,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+
+    profileStatus: {
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
+    profileStatusMatch: {
+        color: theme.colors.successText,
+    },
+
+    profileStatusReview: {
+        color: theme.colors.errorText,
+    },
+
+    profileDetail: {
+        marginTop: 4,
+        color: theme.colors.textDark,
+        fontSize: 13,
+    },
+
+    profileReason: {
+        marginTop: 5,
+        color: theme.colors.errorText,
+        fontSize: 12,
+    },
+
+    profileNote: {
+        marginTop: theme.spacing.sm,
+        color: theme.colors.textMuted,
+        fontSize: 11,
+        lineHeight: 16,
     },
 
     burbuja: {
