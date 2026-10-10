@@ -28,6 +28,7 @@ import api, {
     obtenerResenasByPropiedad,
 } from '../../services/api';
 import { extraerItems } from '../../utils/formato';
+import { iconoServicio } from '../../utils/servicios';
 
 interface Servicio {
     id: number;
@@ -1015,23 +1016,25 @@ export default function PropiedadDetailScreen() {
 
                 {propiedad.servicios.length >
                 0 ? (
-                    propiedad.servicios.map(
-                        (servicio) => (
-                            <Text
-                                key={
-                                    servicio.id
-                                }
-                                style={
-                                    styles.service
-                                }
+                    <View style={styles.serviceBadges}>
+                        {propiedad.servicios.map((servicio) => (
+                            <View
+                                key={servicio.id}
+                                style={styles.serviceBadge}
+                                accessibilityLabel={servicio.nombre}
                             >
-                                •{' '}
-                                {
-                                    servicio.nombre
-                                }
-                            </Text>
-                        )
-                    )
+                                <Text
+                                    style={styles.serviceIcon}
+                                    accessibilityElementsHidden
+                                >
+                                    {iconoServicio(servicio.nombre)}
+                                </Text>
+                                <Text style={styles.serviceBadgeText}>
+                                    {servicio.nombre}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
                 ) : (
                     <Text
                         style={
@@ -1472,11 +1475,32 @@ const styles = StyleSheet.create({
         color: theme.colors.textMuted,
     },
 
-    service: {
-        marginBottom:
-            theme.spacing.sm,
+    serviceBadges: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.spacing.sm,
+    },
+
+    serviceBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 7,
+        paddingHorizontal: 13,
+        paddingVertical: 7,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    serviceIcon: {
         fontSize: 15,
+    },
+
+    serviceBadgeText: {
         color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '500',
     },
 
     availability: {
