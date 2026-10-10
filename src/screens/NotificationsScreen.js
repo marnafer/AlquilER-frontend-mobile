@@ -33,6 +33,8 @@ const ICONOS_POR_TIPO = {
     mensaje_nuevo: '✉️',
 };
 
+const POR_PAGINA = 8;
+
 export default function NotificationsScreen() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -40,6 +42,7 @@ export default function NotificationsScreen() {
     const [marcandoId, setMarcandoId] = useState(null);
     const [marcandoTodas, setMarcandoTodas] = useState(false);
     const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+    const [pagina, setPagina] = useState(1);
 
     const cargar = useCallback(async () => {
         setLoading(true);
@@ -50,6 +53,7 @@ export default function NotificationsScreen() {
 
         if (res.success) {
             setItems(extraerItems(res));
+            setPagina(1);
         } else {
             setError(
                 res.error ||
@@ -148,6 +152,23 @@ export default function NotificationsScreen() {
     }
 
     const noLeidas = items.filter((n) => !n.leida).length;
+    const totalPaginas = Math.max(1, Math.ceil(items.length / POR_PAGINA));
+    const paginaActual = Math.min(pagina, totalPaginas);
+    const itemsVisibles = items.slice(
+        (paginaActual - 1) * POR_PAGINA,
+        paginaActual * POR_PAGINA
+    );
+    const inicioPaginas = Math.max(
+        1,
+        Math.min(paginaActual - 3, totalPaginas - 6)
+    );
+    const paginasVisibles = Array.from(
+        { length: Math.min(7, totalPaginas) },
+        (_, indice) => inicioPaginas + indice
+    );
+    const irAPagina = (nuevaPagina) => {
+        setPagina(Math.min(Math.max(1, nuevaPagina), totalPaginas));
+    };
 
     return (
         <ScrollView
@@ -228,7 +249,7 @@ export default function NotificationsScreen() {
                     </View>
 
                     <View style={styles.lista}>
-                        {items.map((n) => (
+                        {itemsVisibles.map((n) => (
                             <View
                                 key={n.id}
                                 style={[
@@ -289,6 +310,79 @@ export default function NotificationsScreen() {
                             </View>
                         ))}
                     </View>
+                    {totalPaginas > 1 ? (
+                        <View style={styles.paginacion}>
+                            <TouchableOpacity
+                                accessibilityRole="button"
+                                accessibilityLabel="Página anterior"
+                                disabled={paginaActual === 1}
+                                onPress={() => irAPagina(paginaActual - 1)}
+                                style={[
+                                    styles.botonPagina,
+                                    paginaActual === 1 && styles.botonPaginaDeshabilitado,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.textoBotonPagina,
+                                        paginaActual === 1 && styles.textoPaginaDeshabilitado,
+                                    ]}
+                                >
+                                    Anterior
+                                </Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.numerosPagina}>
+                                {paginasVisibles.map((numero) => {
+                                    const activa = numero === paginaActual;
+                                    return (
+                                        <TouchableOpacity
+                                            key={numero}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Página ${numero}`}
+                                            accessibilityState={{ selected: activa }}
+                                            onPress={() => irAPagina(numero)}
+                                            style={[
+                                                styles.numeroPagina,
+                                                activa && styles.numeroPaginaActivo,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.textoNumeroPagina,
+                                                    activa && styles.textoNumeroPaginaActivo,
+                                                ]}
+                                            >
+                                                {numero}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            <TouchableOpacity
+                                accessibilityRole="button"
+                                accessibilityLabel="Página siguiente"
+                                disabled={paginaActual === totalPaginas}
+                                onPress={() => irAPagina(paginaActual + 1)}
+                                style={[
+                                    styles.botonPagina,
+                                    paginaActual === totalPaginas &&
+                                        styles.botonPaginaDeshabilitado,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.textoBotonPagina,
+                                        paginaActual === totalPaginas &&
+                                            styles.textoPaginaDeshabilitado,
+                                    ]}
+                                >
+                                    Siguiente
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
                 </>
             ) : (
                 <View style={styles.emptyContainer}>
@@ -426,6 +520,73 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         paddingHorizontal: theme.spacing.md,
         gap: theme.spacing.sm,
+    },
+
+    paginacion: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.md,
+    },
+
+    numerosPagina: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 4,
+    },
+
+    botonPagina: {
+        minHeight: 38,
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 9,
+        backgroundColor: theme.colors.background,
+    },
+
+    botonPaginaDeshabilitado: {
+        opacity: 0.45,
+    },
+
+    textoBotonPagina: {
+        color: theme.colors.primary,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    textoPaginaDeshabilitado: {
+        color: theme.colors.textMuted,
+    },
+
+    numeroPagina: {
+        width: 36,
+        height: 38,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 9,
+        backgroundColor: theme.colors.background,
+    },
+
+    numeroPaginaActivo: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+    },
+
+    textoNumeroPagina: {
+        color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    textoNumeroPaginaActivo: {
+        color: theme.colors.white,
     },
 
     item: {
