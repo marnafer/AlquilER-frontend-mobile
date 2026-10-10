@@ -34,6 +34,13 @@ export const extraerItems = (res) => {
     return [];
 };
 
+export const extraerIdsFavoritos = (res) =>
+    extraerItems(res)
+        .map((favorito) =>
+            Number(favorito?.propiedad_id ?? favorito?.propiedad?.id)
+        )
+        .filter((id) => Number.isFinite(id) && id > 0);
+
 // Convierte una ruta de imagen guardada (relativa al backend) en una URL
 // completa usando la baseURL configurada en el cliente HTTP.
 export const construirUrlImagen = (ruta) => {

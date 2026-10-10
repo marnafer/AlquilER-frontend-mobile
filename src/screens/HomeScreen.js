@@ -16,9 +16,13 @@ import FeaturedServicesSection from "../components/FeaturedServicesSection";
 import HelpAndInfoSection from "../components/HelpAndInfoSection";
 import PublicarPropiedadSection from "../components/PublicarPropiedadSection";
 import { useAuth } from "../context/AuthContext";
-import api, { obtenerCantidadNotificacionesNoLeidas } from "../services/api";
+import api, {
+  obtenerCantidadNotificacionesNoLeidas,
+  obtenerFavoritos,
+} from "../services/api";
 import { abrirPropiedad } from "../services/propertyNavigation";
 import { obtenerPropiedadesVistas } from "../services/recentProperties";
+import { extraerIdsFavoritos } from "../utils/formato";
 import { theme } from "../theme/theme";
 
 const colorConOpacidad = (color, opacidad) => {
@@ -158,6 +162,7 @@ export default function HomeScreen() {
   const styles = useMemo(() => crearEstilos(responsive), [responsive]);
 
   const [propiedades, setPropiedades] = useState([]);
+  const [favoritosIds, setFavoritosIds] = useState(() => new Set());
   const [categorias, setCategorias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
 
@@ -188,6 +193,42 @@ export default function HomeScreen() {
 
     setPropiedadesVistas(vistas);
   }, [propiedades]);
+
+  const cargarFavoritos = useCallback(async () => {
+    if (!isAuthenticated) {
+      setFavoritosIds(new Set());
+      return;
+    }
+
+    try {
+      const response = await obtenerFavoritos();
+
+      if (!response?.success) {
+        throw new Error(
+          response?.error || response?.message || "No se pudieron obtener los favoritos",
+        );
+      }
+
+      setFavoritosIds(new Set(extraerIdsFavoritos(response)));
+    } catch (error) {
+      console.error("HOME: error al cargar favoritos", error);
+    }
+  }, [isAuthenticated]);
+
+  const actualizarFavorito = useCallback((propiedadId, esFavorito) => {
+    setFavoritosIds((actuales) => {
+      const nuevos = new Set(actuales);
+      const id = Number(propiedadId);
+
+      if (esFavorito) {
+        nuevos.add(id);
+      } else {
+        nuevos.delete(id);
+      }
+
+      return nuevos;
+    });
+  }, []);
 
   useEffect(() => {
     let activo = true;
@@ -275,6 +316,12 @@ export default function HomeScreen() {
     useCallback(() => {
       cargarNotificacionesNoLeidas();
     }, [cargarNotificacionesNoLeidas]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      cargarFavoritos();
+    }, [cargarFavoritos]),
   );
 
   const toggleCategoria = (id) => {
@@ -590,6 +637,9 @@ export default function HomeScreen() {
                 key={propiedad.id}
                 propiedad={propiedad}
                 onPress={() => handlePropiedadVista(propiedad)}
+                mostrarFavorito
+                esFavoritoInicial={favoritosIds.has(Number(propiedad.id))}
+                onCambioFavorito={actualizarFavorito}
               />
             ))}
           </ScrollView>
@@ -627,6 +677,9 @@ export default function HomeScreen() {
                 key={propiedad.id}
                 propiedad={propiedad}
                 onPress={() => handlePropiedadVista(propiedad)}
+                mostrarFavorito
+                esFavoritoInicial={favoritosIds.has(Number(propiedad.id))}
+                onCambioFavorito={actualizarFavorito}
               />
             ))}
           </ScrollView>

@@ -76,6 +76,22 @@ export default function FavoritesScreen() {
                 onPress={() =>
                     abrirPropiedad(router, propiedad)
                 }
+                mostrarFavorito
+                esFavoritoInicial
+                onCambioFavorito={(
+                    propiedadId: number,
+                    esFavorito: boolean
+                ) => {
+                    if (!esFavorito) {
+                        setFavoritos((actuales) =>
+                            actuales.filter(
+                                (favorito) =>
+                                    Number(favorito?.propiedad?.id) !==
+                                    Number(propiedadId)
+                            )
+                        );
+                    }
+                }}
             />
         );
     };

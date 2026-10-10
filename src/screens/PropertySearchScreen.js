@@ -1,6 +1,7 @@
 import {
     useLocalSearchParams,
     useRouter,
+    useFocusEffect,
 } from 'expo-router';
 
 import {
@@ -17,6 +18,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -24,7 +26,9 @@ import {
 import PropertyAdvancedFilter from '../components/PropertyAdvancedFilter';
 import PropertyCard from '../components/PropertyCard';
 import ScreenHeader from '../components/ScreenHeader';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import api, { obtenerFavoritos } from '../services/api';
+import { extraerIdsFavoritos } from '../utils/formato';
 import { theme } from '../theme/theme';
 
 import { abrirPropiedad } from '../services/propertyNavigation';
@@ -61,6 +65,9 @@ const convertirNumero = (valor) => {
         : 0;
 };
 
+const obtenerNombreProvincia = (provincia) =>
+    String(provincia?.nombre || '').replace(/\s+New$/, '');
+
 const obtenerFechaPublicacion = (propiedad) => {
     const fecha = propiedad?.fecha_publicacion;
 
@@ -96,6 +103,7 @@ const opcionesOrden = [
 
 export default function PropertySearchScreen() {
     const router = useRouter();
+    const { isAuthenticated } = useAuth();
 
     const {
         categoria_id,
@@ -109,7 +117,17 @@ export default function PropertySearchScreen() {
         capacidad,
         acepta_mascotas,
         acepta_hijos,
+        q,
+        provincia_id,
+        pagina: paginaParametro,
     } = useLocalSearchParams();
+    const busquedaInicial = Array.isArray(q) ? q[0] : q;
+    const provinciaInicial = Array.isArray(provincia_id)
+        ? provincia_id[0]
+        : provincia_id;
+    const paginaInicial = Array.isArray(paginaParametro)
+        ? paginaParametro[0]
+        : paginaParametro;
 
     const aceptaMascotasInicial =
         (Array.isArray(acepta_mascotas)
@@ -123,6 +141,9 @@ export default function PropertySearchScreen() {
     const [propiedades, setPropiedades] =
         useState([]);
 
+    const [favoritosIds, setFavoritosIds] =
+        useState(() => new Set());
+
     const [categorias, setCategorias] =
         useState([]);
 
@@ -131,6 +152,23 @@ export default function PropertySearchScreen() {
 
     const [servicios, setServicios] =
         useState([]);
+
+    const [provincias, setProvincias] =
+        useState([]);
+
+    const [busqueda, setBusqueda] =
+        useState(busquedaInicial || '');
+
+    const [provinciaSeleccionada, setProvinciaSeleccionada] =
+        useState(provinciaInicial || '');
+
+    const [provinciasAbierto, setProvinciasAbierto] =
+        useState(false);
+
+    const [pagina, setPagina] = useState(() => {
+        const valor = Number(paginaInicial);
+        return Number.isInteger(valor) && valor > 0 ? valor : 1;
+    });
 
     const [loading, setLoading] =
         useState(true);
@@ -153,6 +191,58 @@ export default function PropertySearchScreen() {
         () =>
             aceptaHijosInicial === '1' ||
             aceptaHijosInicial === 'true'
+    );
+
+    const cargarFavoritos = useCallback(async () => {
+        if (!isAuthenticated) {
+            setFavoritosIds(new Set());
+            return;
+        }
+
+        try {
+            const response = await obtenerFavoritos();
+
+            if (!response?.success) {
+                throw new Error(
+                    response?.error ||
+                        response?.message ||
+                        'No se pudieron obtener los favoritos'
+                );
+            }
+
+            setFavoritosIds(
+                new Set(extraerIdsFavoritos(response))
+            );
+        } catch (error) {
+            console.error(
+                'PROPERTY SEARCH: error al cargar favoritos',
+                error
+            );
+        }
+    }, [isAuthenticated]);
+
+    const actualizarFavorito = useCallback(
+        (propiedadId, esFavorito) => {
+            setFavoritosIds((actuales) => {
+                const nuevos = new Set(actuales);
+                const id = Number(propiedadId);
+
+                if (esFavorito) {
+                    nuevos.add(id);
+                } else {
+                    nuevos.delete(id);
+                }
+
+                return nuevos;
+            });
+        },
+        []
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            cargarFavoritos();
+        }, [cargarFavoritos])
     );
 
     const categoriasIniciales = useMemo(
@@ -225,10 +315,12 @@ export default function PropertySearchScreen() {
             categoriasResponse,
             localidadesResponse,
             serviciosResponse,
+            provinciasResponse,
         ] = await Promise.all([
             api.get('/categorias'),
             api.get('/localidades'),
             api.get('/servicios'),
+            api.get('/provincias'),
         ]);
 
         setCategorias(
@@ -249,6 +341,13 @@ export default function PropertySearchScreen() {
             serviciosResponse.data?.data?.items ||
             serviciosResponse.data?.data ||
             serviciosResponse.data ||
+            []
+        );
+
+        setProvincias(
+            provinciasResponse.data?.data?.items ||
+            provinciasResponse.data?.data ||
+            provinciasResponse.data ||
             []
         );
     }, []);
@@ -407,6 +506,7 @@ export default function PropertySearchScreen() {
     }, [cargarCatalogos, cargarPropiedades, filtrosIniciales]);
 
     const handleBuscar = useCallback(async (filtros) => {
+        setPagina(1);
         await cargarPropiedades({
             ...filtros,
             acepta_mascotas: aceptaMascotas,
@@ -415,9 +515,50 @@ export default function PropertySearchScreen() {
     }, [aceptaMascotas, aceptaHijos, cargarPropiedades]);
 
     const propiedadesOrdenadas = useMemo(() => {
-        const resultado = [
-            ...propiedades,
-        ];
+        const termino = busqueda.trim().toLocaleLowerCase('es');
+        const resultado = propiedades.filter((propiedad) => {
+            const disponible =
+                propiedad.disponible !== false &&
+                propiedad.disponible !== 0 &&
+                propiedad.disponible !== '0';
+
+            if (!disponible) {
+                return false;
+            }
+
+            if (termino) {
+                const coincideTexto = [
+                    propiedad.titulo,
+                    propiedad.direccion,
+                    propiedad.descripcion,
+                ].some((texto) =>
+                    String(texto || '')
+                        .toLocaleLowerCase('es')
+                        .includes(termino)
+                );
+
+                if (!coincideTexto) {
+                    return false;
+                }
+            }
+
+            if (provinciaSeleccionada) {
+                const localidad = localidades.find(
+                    (item) =>
+                        String(item.id) ===
+                        String(propiedad.localidad_id)
+                );
+                const provinciaId =
+                    localidad?.provincia_id ??
+                    propiedad.localidad?.provincia_id;
+
+                if (String(provinciaId) !== String(provinciaSeleccionada)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
 
         resultado.sort((a, b) => {
             switch (orden) {
@@ -467,19 +608,48 @@ export default function PropertySearchScreen() {
         return resultado;
     }, [
         propiedades,
+        busqueda,
+        provinciaSeleccionada,
+        localidades,
         orden,
     ]);
+
+    const propiedadesPorPagina = 9;
+    const totalPaginas = Math.max(
+        1,
+        Math.ceil(propiedadesOrdenadas.length / propiedadesPorPagina)
+    );
+    const paginaActual = Math.min(pagina, totalPaginas);
+    const propiedadesPaginadas = propiedadesOrdenadas.slice(
+        (paginaActual - 1) * propiedadesPorPagina,
+        paginaActual * propiedadesPorPagina
+    );
+    const inicioPaginaVisible = Math.max(
+        1,
+        Math.min(paginaActual - 2, totalPaginas - 4)
+    );
+    const paginasVisibles = Array.from(
+        {
+            length: Math.min(5, totalPaginas),
+        },
+        (_, indice) => inicioPaginaVisible + indice
+    );
 
     const ordenarSeleccion = (
         nuevoOrden
     ) => {
         setOrden(nuevoOrden);
+        setPagina(1);
         setOrdenAbierto(false);
     };
 
     const ordenActual = opcionesOrden.find(
         (opcion) =>
             opcion.valor === orden
+    );
+    const provinciaActual = provincias.find(
+        (provincia) =>
+            String(provincia.id) === String(provinciaSeleccionada)
     );
 
     if (loading) {
@@ -525,6 +695,116 @@ export default function PropertySearchScreen() {
                 />
 
                 <View style={styles.filtersContainer}>
+                    <View style={styles.searchField}>
+                        <Text style={styles.searchFieldLabel}>
+                            Buscar por título o dirección
+                        </Text>
+                        <TextInput
+                            style={styles.searchInput}
+                            value={busqueda}
+                            onChangeText={(valor) => {
+                                setBusqueda(valor);
+                                setPagina(1);
+                            }}
+                            placeholder="Ej.: casa en Crespo"
+                            placeholderTextColor={theme.colors.textMuted}
+                            autoCapitalize="none"
+                            returnKeyType="search"
+                            accessibilityLabel="Buscar propiedades por título o dirección"
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.provinceHeader}
+                        onPress={() =>
+                            setProvinciasAbierto((actual) => !actual)
+                        }
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                    >
+                        <View style={styles.provinceHeaderText}>
+                            <Text style={styles.provinceLabel}>Provincia</Text>
+                            <Text style={styles.provinceSummary}>
+                                {provinciaActual
+                                    ? obtenerNombreProvincia(provinciaActual)
+                                    : 'Todas'}
+                            </Text>
+                        </View>
+                        <Text style={styles.provinceArrow}>
+                            {provinciasAbierto ? '▲' : '▼'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {provinciasAbierto ? (
+                        <View style={styles.provinceOptions}>
+                            <ScrollView
+                                nestedScrollEnabled
+                                style={styles.provinceOptionsScroll}
+                                showsVerticalScrollIndicator
+                            >
+                                <TouchableOpacity
+                                    style={[
+                                        styles.provinceOption,
+                                        !provinciaSeleccionada &&
+                                            styles.provinceOptionSelected,
+                                    ]}
+                                    onPress={() => {
+                                        setProvinciaSeleccionada('');
+                                        setProvinciasAbierto(false);
+                                        setPagina(1);
+                                    }}
+                                    accessibilityRole="button"
+                                >
+                                    <Text
+                                        style={[
+                                            styles.provinceOptionText,
+                                            !provinciaSeleccionada &&
+                                                styles.provinceOptionTextSelected,
+                                        ]}
+                                    >
+                                        Todas las provincias
+                                    </Text>
+                                </TouchableOpacity>
+                                {provincias.map((provincia) => {
+                                    const seleccionada =
+                                        String(provincia.id) ===
+                                        String(provinciaSeleccionada);
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={provincia.id}
+                                            style={[
+                                                styles.provinceOption,
+                                                seleccionada &&
+                                                    styles.provinceOptionSelected,
+                                            ]}
+                                            onPress={() => {
+                                                setProvinciaSeleccionada(
+                                                    String(provincia.id)
+                                                );
+                                                setProvinciasAbierto(false);
+                                                setPagina(1);
+                                            }}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.provinceOptionText,
+                                                    seleccionada &&
+                                                        styles.provinceOptionTextSelected,
+                                                ]}
+                                            >
+                                                {obtenerNombreProvincia(
+                                                    provincia
+                                                )}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+                    ) : null}
+
                     <PropertyAdvancedFilter
                         key={JSON.stringify(filtrosIniciales)}
                         categorias={categorias}
@@ -562,9 +842,10 @@ export default function PropertySearchScreen() {
                     <View style={styles.filtroAdicional}>
                         <TouchableOpacity
                             style={styles.filtroAdicionalItem}
-                            onPress={() =>
+                            onPress={() => {
                                 setAceptaMascotas((actual) => !actual)
-                            }
+                                setPagina(1);
+                            }}
                         >
                             <Text style={styles.filtroAdicionalTexto}>
                                 {aceptaMascotas ? 'Dejá de filtrar mascotas' : 'Filtrar mascotas'}
@@ -572,9 +853,10 @@ export default function PropertySearchScreen() {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.filtroAdicionalItem}
-                            onPress={() =>
+                            onPress={() => {
                                 setAceptaHijos((actual) => !actual)
-                            }
+                                setPagina(1);
+                            }}
                         >
                             <Text style={styles.filtroAdicionalTexto}>
                                 {aceptaHijos ? 'Dejá de filtrar hijos' : 'Filtrar hijos'}
@@ -620,6 +902,9 @@ export default function PropertySearchScreen() {
                                 1
                                     ? 'resultado'
                                     : 'resultados'}
+                            </Text>
+                            <Text style={styles.pageSummary}>
+                                Página {paginaActual} de {totalPaginas}
                             </Text>
                         </View>
 
@@ -728,8 +1013,7 @@ export default function PropertySearchScreen() {
                         </View>
                     </View>
 
-                    {propiedadesOrdenadas.length ===
-                    0 ? (
+                    {propiedadesPaginadas.length === 0 ? (
                         <View
                             style={
                                 styles.emptyContainer
@@ -759,7 +1043,7 @@ export default function PropertySearchScreen() {
                                 styles.propertiesGrid
                             }
                         >
-                            {propiedadesOrdenadas.map(
+                            {propiedadesPaginadas.map(
                                 (propiedad) => (
                                     <PropertyCard
                                         key={
@@ -774,11 +1058,101 @@ export default function PropertySearchScreen() {
                                                 propiedad
                                             )
                                         }
+                                        mostrarFavorito
+                                        esFavoritoInicial={
+                                            favoritosIds.has(
+                                                Number(propiedad.id)
+                                            )
+                                        }
+                                        onCambioFavorito={
+                                            actualizarFavorito
+                                        }
                                     />
                                 )
                             )}
                         </View>
                     )}
+
+                    {totalPaginas > 1 ? (
+                        <View style={styles.pagination}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.pageButton,
+                                    paginaActual === 1 &&
+                                        styles.pageButtonDisabled,
+                                ]}
+                                onPress={() => setPagina(paginaActual - 1)}
+                                disabled={paginaActual === 1}
+                                accessibilityRole="button"
+                                accessibilityLabel="Página anterior"
+                            >
+                                <Text
+                                    style={[
+                                        styles.pageButtonText,
+                                        paginaActual === 1 &&
+                                            styles.pageButtonTextDisabled,
+                                    ]}
+                                >
+                                    ‹ Anterior
+                                </Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.pageNumbers}>
+                                {paginasVisibles.map((numero) => {
+                                    const activa = numero === paginaActual;
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={numero}
+                                            style={[
+                                                styles.pageNumber,
+                                                activa &&
+                                                    styles.pageNumberActive,
+                                            ]}
+                                            onPress={() => setPagina(numero)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Página ${numero}`}
+                                            accessibilityState={{
+                                                selected: activa,
+                                            }}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.pageNumberText,
+                                                    activa &&
+                                                        styles.pageNumberTextActive,
+                                                ]}
+                                            >
+                                                {numero}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.pageButton,
+                                    paginaActual === totalPaginas &&
+                                        styles.pageButtonDisabled,
+                                ]}
+                                onPress={() => setPagina(paginaActual + 1)}
+                                disabled={paginaActual === totalPaginas}
+                                accessibilityRole="button"
+                                accessibilityLabel="Página siguiente"
+                            >
+                                <Text
+                                    style={[
+                                        styles.pageButtonText,
+                                        paginaActual === totalPaginas &&
+                                            styles.pageButtonTextDisabled,
+                                    ]}
+                                >
+                                    Siguiente ›
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -818,6 +1192,99 @@ const styles = StyleSheet.create({
         marginTop: theme.spacing.md,
         marginHorizontal:
             theme.spacing.md,
+    },
+
+    searchField: {
+        marginBottom: theme.spacing.sm,
+    },
+
+    searchFieldLabel: {
+        marginBottom: theme.spacing.xs,
+        color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    searchInput: {
+        minHeight: 48,
+        paddingHorizontal: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.white,
+        color: theme.colors.textDark,
+        fontSize: 14,
+    },
+
+    provinceHeader: {
+        minHeight: 54,
+        marginBottom: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    provinceHeaderText: {
+        flex: 1,
+    },
+
+    provinceLabel: {
+        color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    provinceSummary: {
+        marginTop: 2,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+    },
+
+    provinceArrow: {
+        marginLeft: theme.spacing.md,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+    },
+
+    provinceOptions: {
+        marginBottom: theme.spacing.sm,
+        padding: theme.spacing.xs,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.white,
+    },
+
+    provinceOptionsScroll: {
+        maxHeight: 180,
+    },
+
+    provinceOption: {
+        minHeight: 42,
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: 8,
+    },
+
+    provinceOptionSelected: {
+        backgroundColor: theme.colors.primary,
+    },
+
+    provinceOptionText: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+    },
+
+    provinceOptionTextSelected: {
+        color: theme.colors.white,
+        fontWeight: '600',
     },
 
     errorBox: {
@@ -862,6 +1329,12 @@ const styles = StyleSheet.create({
         marginTop: 2,
         color: theme.colors.textMuted,
         fontSize: 13,
+    },
+
+    pageSummary: {
+        marginTop: theme.spacing.xs,
+        color: theme.colors.textMuted,
+        fontSize: 12,
     },
 
     sortContainer: {
@@ -945,6 +1418,71 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: theme.spacing.md,
         rowGap: theme.spacing.md,
+    },
+
+    pagination: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: theme.spacing.lg,
+        marginHorizontal: theme.spacing.md,
+        gap: theme.spacing.xs,
+    },
+
+    pageButton: {
+        minHeight: 40,
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+        borderRadius: 9,
+        backgroundColor: theme.colors.white,
+    },
+
+    pageButtonDisabled: {
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.neutralBg,
+    },
+
+    pageButtonText: {
+        color: theme.colors.primary,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
+    pageButtonTextDisabled: {
+        color: theme.colors.disabled,
+    },
+
+    pageNumbers: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: theme.spacing.xs,
+    },
+
+    pageNumber: {
+        width: 34,
+        height: 38,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 9,
+        backgroundColor: theme.colors.neutralBg,
+    },
+
+    pageNumberActive: {
+        backgroundColor: theme.colors.primary,
+    },
+
+    pageNumberText: {
+        color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    pageNumberTextActive: {
+        color: theme.colors.white,
+        fontWeight: '700',
     },
 
     propertyRow: {

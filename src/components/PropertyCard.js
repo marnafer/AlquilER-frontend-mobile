@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     Image,
     StyleSheet,
     Text,
@@ -6,8 +7,13 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
+import { useState } from 'react';
 
-import api from '../services/api';
+import api, {
+    agregarFavorito,
+    eliminarFavorito,
+} from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/theme';
 
 const estaAceptado = (valor) =>
@@ -20,8 +26,50 @@ const PropertyCard = ({
     propiedad,
     onPress,
     compacto = false,
+    mostrarFavorito = false,
+    esFavoritoInicial = false,
+    onCambioFavorito,
 }) => {
     const { width } = useWindowDimensions();
+    const { isAuthenticated } = useAuth();
+    const [guardandoFavorito, setGuardandoFavorito] = useState(false);
+    const [errorFavorito, setErrorFavorito] = useState('');
+    const esFavorito = esFavoritoInicial;
+
+    const cambiarFavorito = async () => {
+        if (guardandoFavorito) {
+            return;
+        }
+
+        setGuardandoFavorito(true);
+        setErrorFavorito('');
+
+        try {
+            const respuesta = esFavorito
+                ? await eliminarFavorito(propiedad.id)
+                : await agregarFavorito(propiedad.id);
+
+            if (!respuesta?.success) {
+                setErrorFavorito(
+                    respuesta?.error ||
+                        respuesta?.message ||
+                        'No se pudo actualizar el favorito.'
+                );
+                return;
+            }
+
+            const nuevoEstado = !esFavorito;
+            onCambioFavorito?.(propiedad.id, nuevoEstado);
+        } catch (error) {
+            console.error(
+                'PROPERTY CARD: error al actualizar favorito',
+                error
+            );
+            setErrorFavorito('No se pudo actualizar el favorito.');
+        } finally {
+            setGuardandoFavorito(false);
+        }
+    };
 
     const anchoDisponible =
     width - theme.spacing.md * 2;
@@ -63,21 +111,24 @@ const PropertyCard = ({
     const aceptaHijos = estaAceptado(propiedad.acepta_hijos);
 
     return (
-        <TouchableOpacity
+        <View
             style={[
-                    styles.card,
-                    {
-                        width: anchoCard,
-                        ...(alturaCard !== undefined && {
-                            height: alturaCard,
-                        }),
-                    },
-                    compacto &&
-                        styles.cardCompacta,
-                ]}
-            onPress={onPress}
-            activeOpacity={0.9}
+                styles.card,
+                {
+                    width: anchoCard,
+                    ...(alturaCard !== undefined && {
+                        height: alturaCard,
+                    }),
+                },
+                compacto && styles.cardCompacta,
+            ]}
         >
+            <TouchableOpacity
+                style={styles.cardContent}
+                onPress={onPress}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+            >
            <View
                 style={[
                     styles.imageContainer,
@@ -251,7 +302,54 @@ const PropertyCard = ({
                     </View>
                 </View>
             </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+
+            {mostrarFavorito && isAuthenticated ? (
+                <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={cambiarFavorito}
+                    disabled={guardandoFavorito}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                        esFavorito
+                            ? 'Quitar de favoritos'
+                            : 'Agregar a favoritos'
+                    }
+                    accessibilityState={{
+                        disabled: guardandoFavorito,
+                        selected: esFavorito,
+                    }}
+                >
+                    {guardandoFavorito ? (
+                        <ActivityIndicator
+                            size="small"
+                            color={theme.colors.primary}
+                        />
+                    ) : (
+                        <Text
+                            style={[
+                                styles.favoriteIcon,
+                                esFavorito && styles.favoriteIconActive,
+                            ]}
+                        >
+                            {esFavorito ? '♥' : '♡'}
+                        </Text>
+                    )}
+                </TouchableOpacity>
+            ) : null}
+
+            {errorFavorito ? (
+                <View
+                    style={styles.favoriteError}
+                    accessibilityLiveRegion="polite"
+                >
+                    <Text style={styles.favoriteErrorText} numberOfLines={2}>
+                        {errorFavorito}
+                    </Text>
+                </View>
+            ) : null}
+        </View>
     );
 };
 
@@ -264,6 +362,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor:
             theme.colors.border,
+    },
+
+    cardContent: {
+        flex: 1,
     },
 
     cardCompacta: {
@@ -416,6 +518,54 @@ const styles = StyleSheet.create({
 
     policyTextCompacto: {
         fontSize: 10,
+    },
+
+    favoriteButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        width: 42,
+        height: 42,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 21,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        elevation: 3,
+        shadowColor: '#000000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+    },
+
+    favoriteIcon: {
+        color: theme.colors.textMuted,
+        fontSize: 29,
+        lineHeight: 34,
+    },
+
+    favoriteIconActive: {
+        color: theme.colors.errorText,
+    },
+
+    favoriteError: {
+        position: 'absolute',
+        top: 58,
+        right: 8,
+        maxWidth: '75%',
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderRadius: 8,
+        backgroundColor: theme.colors.errorBg,
+    },
+
+    favoriteErrorText: {
+        color: theme.colors.errorText,
+        fontSize: 10,
+        fontWeight: '600',
+        textAlign: 'center',
     },
 });
 
