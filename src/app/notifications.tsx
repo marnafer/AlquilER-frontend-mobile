@@ -102,7 +102,7 @@ export default function NotificacionesScreen() {
 
       if (!response?.success) {
         throw new Error(
-          response?.message || "No se pudieron obtener las notificaciones",
+          response?.error || response?.message || "No se pudieron obtener las notificaciones",
         );
       }
 
@@ -140,7 +140,7 @@ export default function NotificacionesScreen() {
 
       if (!response?.success) {
         throw new Error(
-          response?.message || "No se pudieron marcar las notificaciones",
+          response?.error || response?.message || "No se pudieron marcar las notificaciones",
         );
       }
 

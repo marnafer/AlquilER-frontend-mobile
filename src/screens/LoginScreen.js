@@ -78,6 +78,7 @@ export default function LoginScreen() {
                 }, 2000);
             } else {
                 setError(
+                    result.error ||
                     result.message ||
                     'Correo o contraseña incorrectos'
                 );

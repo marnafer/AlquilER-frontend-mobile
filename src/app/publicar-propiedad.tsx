@@ -89,6 +89,8 @@ export default function PublicarPropiedad() {
     const [capacidad, setCapacidad] = useState('');
 
     const [disponible, setDisponible] = useState(true);
+    const [aceptaMascotas, setAceptaMascotas] = useState(false);
+    const [aceptaHijos, setAceptaHijos] = useState(false);
 
     const [categoriaId, setCategoriaId] = useState<string | null>(null);
     const [localidadId, setLocalidadId] = useState<string | null>(null);
@@ -502,6 +504,8 @@ export default function PublicarPropiedad() {
                 capacidad: capacidadLimpia
                     ? Number(capacidadLimpia)
                     : null,
+                acepta_mascotas: Number(aceptaMascotas),
+                acepta_hijos: Number(aceptaHijos),
                 disponible,
                 categoria_id: Number(categoriaId),
                 localidad_id: Number(localidadId),
@@ -559,19 +563,11 @@ export default function PublicarPropiedad() {
             }, 2000);
 
         } catch (error: any) {
-            console.log(
+            console.error(
                 'ERROR PUBLICAR:',
-                error
-            );
-
-            console.log(
-                'STATUS:',
-                error?.response?.status
-            );
-
-            console.log(
-                'DATA:',
-                error?.response?.data
+                error,
+                error?.response?.status,
+                error?.response?.data,
             );
 
             const validationErrors =
@@ -1018,6 +1014,80 @@ export default function PublicarPropiedad() {
                         disabled={loadingCatalogos}
                     />
 
+                    <Text style={styles.sectionTitle}>
+                        Preferencias
+                    </Text>
+
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            ¿Acepta mascotas?
+                        </Text>
+                        <View style={styles.preferenceOptions}>
+                            {[true, false].map((acepta) => (
+                                <Pressable
+                                    key={String(acepta)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{
+                                        selected: aceptaMascotas === acepta,
+                                    }}
+                                    style={[
+                                        styles.preferenceOption,
+                                        aceptaMascotas === acepta &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setAceptaMascotas(acepta)
+                                    }
+                                    disabled={publicando}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.preferenceOptionText,
+                                            aceptaMascotas === acepta &&
+                                                styles.preferenceOptionTextSelected,
+                                        ]}
+                                    >
+                                        {acepta ? 'Sí' : 'No'}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            ¿Acepta hijos?
+                        </Text>
+                        <View style={styles.preferenceOptions}>
+                            {[true, false].map((acepta) => (
+                                <Pressable
+                                    key={String(acepta)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{
+                                        selected: aceptaHijos === acepta,
+                                    }}
+                                    style={[
+                                        styles.preferenceOption,
+                                        aceptaHijos === acepta &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() => setAceptaHijos(acepta)}
+                                    disabled={publicando}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.preferenceOptionText,
+                                            aceptaHijos === acepta &&
+                                                styles.preferenceOptionTextSelected,
+                                        ]}
+                                    >
+                                        {acepta ? 'Sí' : 'No'}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+
                     {/* Imágenes */}
 
                     <Text style={styles.sectionTitle}>
@@ -1309,6 +1379,41 @@ const styles = StyleSheet.create({
 
     halfField: {
         flex: 1,
+    },
+
+    preferenceGroup: {
+        marginBottom: theme.spacing.md,
+    },
+
+    preferenceOptions: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+    },
+
+    preferenceOption: {
+        flex: 1,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 10,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    preferenceOptionSelected: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primaryBg,
+    },
+
+    preferenceOptionText: {
+        color: theme.colors.textMuted,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
+    preferenceOptionTextSelected: {
+        color: theme.colors.primary,
     },
 
     availabilityContainer: {

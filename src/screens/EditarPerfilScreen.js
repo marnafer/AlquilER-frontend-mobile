@@ -61,6 +61,7 @@ export default function EditarPerfilScreen() {
                 setDomicilio(response.data.domicilio || '');
             } else {
                 setError(
+                    response?.error ||
                     response?.message ||
                         'No se pudo cargar tu perfil'
                 );
@@ -125,6 +126,7 @@ export default function EditarPerfilScreen() {
             }, 1600);
         } else {
             setError(
+                result.error ||
                 result.message ||
                     'No se pudo guardar los cambios.'
             );

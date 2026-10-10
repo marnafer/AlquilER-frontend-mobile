@@ -52,6 +52,7 @@ export default function NotificationsScreen() {
             setItems(extraerItems(res));
         } else {
             setError(
+                res.error ||
                 res.message ||
                     'No se pudieron cargar las notificaciones.'
             );
@@ -81,6 +82,7 @@ export default function NotificationsScreen() {
             setMensaje({
                 tipo: 'error',
                 texto:
+                    res.error ||
                     res.message ||
                     'No se pudo marcar como leída',
             });
@@ -107,6 +109,7 @@ export default function NotificationsScreen() {
             setMensaje({
                 tipo: 'error',
                 texto:
+                    res.error ||
                     res.message ||
                     'No se pudieron marcar como leídas',
             });

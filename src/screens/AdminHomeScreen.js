@@ -56,6 +56,7 @@ export default function AdminHomeScreen() {
             setAutorizado(false);
 
             setError(
+                res.error ||
                 res.message ||
                     'No se pudo verificar tu acceso al panel.'
             );

@@ -92,6 +92,7 @@ export default function RestablecerContrasenaScreen() {
             }, 1800);
         } else {
             setError(
+                result.error ||
                 result.message ||
                     'No se pudo restablecer la contraseña.'
             );

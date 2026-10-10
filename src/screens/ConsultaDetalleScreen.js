@@ -122,6 +122,7 @@ export default function ConsultaDetalleScreen() {
                 setMensajes(extraerItems(mensajesRes));
             } else {
                 setErrorRespuesta(
+                    result.error ||
                     result.message ||
                     'No se pudo enviar el mensaje.'
                 );

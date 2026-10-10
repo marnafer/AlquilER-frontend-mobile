@@ -10,7 +10,9 @@ export async function estaAutenticado() {
 }
 
 const api = create({
-  baseURL: "http://192.168.1.38:8000/api",
+  baseURL:
+    process.env.EXPO_PUBLIC_API_URL ||
+    "http://192.168.1.38:8000/api",
 });
 
 // Handler global para cuando la sesión expira (refresh token inválido).
@@ -146,17 +148,11 @@ export async function register(userData) {
 
 export async function login(userData) {
   try {
-    console.log("📤 LOGIN - enviando:", userData);
-
     const response = await api.post("/autenticador/login", userData);
-
-    console.log("📥 LOGIN - status:", response.status);
-    console.log("📥 LOGIN - respuesta:", response.data);
 
     return response.data;
   } catch (error) {
     console.error("❌ LOGIN - error:", error);
-    console.error("❌ LOGIN - mensaje:", error.message);
     console.error("❌ LOGIN - respuesta backend:", error.response?.data);
 
     return (
@@ -184,21 +180,12 @@ export async function obtenerFavoritos() {
 
 export async function agregarFavorito(propiedadId) {
   try {
-    console.log("FAVORITO propiedadId:", propiedadId);
-
     const response = await api.post("/favoritos", {
       propiedad_id: propiedadId,
     });
 
-    console.log("FAVORITO status:", response.status);
-    console.log("FAVORITO response:", response.data);
-
     return response.data;
   } catch (error) {
-    console.log("FAVORITO error status:", error.response?.status);
-
-    console.log("FAVORITO error data:", error.response?.data);
-
     return (
       error.response?.data || {
         success: false,

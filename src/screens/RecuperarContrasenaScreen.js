@@ -64,6 +64,7 @@ export default function RecuperarContrasenaScreen() {
             );
         } else {
             setError(
+                result.error ||
                 result.message ||
                     'No se pudo procesar la solicitud.'
             );

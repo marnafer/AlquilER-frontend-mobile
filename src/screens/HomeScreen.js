@@ -917,7 +917,7 @@ const crearEstilos = (responsive) => {
     dropdownArrow: {
       marginLeft: 12,
       fontSize: 12,
-      color: theme.colors.text,
+      color: theme.colors.textMuted,
     },
 
     dropdownContent: {

@@ -397,6 +397,7 @@ export default function AdminCrudScreen() {
 
             if (!resultado?.success) {
                 setErrorForm(
+                    resultado?.error ||
                     resultado?.message ||
                         'No se pudieron guardar los cambios.'
                 );
@@ -444,6 +445,7 @@ export default function AdminCrudScreen() {
             setMensaje('Elemento movido a la papelera.');
         } else {
             setMensaje(
+                resultado?.error ||
                 resultado?.message ||
                     'No se pudo eliminar.'
             );
@@ -462,6 +464,7 @@ export default function AdminCrudScreen() {
             setMensaje('Elemento restaurado.');
         } else {
             setMensaje(
+                resultado?.error ||
                 resultado?.message ||
                     'No se pudo restaurar.'
             );
@@ -478,6 +481,7 @@ export default function AdminCrudScreen() {
 
         if (!resultado?.success) {
             setMensaje(
+                resultado?.error ||
                 resultado?.message ||
                     'No se pudo ejecutar la acción.'
             );

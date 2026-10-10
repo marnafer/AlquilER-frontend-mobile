@@ -96,8 +96,8 @@ export default function MyPropertiesScreen() {
             );
         } else {
             setMensaje(
+                result.error ||
                 result.message ||
-                    result.error ||
                     'No se pudo eliminar la propiedad'
             );
         }

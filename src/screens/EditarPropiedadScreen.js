@@ -46,6 +46,12 @@ const esEnteroNoNegativo = (valor) =>
     Number.isInteger(Number(valor)) &&
     Number(valor) >= 0;
 
+const esAceptado = (valor) =>
+    valor === true ||
+    valor === 1 ||
+    valor === '1' ||
+    valor === 'true';
+
 export default function EditarPropiedadScreen() {
     const { id } = useLocalSearchParams();
 
@@ -152,10 +158,10 @@ export default function EditarPropiedadScreen() {
                     Boolean(propiedad.disponible)
                 );
                 setAceptaMascotas(
-                    Boolean(propiedad.acepta_mascotas)
+                    esAceptado(propiedad.acepta_mascotas)
                 );
                 setAceptaHijos(
-                    Boolean(propiedad.acepta_hijos)
+                    esAceptado(propiedad.acepta_hijos)
                 );
                 setCategoriaId(
                     propiedad.categoria_id != null
@@ -311,6 +317,7 @@ export default function EditarPropiedadScreen() {
 
         if (!result.success) {
             setError(
+                result.error ||
                 result.message ||
                     'No se pudo guardar los cambios.'
             );
@@ -697,53 +704,76 @@ export default function EditarPropiedadScreen() {
                         Preferencias
                     </View>
 
-                    <View style={styles.togglesRow}>
-                        <TouchableOpacity
-                            style={[
-                                styles.toggleChip,
-                                aceptaMascotas &&
-                                    styles.toggleChipActivo,
-                            ]}
-                            onPress={() =>
-                                setAceptaMascotas(
-                                    !aceptaMascotas
-                                )
-                            }
-                            activeOpacity={0.85}
-                        >
-                            <Text
-                                style={[
-                                    styles.toggleChipText,
-                                    aceptaMascotas &&
-                                        styles.toggleChipTextActivo,
-                                ]}
-                            >
-                                {aceptaMascotas ? '🏠✓' : '🏠'} Acepta
-                                mascotas
-                            </Text>
-                        </TouchableOpacity>
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            ¿Acepta mascotas?
+                        </Text>
+                        <View style={styles.preferenceOptions}>
+                            {[true, false].map((acepta) => (
+                                <TouchableOpacity
+                                    key={String(acepta)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{
+                                        selected: aceptaMascotas === acepta,
+                                    }}
+                                    style={[
+                                        styles.preferenceOption,
+                                        aceptaMascotas === acepta &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setAceptaMascotas(acepta)
+                                    }
+                                    activeOpacity={0.85}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.preferenceOptionText,
+                                            aceptaMascotas === acepta &&
+                                                styles.preferenceOptionTextSelected,
+                                        ]}
+                                    >
+                                        {acepta ? 'Sí' : 'No'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
 
-                        <TouchableOpacity
-                            style={[
-                                styles.toggleChip,
-                                aceptaHijos &&
-                                    styles.toggleChipActivo,
-                            ]}
-                            onPress={() =>
-                                setAceptaHijos(!aceptaHijos)
-                            }
-                            activeOpacity={0.85}
-                        >
-                            <Text
-                                style={[
-                                    styles.toggleChipText,
-                                    aceptaHijos &&
-                                        styles.toggleChipTextActivo,
-                                ]}
-                            >
-                                {aceptaHijos ? '✓' : ''} Acepta hijos
-                            </Text>
-                        </TouchableOpacity>
+                    <View style={styles.preferenceGroup}>
+                        <Text style={styles.label}>
+                            ¿Acepta hijos?
+                        </Text>
+                        <View style={styles.preferenceOptions}>
+                            {[true, false].map((acepta) => (
+                                <TouchableOpacity
+                                    key={String(acepta)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{
+                                        selected: aceptaHijos === acepta,
+                                    }}
+                                    style={[
+                                        styles.preferenceOption,
+                                        aceptaHijos === acepta &&
+                                            styles.preferenceOptionSelected,
+                                    ]}
+                                    onPress={() =>
+                                        setAceptaHijos(acepta)
+                                    }
+                                    activeOpacity={0.85}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.preferenceOptionText,
+                                            aceptaHijos === acepta &&
+                                                styles.preferenceOptionTextSelected,
+                                        ]}
+                                    >
+                                        {acepta ? 'Sí' : 'No'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
 
                     <View style={styles.availabilityContainer}>
@@ -927,36 +957,38 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    togglesRow: {
-        flexDirection: 'row',
-        gap: theme.spacing.sm,
+    preferenceGroup: {
         marginBottom: theme.spacing.md,
     },
 
-    toggleChip: {
+    preferenceOptions: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+    },
+
+    preferenceOption: {
         flex: 1,
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: 12,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: 10,
         borderWidth: 1,
         borderColor: theme.colors.border,
         backgroundColor: theme.colors.inputBg,
-        alignItems: 'center',
     },
 
-    toggleChipActivo: {
+    preferenceOptionSelected: {
         borderColor: theme.colors.primary,
         backgroundColor: theme.colors.primaryBg,
     },
 
-    toggleChipText: {
-        fontSize: 13,
+    preferenceOptionText: {
+        fontSize: 14,
         fontWeight: '600',
         color: theme.colors.textMuted,
-        textAlign: 'center',
     },
 
-    toggleChipTextActivo: {
+    preferenceOptionTextSelected: {
         color: theme.colors.primary,
     },
 

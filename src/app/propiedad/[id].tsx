@@ -81,6 +81,8 @@ interface Propiedad {
     cantidad_dormitorios: number;
     cantidad_banos: number;
     capacidad: number | null;
+    acepta_mascotas: boolean | number | string;
+    acepta_hijos: boolean | number | string;
     disponible: boolean;
     destacada: boolean;
     categoria_id: number;
@@ -95,6 +97,12 @@ interface Propiedad {
 }
 
 const Divisor = () => <View style={styles.divider} />;
+
+const esAceptado = (valor: boolean | number | string) =>
+    valor === true ||
+    valor === 1 ||
+    valor === '1' ||
+    valor === 'true';
 
 export default function PropiedadDetailScreen() {
     const { id } =
@@ -210,6 +218,7 @@ export default function PropiedadDetailScreen() {
             setEsFavorito(!nuevoEstado);
 
             setMensajeFavorito(
+                response?.error ||
                 response?.message ||
                 'No se pudo actualizar el favorito'
             );
@@ -719,6 +728,52 @@ export default function PropiedadDetailScreen() {
                         </Text>
                     )}
                 </View>
+
+                <View style={styles.policies}>
+                    <View
+                        style={[
+                            styles.policyBadge,
+                            esAceptado(propiedad.acepta_mascotas)
+                                ? styles.policyAccepted
+                                : styles.policyRejected,
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.policyText,
+                                esAceptado(propiedad.acepta_mascotas)
+                                    ? styles.policyTextAccepted
+                                    : styles.policyTextRejected,
+                            ]}
+                        >
+                            {esAceptado(propiedad.acepta_mascotas)
+                                ? 'Se aceptan mascotas'
+                                : 'No se aceptan mascotas'}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={[
+                            styles.policyBadge,
+                            esAceptado(propiedad.acepta_hijos)
+                                ? styles.policyAccepted
+                                : styles.policyRejected,
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.policyText,
+                                esAceptado(propiedad.acepta_hijos)
+                                    ? styles.policyTextAccepted
+                                    : styles.policyTextRejected,
+                            ]}
+                        >
+                            {esAceptado(propiedad.acepta_hijos)
+                                ? 'Se aceptan niños'
+                                : 'No se aceptan niños'}
+                        </Text>
+                    </View>
+                </View>
             </View>
 
             <Divisor />
@@ -1032,6 +1087,40 @@ const styles = StyleSheet.create({
     feature: {
         fontSize: 15,
         color: theme.colors.textDark,
+    },
+
+    policies: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.md,
+    },
+
+    policyBadge: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 7,
+        borderRadius: 999,
+    },
+
+    policyAccepted: {
+        backgroundColor: theme.colors.successBg,
+    },
+
+    policyRejected: {
+        backgroundColor: theme.colors.errorBg,
+    },
+
+    policyText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    policyTextAccepted: {
+        color: theme.colors.successText,
+    },
+
+    policyTextRejected: {
+        color: theme.colors.errorText,
     },
 
     text: {

@@ -39,7 +39,8 @@ export default function FavoritesScreen() {
 
             if (!response?.success) {
                 throw new Error(
-                    response?.message ||
+                    response?.error ||
+                        response?.message ||
                         'No se pudieron obtener los favoritos'
                 );
             }

@@ -43,6 +43,7 @@ export default function ProfileScreen() {
                 setUsuario(null);
 
                 setError(
+                    response?.error ||
                     response?.message ||
                     'No se pudo cargar tu perfil'
                 );

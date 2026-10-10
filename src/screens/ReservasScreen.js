@@ -225,6 +225,7 @@ export default function ReservasScreen() {
             setMensaje({
                 tipo: 'error',
                 texto:
+                    result?.error ||
                     result?.message ||
                     'No se pudo actualizar la reserva.',
             });
@@ -316,6 +317,7 @@ export default function ReservasScreen() {
                 await cargarDatos();
             } else {
                 setErrorResena(
+                    result.error ||
                     result.message ||
                     'No se pudo publicar la reseña.'
                 );

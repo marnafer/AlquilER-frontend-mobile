@@ -285,6 +285,7 @@ export default function NuevaReservaScreen() {
                 }
 
                 setError(
+                    result?.error ||
                     result?.message ||
                         'No se pudo crear la reserva. Revisá los datos e intentá nuevamente.'
                 );

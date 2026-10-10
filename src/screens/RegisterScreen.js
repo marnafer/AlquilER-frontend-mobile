@@ -107,6 +107,7 @@ export default function RegisterScreen() {
             } else {
                 setError(
                     primerErrorValidacion(result) ||
+                    result.error ||
                     result.message ||
                     'Error al registrarse'
                 );

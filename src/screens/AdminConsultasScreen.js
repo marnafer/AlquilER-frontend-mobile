@@ -123,6 +123,7 @@ export default function AdminConsultasScreen() {
 
                 if (res?.success === false) {
                     setError(
+                        res.error ||
                         res.message ||
                             'No se pudieron cargar las consultas.'
                     );
@@ -213,6 +214,7 @@ export default function AdminConsultasScreen() {
             setMensajes(extraerItems(res));
         } else {
             setErrorRespuesta(
+                resultado?.error ||
                 resultado?.message ||
                     'No se pudo enviar el mensaje.'
             );
@@ -248,6 +250,7 @@ export default function AdminConsultasScreen() {
                 : {
                       tipo: 'error',
                       texto:
+                          resultado?.error ||
                           resultado?.message ||
                           'No se pudo eliminar la consulta.',
                   }
@@ -271,6 +274,7 @@ export default function AdminConsultasScreen() {
                 : {
                       tipo: 'error',
                       texto:
+                          resultado?.error ||
                           resultado?.message ||
                           'No se pudo restaurar la consulta.',
                   }

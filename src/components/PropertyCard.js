@@ -10,6 +10,12 @@ import {
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
+const estaAceptado = (valor) =>
+    valor === true ||
+    valor === 1 ||
+    valor === '1' ||
+    valor === 'true';
+
 const PropertyCard = ({
     propiedad,
     onPress,
@@ -29,7 +35,7 @@ const PropertyCard = ({
 
     const alturaCard = compacto
         ? undefined
-        : anchoGrid / 1.5 + 165;
+        : anchoGrid / 1.5 + 210;
 
     const construirUrlImagen = (ruta) => {
         if (!ruta) {
@@ -53,14 +59,8 @@ const PropertyCard = ({
         propiedad.imagen_url
     );
 
-    console.log(
-        'PROPERTY CARD:',
-        propiedad.id,
-        'imagen_url:',
-        propiedad.imagen_url,
-        'URL final:',
-        imagenUrl
-    );
+    const aceptaMascotas = estaAceptado(propiedad.acepta_mascotas);
+    const aceptaHijos = estaAceptado(propiedad.acepta_hijos);
 
     return (
         <TouchableOpacity
@@ -188,32 +188,67 @@ const PropertyCard = ({
                             0}
                     </Text>
 
-<Text
-                    style={[
-                        styles.feature,
-                        compacto &&
-                            styles.featureCompacto,
-                    ]}
->
+                    <Text
+                        style={[
+                            styles.feature,
+                            compacto &&
+                                styles.featureCompacto,
+                        ]}
+                    >
                         👥{' '}
                         {propiedad.capacidad || 0}
                     </Text>
+                </View>
 
-                    {propiedad.acepta_mascotas && (
+                <View
+                    style={[
+                        styles.policies,
+                        compacto && styles.policiesCompactas,
+                    ]}
+                >
+                    <View
+                        style={[
+                            styles.policyBadge,
+                            aceptaMascotas
+                                ? styles.policyAccepted
+                                : styles.policyRejected,
+                        ]}
+                    >
                         <Text
-                            style={styles.feature}
+                            style={[
+                                styles.policyText,
+                                aceptaMascotas
+                                    ? styles.policyTextAccepted
+                                    : styles.policyTextRejected,
+                                compacto && styles.policyTextCompacto,
+                            ]}
+                            numberOfLines={1}
                         >
-                            🏠✓ Acepta mascotas
+                            🐾 Mascotas: {aceptaMascotas ? 'Sí' : 'No'}
                         </Text>
-                    )}
+                    </View>
 
-                    {propiedad.acepta_hijos && (
+                    <View
+                        style={[
+                            styles.policyBadge,
+                            aceptaHijos
+                                ? styles.policyAccepted
+                                : styles.policyRejected,
+                        ]}
+                    >
                         <Text
-                            style={styles.feature}
+                            style={[
+                                styles.policyText,
+                                aceptaHijos
+                                    ? styles.policyTextAccepted
+                                    : styles.policyTextRejected,
+                                compacto && styles.policyTextCompacto,
+                            ]}
+                            numberOfLines={1}
                         >
-                            ✓ Acepta hijos
+                            👶 Hijos: {aceptaHijos ? 'Sí' : 'No'}
                         </Text>
-                    )}
+                    </View>
                 </View>
             </View>
         </TouchableOpacity>
@@ -263,7 +298,7 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 13,
         fontWeight: '600',
-        color: theme.colors.textSecondary,
+        color: theme.colors.textMuted,
         textAlign: 'center',
     },
 
@@ -295,7 +330,7 @@ const styles = StyleSheet.create({
 
     location: {
         fontSize: 13,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
         marginBottom: 8,
     },
 
@@ -323,7 +358,7 @@ const styles = StyleSheet.create({
 
     feature: {
         fontSize: 12,
-        color: theme.colors.text,
+        color: theme.colors.textMuted,
     },
 
     featuresCompactas: {
@@ -337,6 +372,50 @@ const styles = StyleSheet.create({
         fontSize: 10,
         lineHeight: 18,
         flexShrink: 1,
+    },
+
+    policies: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginTop: 8,
+    },
+
+    policiesCompactas: {
+        gap: 5,
+        marginTop: 7,
+    },
+
+    policyBadge: {
+        maxWidth: '100%',
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderRadius: 999,
+    },
+
+    policyAccepted: {
+        backgroundColor: theme.colors.successBg,
+    },
+
+    policyRejected: {
+        backgroundColor: theme.colors.errorBg,
+    },
+
+    policyText: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+
+    policyTextAccepted: {
+        color: theme.colors.successText,
+    },
+
+    policyTextRejected: {
+        color: theme.colors.errorText,
+    },
+
+    policyTextCompacto: {
+        fontSize: 10,
     },
 });
 

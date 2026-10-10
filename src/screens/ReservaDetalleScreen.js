@@ -77,6 +77,7 @@ export default function ReservaDetalleScreen() {
                 setMensaje({
                     tipo: 'error',
                     texto:
+                        res.error ||
                         res.message ||
                         'No se pudo cargar la reserva.',
                 });
@@ -120,6 +121,7 @@ export default function ReservaDetalleScreen() {
                 setMensaje({
                     tipo: 'error',
                     texto:
+                        result?.error ||
                         result?.message ||
                         'No se pudo actualizar la reserva.',
                 });

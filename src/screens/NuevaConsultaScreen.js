@@ -111,6 +111,7 @@ export default function NuevaConsultaScreen() {
                 }, 1800);
             } else {
                 setError(
+                    result.error ||
                     result.message ||
                     'No se pudo enviar la consulta.'
                 );
