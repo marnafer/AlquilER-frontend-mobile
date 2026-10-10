@@ -35,6 +35,12 @@ export default function EditarPerfilScreen() {
     const [erroresCampos, setErroresCampos] = useState({});
     const [guardando, setGuardando] = useState(false);
     const [exito, setExito] = useState('');
+    const [contrasenaNueva, setContrasenaNueva] = useState('');
+    const [repetirContrasena, setRepetirContrasena] = useState('');
+    const [erroresContrasena, setErroresContrasena] = useState({});
+    const [errorContrasena, setErrorContrasena] = useState('');
+    const [exitoContrasena, setExitoContrasena] = useState('');
+    const [guardandoContrasena, setGuardandoContrasena] = useState(false);
 
     const [usuario, setUsuario] = useState(null);
 
@@ -149,6 +155,72 @@ export default function EditarPerfilScreen() {
         }
 
         setGuardando(false);
+    };
+
+    const cambiarContrasena = async () => {
+        const errores = {};
+
+        if (!contrasenaNueva) {
+            errores.nueva = 'Ingresá la nueva contraseña.';
+        } else if (contrasenaNueva.length < 8) {
+            errores.nueva =
+                'La contraseña debe tener al menos 8 caracteres.';
+        }
+
+        if (repetirContrasena !== contrasenaNueva) {
+            errores.repetir = 'Las contraseñas no coinciden.';
+        }
+
+        setErroresContrasena(errores);
+        setErrorContrasena('');
+        setExitoContrasena('');
+
+        if (Object.keys(errores).length > 0) {
+            return;
+        }
+
+        setGuardandoContrasena(true);
+
+        try {
+            const result = await actualizarPerfil(usuario.id, {
+                contrasena: contrasenaNueva,
+            });
+
+            if (!result?.success) {
+                setErrorContrasena(
+                    result?.error ||
+                        result?.message ||
+                        'No se pudo cambiar la contraseña.'
+                );
+
+                if (result?.validation_errors) {
+                    setErroresContrasena((actuales) => ({
+                        ...actuales,
+                        ...result.validation_errors,
+                    }));
+                }
+
+                return;
+            }
+
+            setContrasenaNueva('');
+            setRepetirContrasena('');
+            setErroresContrasena({});
+            setExitoContrasena(
+                result.message ||
+                    'Contraseña cambiada correctamente.'
+            );
+        } catch (err) {
+            console.error(
+                'EDIT PROFILE: error al cambiar contraseña',
+                err
+            );
+            setErrorContrasena(
+                'No se pudo cambiar la contraseña. Intentá nuevamente.'
+            );
+        } finally {
+            setGuardandoContrasena(false);
+        }
     };
 
     if (loading) {
@@ -333,6 +405,91 @@ export default function EditarPerfilScreen() {
                         </Text>
                     </TouchableOpacity>
                 </View>
+
+                <View style={[styles.card, styles.passwordCard]}>
+                    <Text style={styles.sectionTitle}>
+                        Cambiar contraseña
+                    </Text>
+                    <Text style={styles.passwordHelp}>
+                        Definí una nueva contraseña de al menos 8
+                        caracteres.
+                    </Text>
+
+                    {errorContrasena ? (
+                        <View style={styles.errorBox}>
+                            <Text style={styles.errorText}>
+                                {errorContrasena}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    {exitoContrasena ? (
+                        <View style={styles.successBox}>
+                            <Text style={styles.successText}>
+                                ✓ {exitoContrasena}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Nueva contraseña
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Mínimo 8 caracteres"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={contrasenaNueva}
+                            onChangeText={setContrasenaNueva}
+                            secureTextEntry
+                            autoCapitalize="none"
+                            textContentType="newPassword"
+                        />
+                        {erroresContrasena.nueva ? (
+                            <Text style={styles.fieldError}>
+                                {erroresContrasena.nueva}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>
+                            Repetir contraseña
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Repetí la nueva contraseña"
+                            placeholderTextColor={theme.colors.textMuted}
+                            value={repetirContrasena}
+                            onChangeText={setRepetirContrasena}
+                            secureTextEntry
+                            autoCapitalize="none"
+                            textContentType="newPassword"
+                        />
+                        {erroresContrasena.repetir ? (
+                            <Text style={styles.fieldError}>
+                                {erroresContrasena.repetir}
+                            </Text>
+                        ) : null}
+                    </View>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.saveButton,
+                            guardandoContrasena &&
+                                styles.saveButtonDisabled,
+                        ]}
+                        onPress={cambiarContrasena}
+                        disabled={guardandoContrasena}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.saveButtonText}>
+                            {guardandoContrasena
+                                ? 'Actualizando...'
+                                : 'Actualizar contraseña'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -369,6 +526,24 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.inputBg,
         borderWidth: 1,
         borderColor: theme.colors.border,
+    },
+
+    passwordCard: {
+        marginTop: theme.spacing.lg,
+    },
+
+    sectionTitle: {
+        marginBottom: theme.spacing.xs,
+        color: theme.colors.textDark,
+        fontSize: 18,
+        fontWeight: '700',
+    },
+
+    passwordHelp: {
+        marginBottom: theme.spacing.md,
+        color: theme.colors.textMuted,
+        fontSize: 13,
+        lineHeight: 19,
     },
 
     field: {
