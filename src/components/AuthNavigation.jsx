@@ -21,6 +21,7 @@ export default function AuthNavigation() {
             '/register',
             '/ayuda',
             '/contacto',
+            '/explore',
             '/preguntas-frecuentes',
             '/privacidad',
             '/servicios',

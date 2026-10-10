@@ -19,6 +19,11 @@ const opcionesAutenticado = [
     etiqueta: 'Inicio',
   },
   {
+    ruta: '/explore',
+    icono: '⌕',
+    etiqueta: 'Explorar',
+  },
+  {
     ruta: '/notifications',
     icono: '♧',
     etiqueta: 'Notificaciones',
@@ -35,6 +40,11 @@ const opcionesNoAutenticado = [
     ruta: '/home',
     icono: '⌂',
     etiqueta: 'Inicio',
+  },
+  {
+    ruta: '/explore',
+    icono: '⌕',
+    etiqueta: 'Explorar',
   },
   {
     ruta: '/register',
@@ -86,7 +96,10 @@ export default function AppTabs() {
       >
       <View style={styles.bar}>
         {opciones.map((opcion) => {
-          const activo = pathname === opcion.ruta;
+          const activo =
+            pathname === opcion.ruta ||
+            (opcion.ruta === '/explore' &&
+              pathname.startsWith('/propiedades'));
 
           return (
             <TouchableOpacity
