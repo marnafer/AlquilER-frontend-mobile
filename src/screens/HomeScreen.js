@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import PropertyCard from "../components/PropertyCard";
+import FeaturedServicesSection from "../components/FeaturedServicesSection";
 import HelpAndInfoSection from "../components/HelpAndInfoSection";
 import PublicarPropiedadSection from "../components/PublicarPropiedadSection";
 import { useAuth } from "../context/AuthContext";
@@ -580,6 +581,7 @@ export default function HomeScreen() {
         )}
       </View>
 
+      <FeaturedServicesSection />
       <PublicarPropiedadSection />
       <HelpAndInfoSection />
     </ScrollView>

@@ -17,7 +17,14 @@ export default function AuthNavigation() {
         const rutasPublicas = [
             '/home',
             '/login',
+            '/propiedades',
             '/register',
+            '/ayuda',
+            '/contacto',
+            '/preguntas-frecuentes',
+            '/privacidad',
+            '/servicios',
+            '/terminos',
         ];
 
         if (

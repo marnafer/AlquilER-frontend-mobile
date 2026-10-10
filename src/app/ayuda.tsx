@@ -24,6 +24,12 @@ const opciones = [
         descripcion: 'Encontrá respuestas sobre alquileres y reservas.',
     },
     {
+        ruta: '/servicios',
+        icono: '🔧',
+        titulo: 'Catálogo de servicios',
+        descripcion: 'Conocé las comodidades que ofrecen las propiedades.',
+    },
+    {
         ruta: '/terminos',
         icono: '📄',
         titulo: 'Términos y condiciones',
