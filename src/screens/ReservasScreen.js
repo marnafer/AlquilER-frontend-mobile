@@ -255,7 +255,7 @@ export default function ReservasScreen() {
     };
 
     const tipoResena = (reserva) =>
-        reserva.origen === 'propia'
+        reserva?.origen === 'propia'
             ? 'propiedad'
             : 'inquilino';
 
@@ -303,6 +303,13 @@ export default function ReservasScreen() {
             const result = await crearResena(payload);
 
             if (result.success) {
+                setMisResenasHechas((actuales) => [
+                    ...actuales,
+                    {
+                        reserva_id: Number(resenaActiva.id),
+                        tipo: tipoResena(resenaActiva),
+                    },
+                ]);
                 setResenaActiva(null);
                 setCalificacion(0);
                 setComentario('');
@@ -313,11 +320,19 @@ export default function ReservasScreen() {
                         result.message ||
                         '¡Reseña publicada correctamente!',
                 });
-
-                await cargarDatos();
             } else {
+                const erroresServidor = Object.values(
+                    result.validation_errors || {}
+                )
+                    .flatMap((mensajes) =>
+                        Array.isArray(mensajes) ? mensajes : [mensajes]
+                    )
+                    .filter(Boolean)
+                    .join('\n');
+
                 setErrorResena(
                     result.error ||
+                    erroresServidor ||
                     result.message ||
                     'No se pudo publicar la reseña.'
                 );
@@ -904,6 +919,7 @@ export default function ReservasScreen() {
                 </View>
             )}
 
+            {resenaActiva ? (
             <Modal
                 visible={!!resenaActiva}
                 transparent
@@ -1012,6 +1028,7 @@ export default function ReservasScreen() {
                     </View>
                 </View>
             </Modal>
+            ) : null}
         </ScrollView>
     );
 }
