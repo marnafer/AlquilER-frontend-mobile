@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     ActivityIndicator,
@@ -130,6 +130,7 @@ export default function PropiedadDetailScreen() {
 
     const [error, setError] =
         useState('');
+    const solicitudPropiedad = useRef(0);
 
     const [mensajeFavorito, setMensajeFavorito] = useState('');
 
@@ -299,45 +300,58 @@ export default function PropiedadDetailScreen() {
     }, [propiedadId]);
 
 
-    useEffect(() => {
-        const cargarPropiedad = async () => {
-            if (!id) {
-                setError(
-                    'No se indicó una propiedad.'
-                );
+    const cargarPropiedad = useCallback(async () => {
+        const solicitudActual = ++solicitudPropiedad.current;
 
-                setCargando(false);
+        setCargando(true);
+        setError('');
 
+        if (!id) {
+            setPropiedad(null);
+            setError('No se indicó una propiedad.');
+            setCargando(false);
+            return;
+        }
+
+        try {
+            const response = await api.get(`/propiedades/${id}`);
+            const propiedadCargada = response.data?.data;
+
+            if (!propiedadCargada || solicitudActual !== solicitudPropiedad.current) {
+                if (solicitudActual === solicitudPropiedad.current) {
+                    setPropiedad(null);
+                    setError('No se encontró la propiedad solicitada.');
+                }
                 return;
             }
 
-            try {
-                setCargando(true);
-                setError('');
+            setPropiedad(propiedadCargada);
+        } catch (error) {
+            console.error('❌ ERROR CARGANDO PROPIEDAD:', error);
 
-                const response = await api.get(
-                    `/propiedades/${id}`
-                );
-
-                setPropiedad(
-                    response.data.data
-                );
-            } catch (error) {
-                console.error(
-                    '❌ ERROR CARGANDO PROPIEDAD:',
-                    error
-                );
-
+            if (solicitudActual === solicitudPropiedad.current) {
+                setPropiedad(null);
                 setError(
                     'No se pudo cargar la información de la propiedad.'
                 );
-            } finally {
+            }
+        } finally {
+            if (solicitudActual === solicitudPropiedad.current) {
                 setCargando(false);
             }
+        }
+    }, [id]);
+
+    useEffect(() => {
+        const cargarDetalle = async () => {
+            await cargarPropiedad();
         };
 
-        cargarPropiedad();
-    }, [id]);
+        void cargarDetalle();
+        return () => {
+            solicitudPropiedad.current += 1;
+        };
+    }, [cargarPropiedad]);
 
     const cargarResenas = useCallback(async () => {
         if (!id) return;
@@ -574,6 +588,26 @@ export default function PropiedadDetailScreen() {
                     {error ||
                         'Propiedad no encontrada.'}
                 </Text>
+                <View style={styles.errorActions}>
+                    <TouchableOpacity
+                        accessibilityRole="button"
+                        onPress={cargarPropiedad}
+                        style={styles.errorRetryButton}
+                    >
+                        <Text style={styles.errorRetryText}>
+                            Reintentar
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        accessibilityRole="button"
+                        onPress={() => router.push('/propiedades')}
+                        style={styles.errorCatalogButton}
+                    >
+                        <Text style={styles.errorCatalogText}>
+                            Volver al catálogo
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
@@ -1294,6 +1328,45 @@ const styles = StyleSheet.create({
         color: theme.colors.textDark,
         fontSize: 16,
         textAlign: 'center',
+    },
+
+    errorActions: {
+        width: '100%',
+        maxWidth: 320,
+        gap: theme.spacing.sm,
+        marginTop: theme.spacing.lg,
+    },
+
+    errorRetryButton: {
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: 10,
+        backgroundColor: theme.colors.primary,
+    },
+
+    errorRetryText: {
+        color: theme.colors.white,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+
+    errorCatalogButton: {
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+        borderRadius: 10,
+        backgroundColor: theme.colors.background,
+    },
+
+    errorCatalogText: {
+        color: theme.colors.primary,
+        fontSize: 15,
+        fontWeight: '700',
     },
 
     header: {
