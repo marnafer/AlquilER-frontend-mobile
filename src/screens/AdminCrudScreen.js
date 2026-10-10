@@ -11,7 +11,9 @@ import {
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
+    Modal,
     Platform,
+    Share,
     ScrollView,
     StyleSheet,
     Text,
@@ -59,6 +61,14 @@ export default function AdminCrudScreen() {
     const [papelera, setPapelera] = useState(false);
     const [buscando, setBuscando] = useState('');
     const [filtros, setFiltros] = useState({});
+    const [ordenKey, setOrdenKey] = useState('');
+    const [ordenDireccion, setOrdenDireccion] = useState('asc');
+    const [pagina, setPagina] = useState(1);
+    const [detalleItem, setDetalleItem] = useState(null);
+    const [detalleDatos, setDetalleDatos] = useState(null);
+    const [cargandoDetalle, setCargandoDetalle] = useState(false);
+    const [errorDetalle, setErrorDetalle] = useState('');
+    const [exportando, setExportando] = useState(false);
 
     const [externos, setExternos] = useState({});
 
@@ -426,6 +436,99 @@ export default function AdminCrudScreen() {
         }
 
         return true;
+    };
+
+    const abrirDetalle = async (item) => {
+        if (!config?.detalle) return;
+
+        setDetalleItem(item);
+        setDetalleDatos(null);
+        setErrorDetalle('');
+        setCargandoDetalle(true);
+
+        try {
+            const datos = await config.detalle.cargar(item, externos);
+            if (datos === null || datos === undefined) {
+                throw new Error('El detalle no contiene datos.');
+            }
+            setDetalleDatos(datos);
+        } catch (err) {
+            console.error('ADMIN CRUD: error al cargar detalle', err);
+            setErrorDetalle(
+                err?.message || 'No se pudo cargar el detalle.'
+            );
+        } finally {
+            setCargandoDetalle(false);
+        }
+    };
+
+    const obtenerValorColumna = (item, columna) => {
+        const valor = columna.render
+            ? columna.render(item, externos)
+            : item[columna.key];
+
+        if (
+            valor === null ||
+            valor === undefined ||
+            typeof valor === 'object'
+        ) {
+            return item[columna.key] ?? '';
+        }
+
+        return valor;
+    };
+
+    const exportarCsv = async () => {
+        if (exportando) return;
+
+        setExportando(true);
+        setError('');
+        try {
+            const escaparCsv = (valor) =>
+                `"${String(valor ?? '').replace(/"/g, '""')}"`;
+            const filas = [
+                config.columnas.map((columna) =>
+                    escaparCsv(columna.label)
+                ),
+                ...itemsOrdenados.map((item) =>
+                    config.columnas.map((columna) =>
+                        escaparCsv(obtenerValorColumna(item, columna))
+                    )
+                ),
+            ];
+            const contenido = `\uFEFF${filas
+                .map((fila) => fila.join(';'))
+                .join('\r\n')}`;
+            const nombre = `${config.csvNombre || config.clave || 'datos'}.csv`;
+
+            if (Platform.OS === 'web') {
+                const blob = new Blob([contenido], {
+                    type: 'text/csv;charset=utf-8;',
+                });
+                const url = URL.createObjectURL(blob);
+                const enlace = document.createElement('a');
+                enlace.href = url;
+                enlace.download = nombre;
+                document.body.appendChild(enlace);
+                enlace.click();
+                enlace.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 0);
+            } else {
+                const resultado = await Share.share({
+                    title: `Exportar ${config.titulo}`,
+                    message: contenido,
+                });
+                if (resultado.action !== Share.sharedAction) return;
+            }
+            setMensaje('Exportación preparada correctamente.');
+        } catch (err) {
+            console.error('ADMIN CRUD: error al exportar CSV', err);
+            setError(
+                err?.message || 'No se pudo exportar el archivo CSV.'
+            );
+        } finally {
+            setExportando(false);
+        }
     };
 
     const eliminar = async (item) => {
@@ -811,6 +914,51 @@ export default function AdminCrudScreen() {
               )
             : items;
 
+    const itemsOrdenados = ordenKey
+        ? [...itemsFiltrados].sort((a, b) => {
+              const columna = config.columnas.find(
+                  (item) => item.key === ordenKey
+              );
+              const valorA = obtenerValorColumna(a, columna);
+              const valorB = obtenerValorColumna(b, columna);
+              const numeroA = Number(valorA);
+              const numeroB = Number(valorB);
+              const ambosNumericos =
+                  String(valorA).trim() !== '' &&
+                  String(valorB).trim() !== '' &&
+                  Number.isFinite(numeroA) &&
+                  Number.isFinite(numeroB);
+              const comparacion = ambosNumericos
+                  ? numeroA - numeroB
+                  : String(valorA ?? '').localeCompare(
+                        String(valorB ?? ''),
+                        'es',
+                        { sensitivity: 'base', numeric: true }
+                    );
+              return ordenDireccion === 'asc'
+                  ? comparacion
+                  : -comparacion;
+          })
+        : itemsFiltrados;
+    const filasPorPagina = 10;
+    const totalPaginas = Math.max(
+        1,
+        Math.ceil(itemsOrdenados.length / filasPorPagina)
+    );
+    const paginaActual = Math.min(pagina, totalPaginas);
+    const itemsPaginados = itemsOrdenados.slice(
+        (paginaActual - 1) * filasPorPagina,
+        paginaActual * filasPorPagina
+    );
+    const inicioPaginas = Math.max(
+        1,
+        Math.min(paginaActual - 3, totalPaginas - 6)
+    );
+    const paginasVisibles = Array.from(
+        { length: Math.min(7, totalPaginas) },
+        (_, indice) => inicioPaginas + indice
+    );
+
     const otrasColumnas = config.columnas.filter(
         (col) =>
             col.key !== config.principal && col.key !== 'id'
@@ -835,9 +983,10 @@ export default function AdminCrudScreen() {
                             papelera &&
                                 styles.toolbarButtonActivo,
                         ]}
-                        onPress={() =>
+                        onPress={() => {
+                            setPagina(1);
                             setPapelera((v) => !v)
-                        }
+                        }}
                         activeOpacity={0.85}
                     >
                         <Text
@@ -863,6 +1012,17 @@ export default function AdminCrudScreen() {
                         </Text>
                     </TouchableOpacity>
                 ) : null}
+
+                <TouchableOpacity
+                    style={styles.toolbarButton}
+                    onPress={exportarCsv}
+                    disabled={exportando || loading}
+                    activeOpacity={0.85}
+                >
+                    <Text style={styles.toolbarButtonText}>
+                        {exportando ? 'Preparando...' : 'Exportar CSV'}
+                    </Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.searchWrap}>
@@ -873,8 +1033,61 @@ export default function AdminCrudScreen() {
                         theme.colors.textMuted
                     }
                     value={buscando}
-                    onChangeText={setBuscando}
+                    onChangeText={(texto) => {
+                        setBuscando(texto);
+                        setPagina(1);
+                    }}
                 />
+            </View>
+
+            <View style={styles.sortWrap}>
+                <Text style={styles.filtroLabel}>Ordenar por</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.sortOptions}
+                >
+                    {config.columnas.map((columna) => {
+                        const activa = ordenKey === columna.key;
+                        return (
+                            <TouchableOpacity
+                                key={columna.key}
+                                style={[
+                                    styles.chip,
+                                    activa && styles.chipActivo,
+                                ]}
+                                onPress={() => {
+                                    if (activa) {
+                                        setOrdenDireccion((direccion) =>
+                                            direccion === 'asc'
+                                                ? 'desc'
+                                                : 'asc'
+                                        );
+                                    } else {
+                                        setOrdenKey(columna.key);
+                                        setOrdenDireccion('asc');
+                                    }
+                                    setPagina(1);
+                                }}
+                                activeOpacity={0.85}
+                            >
+                                <Text
+                                    style={[
+                                        styles.chipText,
+                                        activa && styles.chipTextActivo,
+                                    ]}
+                                >
+                                    {columna.label}
+                                    {activa
+                                        ? ordenDireccion === 'asc'
+                                            ? ' ↑'
+                                            : ' ↓'
+                                        : ''}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
             </View>
 
             {config.filtros ? (
@@ -899,7 +1112,8 @@ export default function AdminCrudScreen() {
                                                 ] &&
                                                     styles.chipActivo,
                                             ]}
-                                            onPress={() =>
+                                            onPress={() => {
+                                                setPagina(1);
                                                 setFiltros(
                                                     (prev) => ({
                                                         ...prev,
@@ -907,7 +1121,7 @@ export default function AdminCrudScreen() {
                                                             '',
                                                     })
                                                 )
-                                            }
+                                            }}
                                             activeOpacity={0.85}
                                         >
                                             <Text
@@ -949,7 +1163,8 @@ export default function AdminCrudScreen() {
                                                             activo &&
                                                                 styles.chipActivo,
                                                         ]}
-                                                        onPress={() =>
+                                                        onPress={() => {
+                                                            setPagina(1);
                                                             setFiltros(
                                                                 (
                                                                     prev
@@ -959,7 +1174,7 @@ export default function AdminCrudScreen() {
                                                                         opc.id,
                                                                 })
                                                             )
-                                                        }
+                                                        }}
                                                         activeOpacity={
                                                             0.85
                                                         }
@@ -1004,12 +1219,13 @@ export default function AdminCrudScreen() {
                                             filtro.parametro
                                         ] ?? ''
                                     }
-                                    onChangeText={(t) =>
+                                    onChangeText={(t) => {
+                                        setPagina(1);
                                         setFiltros((prev) => ({
                                             ...prev,
                                             [filtro.parametro]: t,
-                                        }))
-                                    }
+                                        }));
+                                    }}
                                 />
                             </View>
                         );
@@ -1054,9 +1270,9 @@ export default function AdminCrudScreen() {
                         Cargando {config.titulo.toLowerCase()}...
                     </Text>
                 </View>
-            ) : itemsFiltrados.length > 0 ? (
+            ) : itemsPaginados.length > 0 ? (
                 <View style={styles.lista}>
-                    {itemsFiltrados.map((item) => {
+                    {itemsPaginados.map((item) => {
                         const procesando =
                             procesandoId === String(item.id);
 
@@ -1143,6 +1359,20 @@ export default function AdminCrudScreen() {
                                     })}
 
                                 <View style={styles.cardAcciones}>
+                                    {config.detalle ? (
+                                        <TouchableOpacity
+                                            style={styles.actionSmall}
+                                            onPress={() => abrirDetalle(item)}
+                                            activeOpacity={0.85}
+                                        >
+                                            <Text
+                                                style={styles.actionSmallText}
+                                            >
+                                                Ver detalle
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ) : null}
+
                                     {!config.soloLectura &&
                                     config.actualizar ? (
                                         <TouchableOpacity
@@ -1290,6 +1520,126 @@ export default function AdminCrudScreen() {
                     </Text>
                 </View>
             )}
+
+            {!loading && itemsOrdenados.length > 0 ? (
+                <View style={styles.pagination}>
+                    <TouchableOpacity
+                        style={[
+                            styles.toolbarButton,
+                            paginaActual <= 1 && styles.disabledButton,
+                        ]}
+                        onPress={() =>
+                            setPagina((actual) => Math.max(1, actual - 1))
+                        }
+                        disabled={paginaActual <= 1}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.toolbarButtonText}>Anterior</Text>
+                    </TouchableOpacity>
+                    {paginasVisibles.map((numero) => (
+                        <TouchableOpacity
+                            key={numero}
+                            style={[
+                                styles.pageButton,
+                                paginaActual === numero &&
+                                    styles.pageButtonActive,
+                            ]}
+                            onPress={() => setPagina(numero)}
+                            activeOpacity={0.85}
+                        >
+                            <Text
+                                style={[
+                                    styles.pageButtonText,
+                                    paginaActual === numero &&
+                                        styles.pageButtonTextActive,
+                                ]}
+                            >
+                                {numero}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                        style={[
+                            styles.toolbarButton,
+                            paginaActual >= totalPaginas &&
+                                styles.disabledButton,
+                        ]}
+                        onPress={() =>
+                            setPagina((actual) =>
+                                Math.min(totalPaginas, actual + 1)
+                            )
+                        }
+                        disabled={paginaActual >= totalPaginas}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.toolbarButtonText}>
+                            Siguiente
+                        </Text>
+                    </TouchableOpacity>
+                    <Text style={styles.paginationSummary}>
+                        Página {paginaActual} de {totalPaginas}
+                    </Text>
+                </View>
+            ) : null}
+
+            <Modal
+                visible={Boolean(detalleItem && config.detalle)}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDetalleItem(null)}
+            >
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.detailModal}>
+                        <Text style={styles.detailTitle}>
+                            {typeof config.detalle?.titulo === 'function'
+                                ? config.detalle.titulo(detalleItem)
+                                : config.detalle?.titulo || 'Detalle'}
+                        </Text>
+                        <ScrollView
+                            style={styles.detailContent}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {cargandoDetalle ? (
+                                <ActivityIndicator
+                                    size="large"
+                                    color={theme.colors.primary}
+                                />
+                            ) : errorDetalle ? (
+                                <Text style={styles.errorText}>
+                                    {errorDetalle}
+                                </Text>
+                            ) : detalleDatos ? (
+                                (config.detalle?.filas || []).map((fila) => (
+                                    <View
+                                        key={fila.label}
+                                        style={styles.detailRow}
+                                    >
+                                        <Text style={styles.detailLabel}>
+                                            {fila.label}
+                                        </Text>
+                                        <Text style={styles.detailValue}>
+                                            {textoValor(
+                                                fila.valor(detalleDatos)
+                                            )}
+                                        </Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <Text style={styles.errorText}>
+                                    No se recibieron datos para mostrar.
+                                </Text>
+                            )}
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={styles.detailCloseButton}
+                            onPress={() => setDetalleItem(null)}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.detailCloseText}>Cerrar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -1420,6 +1770,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
     },
 
+    sortWrap: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        gap: theme.spacing.sm,
+    },
+
+    sortOptions: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+    },
+
     searchInput: {
         minHeight: 46,
         borderWidth: 1,
@@ -1521,6 +1882,112 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: theme.spacing.sm,
+    },
+
+    pagination: {
+        marginTop: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: theme.spacing.sm,
+    },
+
+    pageButton: {
+        minWidth: 38,
+        minHeight: 38,
+        paddingHorizontal: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 8,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    pageButtonActive: {
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+    },
+
+    pageButtonText: {
+        color: theme.colors.textDark,
+        fontWeight: '600',
+    },
+
+    pageButtonTextActive: {
+        color: theme.colors.white,
+    },
+
+    paginationSummary: {
+        width: '100%',
+        color: theme.colors.textMuted,
+        textAlign: 'center',
+        fontSize: 12,
+    },
+
+    disabledButton: {
+        opacity: 0.45,
+    },
+
+    modalBackdrop: {
+        flex: 1,
+        padding: theme.spacing.md,
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    },
+
+    detailModal: {
+        width: '100%',
+        maxHeight: '85%',
+        padding: theme.spacing.lg,
+        borderRadius: 16,
+        backgroundColor: theme.colors.background,
+    },
+
+    detailTitle: {
+        color: theme.colors.textDark,
+        fontSize: 19,
+        fontWeight: '700',
+        marginBottom: theme.spacing.md,
+    },
+
+    detailContent: {
+        flexGrow: 0,
+    },
+
+    detailRow: {
+        paddingVertical: theme.spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+
+    detailLabel: {
+        marginBottom: 4,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+
+    detailValue: {
+        color: theme.colors.textDark,
+        fontSize: 14,
+    },
+
+    detailCloseButton: {
+        marginTop: theme.spacing.md,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 10,
+        backgroundColor: theme.colors.primary,
+    },
+
+    detailCloseText: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
     },
 
     actionSmall: {

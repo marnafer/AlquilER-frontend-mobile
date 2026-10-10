@@ -453,6 +453,21 @@ export async function obtenerReserva(id) {
   }
 }
 
+export async function obtenerUsuario(id) {
+  try {
+    const response = await api.get(`/usuarios/${id}`);
+
+    return response.data;
+  } catch (error) {
+    return (
+      error.response?.data || {
+        success: false,
+        message: "Error de conexión",
+      }
+    );
+  }
+}
+
 export async function crearReserva(data) {
   try {
     const response = await api.post("/reservas", data);

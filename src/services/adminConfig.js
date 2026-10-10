@@ -5,7 +5,10 @@ import {
     crearRecurso,
     eliminarRecurso,
     finalizarReserva,
+    obtenerReserva,
     obtenerRecurso,
+    obtenerResenasByUsuario,
+    obtenerUsuario,
     obtenerReservas,
     rechazarReserva,
     restaurarRecurso,
@@ -156,6 +159,66 @@ const configUsuarios = {
     eliminar: (id) => eliminarRecurso('/usuarios', id),
     restaurar: (id) => restaurarRecurso('/usuarios', id),
     externos: [{ clave: 'roles', cargar: () => obtenerRecurso('/roles') }],
+    detalle: {
+        titulo: (item) =>
+            `Perfil de ${item.nombre || ''} ${item.apellido || ''}`.trim(),
+        cargar: async (item) => {
+            const [usuario, resenas, favoritos] = await Promise.all([
+                obtenerUsuario(item.id),
+                obtenerResenasByUsuario(item.id),
+                obtenerRecurso(`/usuarios/${item.id}/favoritos`),
+            ]);
+
+            if (!usuario?.success) {
+                throw new Error(
+                    usuario?.error ||
+                        usuario?.message ||
+                        'No se pudo cargar el perfil.'
+                );
+            }
+
+            if (!resenas?.success || !favoritos?.success) {
+                throw new Error(
+                    resenas?.error ||
+                        resenas?.message ||
+                        favoritos?.error ||
+                        favoritos?.message ||
+                        'No se pudieron cargar las estadísticas del usuario.'
+                );
+            }
+
+            return {
+                usuario: usuario.data,
+                resenas: resenas.data,
+                favoritos: extraer(favoritos),
+            };
+        },
+        filas: [
+            { label: 'Email', valor: (data) => data.usuario?.email || '—' },
+            {
+                label: 'Teléfono',
+                valor: (data) => data.usuario?.telefono || '—',
+            },
+            {
+                label: 'Domicilio',
+                valor: (data) => data.usuario?.domicilio || '—',
+            },
+            {
+                label: 'Reseñas recibidas',
+                valor: (data) => {
+                    const resenas = data.resenas;
+                    const total = resenas?.total ?? resenas?.items?.length ?? 0;
+                    const promedio = Number(resenas?.promedio) || 0;
+                    return `${total} ${total === 1 ? 'reseña' : 'reseñas'} · promedio ${promedio.toFixed(1)} ★`;
+                },
+            },
+            {
+                label: 'Favoritos',
+                valor: (data) =>
+                    `${data.favoritos.length} propiedades guardadas`,
+            },
+        ],
+    },
     columnas: [
         { key: 'id', label: 'ID' },
         {
@@ -614,6 +677,77 @@ const configReservas = {
             ejecutar: (id) => cancelarReserva(id),
         },
     ],
+    detalle: {
+        titulo: (item) => `Reserva #${item.id}`,
+        cargar: async (item) => {
+            const response = await obtenerReserva(item.id);
+            if (!response?.success) {
+                throw new Error(
+                    response?.error ||
+                        response?.message ||
+                        'No se pudo cargar el detalle de la reserva.'
+                );
+            }
+            return response.data;
+        },
+        filas: [
+            {
+                label: 'Propiedad',
+                valor: (data) =>
+                    data.propiedad?.titulo ||
+                    `Propiedad #${data.propiedad_id}`,
+            },
+            {
+                label: 'Dirección',
+                valor: (data) => data.propiedad?.direccion || '—',
+            },
+            {
+                label: 'Inquilino',
+                valor: (data) =>
+                    data.usuario
+                        ? `${data.usuario.nombre} ${data.usuario.apellido || ''}`.trim()
+                        : `#${data.usuario_id}`,
+            },
+            {
+                label: 'Email',
+                valor: (data) => data.usuario?.email || '—',
+            },
+            {
+                label: 'Teléfono',
+                valor: (data) => data.usuario?.telefono || '—',
+            },
+            {
+                label: 'Estado',
+                valor: (data) =>
+                    ESTADOS_RESERVA.find(
+                        (estado) => estado.value === data.estado
+                    )?.label || data.estado || '—',
+            },
+            {
+                label: 'Solicitada',
+                valor: (data) => data.fecha_reserva || '—',
+            },
+            {
+                label: 'Inicio de alquiler',
+                valor: (data) => data.fecha_inicio_alquiler || '—',
+            },
+            {
+                label: 'Fin de alquiler',
+                valor: (data) => data.fecha_fin_alquiler || '—',
+            },
+            {
+                label: 'Monto',
+                valor: (data) =>
+                    data.monto_total != null
+                        ? `$${Number(data.monto_total).toLocaleString('es-AR')}`
+                        : '—',
+            },
+            {
+                label: 'Comentario',
+                valor: (data) => data.comentario || '—',
+            },
+        ],
+    },
     externos: [
         {
             clave: 'estadosCrear',
