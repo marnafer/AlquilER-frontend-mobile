@@ -24,9 +24,9 @@ const opcionesAutenticado = [
     etiqueta: 'Notificaciones',
   },
   {
-      ruta: '/my-information',
+      ruta: '/dashboard',
       icono: '♙',
-      etiqueta: 'Mi información',
+      etiqueta: 'Mi panel',
   },
 ] as const;
 
