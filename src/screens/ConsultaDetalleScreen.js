@@ -178,7 +178,7 @@ export default function ConsultaDetalleScreen() {
                     <TouchableOpacity
                         onPress={() =>
                             router.push(
-                                `/propiedad/${consulta.propiedad.id}`
+                                `/propiedades/${consulta.propiedad.id}`
                             )
                         }
                         activeOpacity={0.8}

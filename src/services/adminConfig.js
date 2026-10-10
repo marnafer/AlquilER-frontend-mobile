@@ -492,7 +492,7 @@ const configPropiedades = {
     principal: 'titulo',
     ruta: '/propiedades',
     nombreSingular: 'propiedad',
-    crearRuta: '/publicar-propiedad?origen=admin',
+    crearRuta: '/propiedades/crear?origen=admin',
     crearEtiqueta: 'Nueva propiedad',
     papelera: true,
     obtener: ({ papelera }) =>

@@ -398,7 +398,7 @@ export default function MyPropertiesScreen() {
                                     ]}
                                     onPress={() =>
                                         router.push(
-                                            `/editar-propiedad/${propiedad.id}`
+                                            `/propiedades/${propiedad.id}/editar`
                                         )
                                     }
                                     activeOpacity={0.85}

@@ -446,7 +446,7 @@ export default function ReservaDetalleScreen() {
                             style={styles.propiedadRow}
                             onPress={() =>
                                 router.push(
-                                    `/propiedad/${propiedad.id}`
+                                    `/propiedades/${propiedad.id}`
                                 )
                             }
                             activeOpacity={0.8}
