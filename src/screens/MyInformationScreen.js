@@ -196,6 +196,40 @@ export default function MyInformationScreen() {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
+                    Ayuda e información
+                </Text>
+
+                <View style={styles.menu}>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        activeOpacity={0.8}
+                        onPress={() => router.push('/ayuda')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <Text style={styles.menuIconText}>
+                                ❔
+                            </Text>
+                        </View>
+
+                        <View style={styles.menuContent}>
+                            <Text style={styles.menuTitle}>
+                                Centro de ayuda
+                            </Text>
+
+                            <Text style={styles.menuDescription}>
+                                Contacto, preguntas frecuentes y políticas
+                            </Text>
+                        </View>
+
+                        <Text style={styles.menuArrow}>
+                            ›
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
                     Mi actividad
                 </Text>
 
