@@ -10,6 +10,7 @@ import {
 
 import {
     ActivityIndicator,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -19,12 +20,21 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import PropertySelect from '../components/PropertySelect';
 import api, {
     actualizarPropiedad,
 } from '../services/api';
 import { theme } from '../theme/theme';
+
+const MAX_IMAGENES_POR_PROPIEDAD = 10;
+const TIPOS_IMAGEN_PERMITIDOS = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+];
 
 const esNumeroPositivo = (valor) =>
     valor.trim() !== '' &&
@@ -85,6 +95,11 @@ export default function EditarPropiedadScreen() {
     const [localidades, setLocalidades] = useState([]);
     const [servicios, setServicios] = useState([]);
     const [loadingCatalogos, setLoadingCatalogos] = useState(true);
+    const [imagenes, setImagenes] = useState([]);
+    const [procesandoImagen, setProcesandoImagen] = useState(false);
+    const [imagenAEliminar, setImagenAEliminar] = useState(null);
+    const [errorImagen, setErrorImagen] = useState('');
+    const [mensajeImagen, setMensajeImagen] = useState('');
 
     useEffect(() => {
         const cargarDatos = async () => {
@@ -122,6 +137,11 @@ export default function EditarPropiedadScreen() {
                 }
 
                 setTitulo(propiedad.titulo || '');
+                setImagenes(
+                    Array.isArray(propiedad.imagenes)
+                        ? propiedad.imagenes
+                        : []
+                );
                 setDescripcion(propiedad.descripcion || '');
                 setPrecio(
                     propiedad.precio != null
@@ -220,6 +240,308 @@ export default function EditarPropiedadScreen() {
 
         cargarDatos();
     }, [id]);
+
+    const obtenerUrlImagen = (imagen) => {
+        if (!imagen?.ruta) return null;
+        if (/^https?:\/\//i.test(imagen.ruta)) return imagen.ruta;
+
+        const baseUrl = (api.defaults.baseURL || '').replace(
+            /\/api\/?$/,
+            ''
+        );
+        return `${baseUrl}${imagen.ruta.startsWith('/') ? '' : '/'}${imagen.ruta}`;
+    };
+
+    const recargarImagenes = async () => {
+        const response = await api.get(`/propiedades/${id}`);
+        const propiedad = response.data?.data;
+
+        if (!propiedad || !Array.isArray(propiedad.imagenes)) {
+            throw new Error('No se pudo actualizar la galería de imágenes.');
+        }
+
+        setImagenes(propiedad.imagenes);
+    };
+
+    const obtenerMimeImagen = (imagen) => {
+        if (imagen.mimeType) return imagen.mimeType.toLowerCase();
+
+        const extension = imagen.fileName?.split('.').pop()?.toLowerCase();
+        const tiposPorExtension = {
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+            webp: 'image/webp',
+        };
+
+        return tiposPorExtension[extension] || '';
+    };
+
+    const agregarImagenes = async () => {
+        if (procesandoImagen || guardando) return;
+
+        const cantidadDisponible =
+            MAX_IMAGENES_POR_PROPIEDAD - imagenes.length;
+        if (cantidadDisponible <= 0) {
+            setErrorImagen(
+                `Ya alcanzaste el máximo de ${MAX_IMAGENES_POR_PROPIEDAD} imágenes.`
+            );
+            return;
+        }
+
+        setErrorImagen('');
+        setMensajeImagen('');
+        setProcesandoImagen(true);
+
+        try {
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: true,
+                quality: 0.8,
+            });
+
+            if (resultado.canceled || !resultado.assets?.length) return;
+
+            if (resultado.assets.length > cantidadDisponible) {
+                setErrorImagen(
+                    `Solo podés agregar ${cantidadDisponible} imagen${cantidadDisponible === 1 ? '' : 'es'} más (máximo ${MAX_IMAGENES_POR_PROPIEDAD}).`
+                );
+                return;
+            }
+
+            const imagenInvalida = resultado.assets.find((imagen) => {
+                const tipo = obtenerMimeImagen(imagen);
+                return (
+                    !TIPOS_IMAGEN_PERMITIDOS.includes(tipo) ||
+                    (imagen.fileSize != null &&
+                        imagen.fileSize > 5 * 1024 * 1024)
+                );
+            });
+
+            if (imagenInvalida) {
+                const excedeTamano =
+                    imagenInvalida.fileSize > 5 * 1024 * 1024;
+                setErrorImagen(
+                    excedeTamano
+                        ? `${imagenInvalida.fileName || 'La imagen seleccionada'} supera los 5 MB.`
+                        : 'Formato no permitido. Usá JPG, PNG, GIF o WEBP.'
+                );
+                return;
+            }
+
+            let subidas = 0;
+            const imagenesSubidas = [];
+            try {
+                for (const imagen of resultado.assets) {
+                    const formData = new FormData();
+                    formData.append('propiedad_id', String(id));
+                    formData.append('descripcion', '');
+                    formData.append('imagen', {
+                        uri: imagen.uri,
+                        name:
+                            imagen.fileName ||
+                            `imagen-${Date.now()}-${subidas + 1}.jpg`,
+                        type: obtenerMimeImagen(imagen),
+                    });
+
+                    const response = await api.post(
+                        '/propiedad-imagenes',
+                        formData,
+                        {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        }
+                    );
+
+                    if (response.data?.success === false) {
+                        throw new Error(
+                            response.data?.message ||
+                                response.data?.error ||
+                                'No se pudo subir la imagen.'
+                        );
+                    }
+                    subidas += 1;
+                    if (response.data?.data) {
+                        imagenesSubidas.push(response.data.data);
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    'EDITAR PROPIEDAD: error al subir imágenes',
+                    error
+                );
+                if (imagenesSubidas.length > 0) {
+                    setImagenes((actuales) => [
+                        ...actuales,
+                        ...imagenesSubidas,
+                    ]);
+                }
+                try {
+                    await recargarImagenes();
+                } catch (errorRecarga) {
+                    console.error(
+                        'EDITAR PROPIEDAD: error al actualizar la galería',
+                        errorRecarga
+                    );
+                }
+                const detalle =
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    'No se pudo subir la imagen.';
+                setErrorImagen(
+                    subidas > 0
+                        ? `Se subieron ${subidas} imagen${subidas === 1 ? '' : 'es'}, pero la carga se interrumpió: ${detalle}`
+                        : detalle
+                );
+                return;
+            }
+
+            if (imagenesSubidas.length > 0) {
+                setImagenes((actuales) => [
+                    ...actuales,
+                    ...imagenesSubidas,
+                ]);
+            }
+            try {
+                await recargarImagenes();
+            } catch (error) {
+                console.error(
+                    'EDITAR PROPIEDAD: no se pudo actualizar la galería tras subir',
+                    error
+                );
+                setErrorImagen(
+                    'Las imágenes se subieron, pero no se pudo actualizar la galería. Volvé a cargar la propiedad para ver los cambios.'
+                );
+                return;
+            }
+            setMensajeImagen(
+                `${subidas} imagen${subidas === 1 ? '' : 'es'} agregada${subidas === 1 ? '' : 's'} correctamente.`
+            );
+        } catch (error) {
+            console.error(
+                'EDITAR PROPIEDAD: error al gestionar imágenes',
+                error
+            );
+            setErrorImagen(
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    'No se pudieron gestionar las imágenes.'
+            );
+        } finally {
+            setProcesandoImagen(false);
+        }
+    };
+
+    const establecerImagenPrincipal = async (imagen) => {
+        if (procesandoImagen || guardando) return;
+
+        setProcesandoImagen(true);
+        setErrorImagen('');
+        setMensajeImagen('');
+        try {
+            const response = await api.put(
+                `/propiedad-imagenes/${imagen.id}/principal`
+            );
+            if (response.data?.success === false) {
+                throw new Error(
+                    response.data?.message ||
+                        response.data?.error ||
+                        'No se pudo cambiar la imagen principal.'
+                );
+            }
+
+            try {
+                await recargarImagenes();
+                setMensajeImagen('Imagen principal actualizada.');
+            } catch (error) {
+                console.error(
+                    'EDITAR PROPIEDAD: imagen principal actualizada, pero no se refrescó la galería',
+                    error
+                );
+                setImagenes((actuales) =>
+                    actuales.map((actual) => ({
+                        ...actual,
+                        es_principal:
+                            String(actual.id) === String(imagen.id),
+                    }))
+                );
+                setErrorImagen(
+                    'La imagen principal se actualizó, pero no se pudo refrescar la galería. Volvé a cargar la propiedad para ver los cambios.'
+                );
+            }
+        } catch (error) {
+            console.error(
+                'EDITAR PROPIEDAD: error al cambiar imagen principal',
+                error
+            );
+            setErrorImagen(
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    'No se pudo cambiar la imagen principal.'
+            );
+        } finally {
+            setProcesandoImagen(false);
+        }
+    };
+
+    const eliminarImagen = async () => {
+        if (!imagenAEliminar || procesandoImagen || guardando) return;
+
+        setProcesandoImagen(true);
+        setErrorImagen('');
+        setMensajeImagen('');
+        try {
+            const response = await api.delete(
+                `/propiedad-imagenes/${imagenAEliminar.id}`
+            );
+            if (response.data?.success === false) {
+                throw new Error(
+                    response.data?.message ||
+                        response.data?.error ||
+                        'No se pudo eliminar la imagen.'
+                );
+            }
+
+            setImagenAEliminar(null);
+            try {
+                await recargarImagenes();
+                setMensajeImagen('Imagen eliminada correctamente.');
+            } catch (error) {
+                console.error(
+                    'EDITAR PROPIEDAD: imagen eliminada, pero no se refrescó la galería',
+                    error
+                );
+                setImagenes((actuales) =>
+                    actuales.filter(
+                        (imagen) =>
+                            String(imagen.id) !==
+                            String(imagenAEliminar.id)
+                    )
+                );
+                setErrorImagen(
+                    'La imagen se eliminó, pero no se pudo refrescar la galería. Volvé a cargar la propiedad para ver los cambios.'
+                );
+            }
+        } catch (error) {
+            console.error(
+                'EDITAR PROPIEDAD: error al eliminar imagen',
+                error
+            );
+            setErrorImagen(
+                error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    'No se pudo eliminar la imagen.'
+            );
+        } finally {
+            setProcesandoImagen(false);
+        }
+    };
 
     const guardar = async () => {
         const errores = {};
@@ -700,6 +1022,208 @@ export default function EditarPropiedadScreen() {
                         />
                     </View>
 
+                    <Text style={styles.sectionTitle}>
+                        Imágenes de la propiedad
+                    </Text>
+
+                    <Text style={styles.imageHelper}>
+                        Agregá hasta {MAX_IMAGENES_POR_PROPIEDAD} imágenes
+                        (máximo 5 MB cada una). Podés cambiar la imagen
+                        principal o eliminar fotos existentes.
+                    </Text>
+
+                    <Text style={styles.imageCount}>
+                        {imagenes.length}/{MAX_IMAGENES_POR_PROPIEDAD} imágenes
+                    </Text>
+
+                    {errorImagen ? (
+                        <View style={styles.errorBox}>
+                            <Text style={styles.errorBoxText}>
+                                {errorImagen}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    {mensajeImagen ? (
+                        <View style={styles.successBox}>
+                            <Text style={styles.successText}>
+                                {mensajeImagen}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    {imagenes.length > 0 ? (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.imageList}
+                        >
+                            {imagenes.map((imagen) => {
+                                const esPrincipal =
+                                    Number(imagen.es_principal) === 1 ||
+                                    imagen.es_principal === true;
+                                const confirmarEliminar =
+                                    String(imagenAEliminar?.id) ===
+                                    String(imagen.id);
+
+                                return (
+                                    <View
+                                        key={imagen.id}
+                                        style={[
+                                            styles.imageCard,
+                                            esPrincipal && styles.imageCardPrincipal,
+                                        ]}
+                                    >
+                                        {obtenerUrlImagen(imagen) ? (
+                                            <Image
+                                                source={{
+                                                    uri: obtenerUrlImagen(imagen),
+                                                }}
+                                                style={styles.propertyImage}
+                                                resizeMode="cover"
+                                                accessibilityLabel={
+                                                    esPrincipal
+                                                        ? 'Imagen principal de la propiedad'
+                                                        : 'Imagen de la propiedad'
+                                                }
+                                            />
+                                        ) : (
+                                            <View style={styles.imagePlaceholder}>
+                                                <Text style={styles.imagePlaceholderText}>
+                                                    No se pudo mostrar la imagen
+                                                </Text>
+                                            </View>
+                                        )}
+
+                                        <View style={styles.imageCardContent}>
+                                            <Text
+                                                style={[
+                                                    styles.imageStatus,
+                                                    esPrincipal &&
+                                                        styles.imageStatusPrincipal,
+                                                ]}
+                                            >
+                                                {esPrincipal
+                                                    ? '★ Imagen principal'
+                                                    : 'Imagen secundaria'}
+                                            </Text>
+
+                                            {confirmarEliminar ? (
+                                                <View style={styles.imageConfirm}>
+                                                    <Text style={styles.imageConfirmText}>
+                                                        ¿Eliminar esta imagen?
+                                                    </Text>
+                                                    <View style={styles.imageActions}>
+                                                        <TouchableOpacity
+                                                            onPress={() =>
+                                                                setImagenAEliminar(null)
+                                                            }
+                                                            disabled={procesandoImagen}
+                                                            style={styles.imageActionButton}
+                                                        >
+                                                            <Text style={styles.imageActionText}>
+                                                                Cancelar
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                        <TouchableOpacity
+                                                            onPress={eliminarImagen}
+                                                            disabled={
+                                                                procesandoImagen ||
+                                                                guardando
+                                                            }
+                                                            style={[
+                                                                styles.imageActionButton,
+                                                                styles.imageDeleteButton,
+                                                            ]}
+                                                        >
+                                                            <Text style={styles.imageDeleteText}>
+                                                                {procesandoImagen
+                                                                    ? 'Eliminando...'
+                                                                    : 'Eliminar'}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            ) : (
+                                                <View style={styles.imageActions}>
+                                                    {!esPrincipal ? (
+                                                        <TouchableOpacity
+                                                            onPress={() =>
+                                                                establecerImagenPrincipal(
+                                                                    imagen
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                procesandoImagen ||
+                                                                guardando
+                                                            }
+                                                            style={styles.imageActionButton}
+                                                        >
+                                                            <Text style={styles.imageActionText}>
+                                                                Hacer principal
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    ) : null}
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setErrorImagen('');
+                                                            setImagenAEliminar(imagen);
+                                                        }}
+                                                        disabled={
+                                                            procesandoImagen ||
+                                                            guardando
+                                                        }
+                                                        style={[
+                                                            styles.imageActionButton,
+                                                            styles.imageDeleteButton,
+                                                        ]}
+                                                    >
+                                                        <Text style={styles.imageDeleteText}>
+                                                            Eliminar
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </View>
+                                );
+                            })}
+                        </ScrollView>
+                    ) : (
+                        <View style={styles.noImages}>
+                            <Text style={styles.imagePlaceholderText}>
+                                Todavía no hay imágenes cargadas.
+                            </Text>
+                        </View>
+                    )}
+
+                    <TouchableOpacity
+                        onPress={agregarImagenes}
+                        disabled={
+                            procesandoImagen ||
+                            guardando ||
+                            imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD
+                        }
+                        activeOpacity={0.85}
+                        style={[
+                            styles.addImagesButton,
+                            (procesandoImagen ||
+                                guardando ||
+                                imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD) &&
+                                styles.saveButtonDisabled,
+                        ]}
+                    >
+                        {procesandoImagen ? (
+                            <ActivityIndicator color={theme.colors.white} />
+                        ) : (
+                            <Text style={styles.addImagesButtonText}>
+                                {imagenes.length >= MAX_IMAGENES_POR_PROPIEDAD
+                                    ? 'Máximo de imágenes alcanzado'
+                                    : '+ Agregar imágenes'}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+
                     <View style={styles.sectionTitle}>
                         Preferencias
                     </View>
@@ -811,10 +1335,11 @@ export default function EditarPropiedadScreen() {
                     <TouchableOpacity
                         style={[
                             styles.saveButton,
-                            guardando && styles.saveButtonDisabled,
+                            (guardando || procesandoImagen) &&
+                                styles.saveButtonDisabled,
                         ]}
                         onPress={guardar}
-                        disabled={guardando}
+                        disabled={guardando || procesandoImagen}
                         activeOpacity={0.85}
                     >
                         <Text style={styles.saveButtonText}>
@@ -1013,6 +1538,146 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: theme.colors.textMuted,
         marginTop: 3,
+    },
+
+    imageHelper: {
+        marginTop: -theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
+        color: theme.colors.textMuted,
+        fontSize: 13,
+        lineHeight: 19,
+    },
+
+    imageCount: {
+        marginBottom: theme.spacing.sm,
+        color: theme.colors.textDark,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    imageList: {
+        gap: theme.spacing.sm,
+        paddingBottom: theme.spacing.xs,
+    },
+
+    imageCard: {
+        width: 190,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 12,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    imageCardPrincipal: {
+        borderColor: theme.colors.successText,
+        borderWidth: 2,
+    },
+
+    propertyImage: {
+        width: '100%',
+        height: 125,
+        backgroundColor: theme.colors.border,
+    },
+
+    imagePlaceholder: {
+        width: '100%',
+        height: 125,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    imagePlaceholderText: {
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        textAlign: 'center',
+    },
+
+    imageCardContent: {
+        padding: theme.spacing.sm,
+    },
+
+    imageStatus: {
+        marginBottom: theme.spacing.xs,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+
+    imageStatusPrincipal: {
+        color: theme.colors.successText,
+    },
+
+    imageActions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.spacing.xs,
+    },
+
+    imageActionButton: {
+        minHeight: 36,
+        flexGrow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.xs,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+        borderRadius: 8,
+    },
+
+    imageActionText: {
+        color: theme.colors.primary,
+        fontSize: 11,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+
+    imageDeleteButton: {
+        borderColor: theme.colors.errorText,
+    },
+
+    imageDeleteText: {
+        color: theme.colors.errorText,
+        fontSize: 11,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+
+    imageConfirm: {
+        gap: theme.spacing.xs,
+    },
+
+    imageConfirmText: {
+        color: theme.colors.errorText,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+
+    noImages: {
+        padding: theme.spacing.md,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.inputBg,
+    },
+
+    addImagesButton: {
+        minHeight: 46,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: theme.spacing.sm,
+        marginBottom: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        borderRadius: 10,
+        backgroundColor: theme.colors.primary,
+    },
+
+    addImagesButtonText: {
+        color: theme.colors.white,
+        fontSize: 14,
+        fontWeight: '700',
     },
 
     checkPlaceholder: {
