@@ -21,10 +21,17 @@ import PropertyCard from '../components/PropertyCard';
 import ScreenHeader from '../components/ScreenHeader';
 import api, {
     eliminarPropiedad,
+    actualizarPropiedad,
 } from '../services/api';
 import { theme } from '../theme/theme';
 
 import { abrirPropiedad } from '../services/propertyNavigation';
+
+const esDisponible = (valor) =>
+    valor === true ||
+    valor === 1 ||
+    valor === '1' ||
+    valor === 'true';
 
 export default function MyPropertiesScreen() {
     const router = useRouter();
@@ -33,7 +40,9 @@ export default function MyPropertiesScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [eliminandoId, setEliminandoId] = useState(null);
-    const [mensaje, setMensaje] = useState('');
+    const [actualizandoId, setActualizandoId] = useState(null);
+    const [serviciosExpandidos, setServiciosExpandidos] = useState({});
+    const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
 
     const cargarPropiedades = async () => {
         try {
@@ -79,15 +88,15 @@ export default function MyPropertiesScreen() {
         }
 
         setEliminandoId(propiedad.id);
-        setMensaje('');
+        setMensaje({ tipo: '', texto: '' });
 
         const result = await eliminarPropiedad(propiedad.id);
 
         if (result.success) {
-            setMensaje(
-                result.message ||
-                    'Propiedad eliminada correctamente'
-            );
+            setMensaje({
+                tipo: 'exito',
+                texto: result.message || 'Propiedad eliminada correctamente',
+            });
 
             setPropiedades((prev) =>
                 prev.filter(
@@ -95,15 +104,84 @@ export default function MyPropertiesScreen() {
                 )
             );
         } else {
-            setMensaje(
-                result.error ||
-                result.message ||
-                    'No se pudo eliminar la propiedad'
-            );
+            setMensaje({
+                tipo: 'error',
+                texto:
+                    result.error ||
+                    result.message ||
+                    'No se pudo eliminar la propiedad',
+            });
         }
 
         setEliminandoId(null);
     };
+
+    const toggleDisponible = async (propiedad) => {
+        const nuevoEstado = !esDisponible(propiedad.disponible);
+        setActualizandoId(propiedad.id);
+        setMensaje({ tipo: '', texto: '' });
+
+        try {
+            const result = await actualizarPropiedad(propiedad.id, {
+                disponible: nuevoEstado ? 1 : 0,
+            });
+
+            if (!result?.success) {
+                setMensaje({
+                    tipo: 'error',
+                    texto:
+                        result?.error ||
+                        result?.message ||
+                        'No se pudo actualizar la disponibilidad.',
+                });
+                return;
+            }
+
+            setPropiedades((actuales) =>
+                actuales.map((actual) =>
+                    Number(actual.id) === Number(propiedad.id)
+                        ? { ...actual, disponible: nuevoEstado ? 1 : 0 }
+                        : actual
+                )
+            );
+            setMensaje({
+                tipo: 'exito',
+                texto:
+                    result.message ||
+                    `La propiedad ahora está ${
+                        nuevoEstado ? 'disponible' : 'no disponible'
+                    }.`,
+            });
+        } catch (error) {
+            console.error(
+                'MY PROPERTIES: error al actualizar disponibilidad',
+                error
+            );
+            setMensaje({
+                tipo: 'error',
+                texto:
+                    error.response?.data?.error ||
+                    'No se pudo actualizar la disponibilidad.',
+            });
+        } finally {
+            setActualizandoId(null);
+        }
+    };
+
+    const toggleServicios = (propiedadId) => {
+        setServiciosExpandidos((actuales) => ({
+            ...actuales,
+            [propiedadId]: !actuales[propiedadId],
+        }));
+    };
+
+    const obtenerServicios = (propiedad) =>
+        (Array.isArray(propiedad.servicios) ? propiedad.servicios : [])
+            .map((fila) => ({
+                id: fila.id ?? fila.servicio_id ?? fila.servicio?.id,
+                nombre: fila.nombre ?? fila.servicio?.nombre,
+            }))
+            .filter((servicio) => servicio.nombre);
 
     useFocusEffect(
         useCallback(() => {
@@ -145,12 +223,11 @@ export default function MyPropertiesScreen() {
                 </View>
             ) : null}
 
-            {mensaje ? (
+            {mensaje.texto ? (
                 <View
                     style={[
                         styles.messageBox,
-                        mensaje.toLowerCase().includes('eliminada') ||
-                        mensaje.toLowerCase().includes('correctamente')
+                        mensaje.tipo === 'exito'
                             ? styles.messageExito
                             : styles.messageError,
                     ]}
@@ -158,13 +235,12 @@ export default function MyPropertiesScreen() {
                     <Text
                         style={[
                             styles.messageText,
-                            mensaje.toLowerCase().includes('eliminada') ||
-                            mensaje.toLowerCase().includes('correctamente')
+                            mensaje.tipo === 'exito'
                                 ? styles.messageTextExito
                                 : styles.messageTextError,
                         ]}
                     >
-                        {mensaje}
+                        {mensaje.texto}
                     </Text>
                 </View>
             ) : null}
@@ -177,17 +253,33 @@ export default function MyPropertiesScreen() {
                 <Text style={styles.sectionDescription}>
                     {propiedades.length === 0
                         ? 'Todavía no publicaste ninguna propiedad.'
-                        : `${propiedades.length} ${
-                            propiedades.length === 1
-                                ? 'propiedad publicada'
-                                : 'propiedades publicadas'
-                        }`}
+                        : `${propiedades.length} en total · ${
+                              propiedades.filter((p) =>
+                                  esDisponible(p.disponible)
+                              ).length
+                          } disponibles · ${
+                              propiedades.filter(
+                                  (p) => !esDisponible(p.disponible)
+                              ).length
+                          } no disponibles`}
                 </Text>
             </View>
 
             {propiedades.length > 0 ? (
                 <View style={styles.propertiesGrid}>
-                    {propiedades.map((propiedad) => (
+                    {propiedades.map((propiedad) => {
+                        const servicios = obtenerServicios(propiedad);
+                        const expandido = Boolean(
+                            serviciosExpandidos[propiedad.id]
+                        );
+                        const serviciosVisibles = expandido
+                            ? servicios
+                            : servicios.slice(0, 4);
+                        const disponibles = esDisponible(
+                            propiedad.disponible
+                        );
+
+                        return (
                         <View key={propiedad.id} style={styles.cardWrapper}>
                             <PropertyCard
                                 propiedad={propiedad}
@@ -198,6 +290,105 @@ export default function MyPropertiesScreen() {
                                     )
                                 }
                             />
+
+                            <View
+                                style={[
+                                    styles.availabilityBadge,
+                                    disponibles
+                                        ? styles.availableBadge
+                                        : styles.unavailableBadge,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.availabilityText,
+                                        disponibles
+                                            ? styles.availableText
+                                            : styles.unavailableText,
+                                    ]}
+                                >
+                                    {disponibles ? 'Disponible' : 'No disponible'}
+                                </Text>
+                            </View>
+
+                            <View style={styles.servicesSection}>
+                                <Text style={styles.servicesTitle}>
+                                    Servicios
+                                </Text>
+                                {servicios.length > 0 ? (
+                                    <>
+                                        <View style={styles.servicesList}>
+                                            {serviciosVisibles.map(
+                                                (servicio, index) => (
+                                                    <View
+                                                        key={
+                                                            servicio.id ??
+                                                            `${servicio.nombre}-${index}`
+                                                        }
+                                                        style={styles.serviceBadge}
+                                                    >
+                                                        <Text
+                                                            style={styles.serviceText}
+                                                        >
+                                                            {servicio.nombre}
+                                                        </Text>
+                                                    </View>
+                                                )
+                                            )}
+                                        </View>
+                                        {servicios.length > 4 ? (
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    toggleServicios(propiedad.id)
+                                                }
+                                                activeOpacity={0.8}
+                                                accessibilityRole="button"
+                                            >
+                                                <Text style={styles.servicesToggle}>
+                                                    {expandido
+                                                        ? 'Ver menos'
+                                                        : `+${servicios.length - 4} más`}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ) : null}
+                                    </>
+                                ) : (
+                                    <Text style={styles.noServices}>
+                                        Sin servicios cargados
+                                    </Text>
+                                )}
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.actionButton,
+                                    styles.availabilityButton,
+                                    actualizandoId === propiedad.id &&
+                                        styles.disabledButton,
+                                ]}
+                                onPress={() => toggleDisponible(propiedad)}
+                                disabled={actualizandoId === propiedad.id}
+                                activeOpacity={0.85}
+                                accessibilityRole="button"
+                                accessibilityLabel={
+                                    disponibles
+                                        ? 'Marcar como no disponible'
+                                        : 'Marcar como disponible'
+                                }
+                            >
+                                {actualizandoId === propiedad.id ? (
+                                    <ActivityIndicator
+                                        size="small"
+                                        color={theme.colors.primary}
+                                    />
+                                ) : (
+                                    <Text style={styles.availabilityButtonText}>
+                                        {disponibles
+                                            ? 'Poner no disponible'
+                                            : 'Poner disponible'}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
 
                             <View style={styles.cardActions}>
                                 <TouchableOpacity
@@ -250,7 +441,8 @@ export default function MyPropertiesScreen() {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    ))}
+                        );
+                    })}
                 </View>
             ) : (
                 <View style={styles.emptyContainer}>
@@ -389,6 +581,94 @@ const styles = StyleSheet.create({
     cardWrapper: {
         width: '48%',
         marginBottom: theme.spacing.sm,
+    },
+
+    availabilityBadge: {
+        alignSelf: 'flex-start',
+        marginTop: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: 4,
+        borderRadius: 999,
+    },
+
+    availableBadge: {
+        backgroundColor: theme.colors.successBg,
+    },
+
+    unavailableBadge: {
+        backgroundColor: theme.colors.neutralBg,
+    },
+
+    availabilityText: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+
+    availableText: {
+        color: theme.colors.successText,
+    },
+
+    unavailableText: {
+        color: theme.colors.neutralText,
+    },
+
+    servicesSection: {
+        marginTop: theme.spacing.sm,
+        gap: theme.spacing.xs,
+    },
+
+    servicesTitle: {
+        color: theme.colors.textDark,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
+    servicesList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+    },
+
+    serviceBadge: {
+        maxWidth: '100%',
+        paddingHorizontal: 7,
+        paddingVertical: 4,
+        borderRadius: 999,
+        backgroundColor: theme.colors.neutralBg,
+    },
+
+    serviceText: {
+        color: theme.colors.neutralText,
+        fontSize: 10,
+    },
+
+    noServices: {
+        color: theme.colors.textMuted,
+        fontSize: 11,
+    },
+
+    servicesToggle: {
+        color: theme.colors.primary,
+        fontSize: 11,
+        fontWeight: '700',
+    },
+
+    availabilityButton: {
+        minHeight: 36,
+        marginTop: theme.spacing.sm,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.background,
+    },
+
+    availabilityButtonText: {
+        color: theme.colors.textDark,
+        fontSize: 12,
+        fontWeight: '600',
+    },
+
+    disabledButton: {
+        opacity: 0.6,
     },
 
     cardActions: {
