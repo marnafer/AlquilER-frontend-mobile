@@ -5,6 +5,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     useWindowDimensions,
     View,
@@ -40,6 +41,34 @@ const colorConOpacidad = (color, opacidad) => {
 
 const limitar = (valor, minimo, maximo) =>
   Math.min(Math.max(valor, minimo), maximo);
+
+const obtenerIconoCategoria = (nombre) => {
+  const nombreNormalizado = String(nombre || "").toLocaleLowerCase("es");
+
+  if (nombreNormalizado.includes("casa") || nombreNormalizado.includes("cabaña")) {
+    return "🏠";
+  }
+
+  if (
+    nombreNormalizado.includes("departamento") ||
+    nombreNormalizado.includes("monoambiente")
+  ) {
+    return "🏢";
+  }
+
+  if (
+    nombreNormalizado.includes("local") ||
+    nombreNormalizado.includes("comercial")
+  ) {
+    return "🏬";
+  }
+
+  if (nombreNormalizado.includes("terreno")) {
+    return "🌳";
+  }
+
+  return "⌂";
+};
 
 const crearValoresResponsive = (width, height) => {
   /*
@@ -135,6 +164,7 @@ export default function HomeScreen() {
   const [categoriasBusqueda, setCategoriasBusqueda] = useState([]);
 
   const [localidadesBusqueda, setLocalidadesBusqueda] = useState([]);
+  const [precioMaximo, setPrecioMaximo] = useState("");
 
   const [categoriasAbierto, setCategoriasAbierto] = useState(false);
 
@@ -287,6 +317,10 @@ export default function HomeScreen() {
       params.localidad_id = localidadesBusqueda;
     }
 
+    if (precioMaximo.trim() !== "") {
+      params.precio_max = precioMaximo.trim();
+    }
+
     router.push({
       pathname: "/propiedades",
       params,
@@ -334,11 +368,13 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.descriptionCard}>
-          <Text style={styles.descriptionTitle}>Alquilá con más confianza</Text>
+          <Text style={styles.descriptionTitle}>
+            Encontrá tu propiedad ideal
+          </Text>
 
           <Text style={styles.descriptionText}>
-            Calificaciones y reseñas de la comunidad para una mayor
-            transparencia.
+            Las mejores propiedades en alquiler. Departamentos, casas, locales
+            comerciales y más.
           </Text>
         </View>
 
@@ -501,6 +537,24 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
+          <View style={styles.priceFilter}>
+            <Text style={styles.priceFilterLabel}>Precio máximo</Text>
+            <View style={styles.priceInputContainer}>
+              <Text style={styles.priceCurrency}>$</Text>
+              <TextInput
+                style={styles.priceInput}
+                value={precioMaximo}
+                onChangeText={(valor) =>
+                  setPrecioMaximo(valor.replace(/\D/g, ""))
+                }
+                keyboardType="number-pad"
+                placeholder="Sin límite"
+                maxLength={12}
+                accessibilityLabel="Precio máximo en pesos"
+              />
+            </View>
+          </View>
+
           <TouchableOpacity
             style={styles.searchButton}
             onPress={handleBuscar}
@@ -578,6 +632,59 @@ export default function HomeScreen() {
           </ScrollView>
         ) : (
           <Text style={styles.emptyText}>No hay propiedades publicadas.</Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.seeAllButton}
+          onPress={() => router.push("/propiedades")}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.seeAllButtonText}>Ver todas las propiedades</Text>
+          <Text style={styles.seeAllArrow}>↗</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionBadge}>Categorías</Text>
+          <Text style={styles.sectionTitle}>Explorar por categoría</Text>
+          <Text style={styles.sectionDescription}>
+            Encontrá el tipo de propiedad que estás buscando.
+          </Text>
+        </View>
+
+        {categorias.length > 0 ? (
+          <View style={styles.categoriesGrid}>
+            {categorias.map((categoria) => (
+              <TouchableOpacity
+                key={categoria.id}
+                style={styles.categoryGridCard}
+                onPress={() =>
+                  router.push({
+                    pathname: "/propiedades",
+                    params: { categoria_id: String(categoria.id) },
+                  })
+                }
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver propiedades de ${categoria.nombre}`}
+              >
+                <View style={styles.categoryIcon}>
+                  <Text style={styles.categoryIconText}>
+                    {obtenerIconoCategoria(categoria.nombre)}
+                  </Text>
+                </View>
+                <Text style={styles.categoryName} numberOfLines={2}>
+                  {categoria.nombre}
+                </Text>
+                <Text style={styles.categoryAction}>
+                  Ver propiedades
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.emptyText}>No hay categorías disponibles.</Text>
         )}
       </View>
 
@@ -790,6 +897,42 @@ const crearEstilos = (responsive) => {
       textAlign: "center",
     },
 
+    priceFilter: {
+      marginBottom: separacionMedia,
+    },
+
+    priceFilterLabel: {
+      marginBottom: separacionPequena,
+      color: theme.colors.textDark,
+      fontSize: fontBody,
+      fontWeight: "600",
+    },
+
+    priceInputContainer: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: separacionMedia,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: radioPequeno,
+      backgroundColor: theme.colors.inputBg,
+    },
+
+    priceCurrency: {
+      marginRight: separacionPequena,
+      color: theme.colors.textMuted,
+      fontSize: fontBody,
+      fontWeight: "600",
+    },
+
+    priceInput: {
+      flex: 1,
+      minHeight: 46,
+      color: theme.colors.textDark,
+      fontSize: fontBody,
+    },
+
     errorBox: {
       marginHorizontal: paddingHorizontal,
       marginTop: separacionSeccion,
@@ -868,6 +1011,26 @@ const crearEstilos = (responsive) => {
       fontSize: iconCategory,
     },
 
+    categoriesGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      gap: separacionMedia,
+      paddingHorizontal,
+    },
+
+    categoryGridCard: {
+      width: "47%",
+      minHeight: 150,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: separacionMedia,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: radioMedio,
+      backgroundColor: theme.colors.white,
+    },
+
     categoryName: {
       color: theme.colors.textDark,
       fontSize: fontFilter,
@@ -875,9 +1038,42 @@ const crearEstilos = (responsive) => {
       textAlign: "center",
     },
 
+    categoryAction: {
+      marginTop: separacionPequena,
+      color: theme.colors.primary,
+      fontSize: fontSmall,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+
     propertiesScroll: {
       paddingHorizontal,
       gap: separacionMedia,
+    },
+
+    seeAllButton: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+      marginTop: separacionMedia,
+      marginHorizontal: paddingHorizontal,
+      paddingHorizontal: separacionMedia,
+      borderRadius: radioPequeno,
+      backgroundColor: theme.colors.primaryBg,
+    },
+
+    seeAllButtonText: {
+      color: theme.colors.primary,
+      fontSize: fontSmall,
+      fontWeight: "700",
+    },
+
+    seeAllArrow: {
+      marginLeft: separacionPequena,
+      color: theme.colors.primary,
+      fontSize: fontBody + 2,
     },
 
     emptyText: {
