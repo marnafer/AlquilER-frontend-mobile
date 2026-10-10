@@ -46,6 +46,11 @@ const colorConOpacidad = (color, opacidad) => {
 const limitar = (valor, minimo, maximo) =>
   Math.min(Math.max(valor, minimo), maximo);
 
+const estaDisponible = (propiedad) =>
+  propiedad?.disponible !== false &&
+  propiedad?.disponible !== 0 &&
+  propiedad?.disponible !== "0";
+
 const obtenerIconoCategoria = (nombre) => {
   const nombreNormalizado = String(nombre || "").toLocaleLowerCase("es");
 
@@ -162,6 +167,7 @@ export default function HomeScreen() {
   const styles = useMemo(() => crearEstilos(responsive), [responsive]);
 
   const [propiedades, setPropiedades] = useState([]);
+  const [propiedadesDestacadas, setPropiedadesDestacadas] = useState([]);
   const [favoritosIds, setFavoritosIds] = useState(() => new Set());
   const [categorias, setCategorias] = useState([]);
   const [localidades, setLocalidades] = useState([]);
@@ -235,12 +241,17 @@ export default function HomeScreen() {
 
     const cargarDatos = async () => {
       try {
-        const [propiedadesResponse, categoriasResponse, localidadesResponse] =
-          await Promise.all([
-            api.get("/propiedades"),
-            api.get("/categorias"),
-            api.get("/localidades"),
-          ]);
+        const [
+          propiedadesResponse,
+          destacadasResponse,
+          categoriasResponse,
+          localidadesResponse,
+        ] = await Promise.all([
+          api.get("/propiedades"),
+          api.get("/propiedades/destacadas"),
+          api.get("/categorias"),
+          api.get("/localidades"),
+        ]);
 
         if (!activo) return;
 
@@ -259,6 +270,11 @@ export default function HomeScreen() {
         );
 
         setPropiedades(propiedadesResponse.data?.data?.items || []);
+        setPropiedadesDestacadas(
+          destacadasResponse.data?.data?.items ||
+            destacadasResponse.data?.data ||
+            [],
+        );
       } catch (error) {
         console.error("HOME: ERROR", error);
         console.error("HOME: código", error.code);
@@ -383,6 +399,12 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+  const destacadasDisponibles = propiedadesDestacadas.filter(estaDisponible);
+  const hayDestacadas = destacadasDisponibles.length > 0;
+  const propiedadesDelInicio = (
+    hayDestacadas ? destacadasDisponibles : propiedades.filter(estaDisponible)
+  ).slice(0, 6);
 
   return (
     <ScrollView
@@ -646,7 +668,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* PROPIEDADES RECIENTES */}
+      {/* PROPIEDADES DESTACADAS */}
       <View
         style={[
           styles.section,
@@ -659,20 +681,24 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionBadge}>Catálogo</Text>
 
-          <Text style={styles.sectionTitle}>Nuevas propiedades</Text>
+          <Text style={styles.sectionTitle}>
+            {hayDestacadas ? "Propiedades destacadas" : "Propiedades recientes"}
+          </Text>
 
           <Text style={styles.sectionDescription}>
-            Las últimas publicaciones en AlquilER
+            {hayDestacadas
+              ? "Las propiedades destacadas por nuestro equipo"
+              : "Las últimas publicaciones en AlquilER"}
           </Text>
         </View>
 
-        {propiedades.length > 0 ? (
+        {propiedadesDelInicio.length > 0 ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.propertiesScroll}
           >
-            {propiedades.slice(0, 5).map((propiedad) => (
+            {propiedadesDelInicio.map((propiedad) => (
               <PropertyCard
                 key={propiedad.id}
                 propiedad={propiedad}
@@ -684,7 +710,9 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         ) : (
-          <Text style={styles.emptyText}>No hay propiedades publicadas.</Text>
+          <Text style={styles.emptyText}>
+            Todavía no hay propiedades disponibles.
+          </Text>
         )}
 
         <TouchableOpacity
