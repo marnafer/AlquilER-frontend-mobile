@@ -18,7 +18,7 @@ import {
 
 import * as ImagePicker from 'expo-image-picker';
 
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import PropertySelect from '../components/PropertySelect';
 import api from '../services/api';
 import { theme } from '../theme/theme';
@@ -72,6 +72,7 @@ const esEnteroNoNegativo = (valor: string): boolean => {
 export default function PublicarPropiedad() {
 
     const router = useRouter();
+    const { origen } = useLocalSearchParams<{ origen?: string }>();
 
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -559,7 +560,11 @@ export default function PublicarPropiedad() {
 
             setTimeout(() => {
                 setMostrarExito(false);
-                router.replace('/my-properties');
+                router.replace(
+                    origen === 'admin'
+                        ? '/admin/propiedades'
+                        : '/my-properties'
+                );
             }, 2000);
 
         } catch (error: any) {

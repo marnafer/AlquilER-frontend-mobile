@@ -1,5 +1,6 @@
 import {
     useLocalSearchParams,
+    useRouter,
 } from 'expo-router';
 
 import {
@@ -47,6 +48,7 @@ const esCampoRequerido = (campo, modo) =>
 
 export default function AdminCrudScreen() {
     const { recurso } = useLocalSearchParams();
+    const router = useRouter();
 
     const config = CONFIGURACIONES[recurso];
 
@@ -1001,14 +1003,20 @@ export default function AdminCrudScreen() {
                     </TouchableOpacity>
                 ) : null}
 
-                {config.crear ? (
+                {config.crear || config.crearRuta ? (
                     <TouchableOpacity
                         style={styles.nuevoButton}
-                        onPress={abrirCrear}
+                        onPress={() => {
+                            if (config.crearRuta) {
+                                router.push(config.crearRuta);
+                                return;
+                            }
+                            abrirCrear();
+                        }}
                         activeOpacity={0.85}
                     >
                         <Text style={styles.nuevoButtonText}>
-                            + Nuevo
+                            + {config.crearEtiqueta || 'Nuevo'}
                         </Text>
                     </TouchableOpacity>
                 ) : null}
