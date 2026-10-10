@@ -55,9 +55,8 @@ export default function NotificacionesScreen() {
     reserva_nueva: "/reservas",
     reserva_confirmada: "/reservas",
     reserva_rechazada: "/reservas",
-    // Falta confirmar la ruta real:
-    consulta_nueva: "/mensajes",
-    mensaje_nuevo: "/mensajes",
+    consulta_nueva: "/consultas",
+    mensaje_nuevo: "/consultas",
   };
 
   const handleNotificacionPress = async (notificacion: Notificacion) => {
