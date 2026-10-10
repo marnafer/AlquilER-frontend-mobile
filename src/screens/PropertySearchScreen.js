@@ -99,6 +99,10 @@ const opcionesOrden = [
         valor: 'precio_desc',
         etiqueta: 'Precio: mayor a menor',
     },
+    {
+        valor: 'titulo',
+        etiqueta: 'Título (A-Z)',
+    },
 ];
 
 export default function PropertySearchScreen() {
@@ -580,6 +584,13 @@ export default function PropertySearchScreen() {
                         convertirNumero(
                             a.precio
                         )
+                    );
+
+                case 'titulo':
+                    return String(a.titulo || '').localeCompare(
+                        String(b.titulo || ''),
+                        'es',
+                        { sensitivity: 'base' }
                     );
 
                 case 'antiguedad_asc':
