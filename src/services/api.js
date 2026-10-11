@@ -269,6 +269,18 @@ export async function obtenerFavoritos() {
             };
         }
     }
+    
+    export async function obtenerReserva(id) {
+        try {
+            const response = await api.get(`/reservas/${id}`);
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
 
     export async function obtenerNotificaciones() {
         try {
@@ -327,5 +339,140 @@ export async function obtenerFavoritos() {
         }
     }
 
+    
+    export async function obtenerConsultas() {
+        try {
+            const response = await api.get('/consultas');
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function obtenerConsulta(id) {
+        try {
+            const response = await api.get(`/consultas/${id}`);
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export async function obtenerMensajes(consultaId, parametros = {}) {
+        try {
+            const response = await api.get(
+                `/consultas/${consultaId}/mensajes`,
+                { params: parametros }
+            );
+
+            return response.data;
+        } catch (error) {
+            return error.response?.data || {
+                success: false,
+                message: 'Error de conexión',
+            };
+        }
+    }
+
+    export const enviarMensaje = async (consultaId, mensaje) => {
+        const response = await api.post(
+            `/consultas/${consultaId}/mensajes`,
+            { mensaje },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        return response.data;
+    };
+
+    
+    export async function obtenerTodasLasConsultas() {
+        try {
+            const [iniciadasResponse, recibidasResponse] =
+                await Promise.all([
+                    api.get('/consultas'),
+                    api.get('/consultas/recibidas'),
+                ]);
+
+            const consultasIniciadas =
+                iniciadasResponse.data?.data?.items || [];
+
+            const consultasRecibidas =
+                recibidasResponse.data?.data?.items || [];
+
+            const consultasUnicas = [
+                ...new Map(
+                    [...consultasIniciadas, ...consultasRecibidas]
+                        .map((consulta) => [consulta.id, consulta])
+                ).values(),
+            ];
+
+            consultasUnicas.sort((a, b) => {
+                const fechaA = new Date(
+                    a.ultima_actividad || a.fecha_consulta || 0
+                ).getTime();
+
+                const fechaB = new Date(
+                    b.ultima_actividad || b.fecha_consulta || 0
+                ).getTime();
+
+                return fechaB - fechaA;
+            });
+
+            return {
+                success: true,
+                data: {
+                    items: consultasUnicas,
+                    total: consultasUnicas.length,
+                },
+            };
+        } catch (error) {
+            console.error(
+                'Error al cargar todas las consultas:',
+                error.response?.data || error.message
+            );
+
+            return error.response?.data || {
+                success: false,
+                message: 'No se pudieron cargar las conversaciones',
+            };
+        }
+    }
+
+    export async function crearConsulta(propiedadId, perfilInteresado) {
+    try {
+        const payload = {
+            propiedad_id: propiedadId,
+        };
+
+        if (perfilInteresado) {
+            payload.perfil_interesado = perfilInteresado;
+        }
+
+        const response = await api.post('/consultas', payload);
+        return response.data;
+    } catch (error) {
+        console.log('ENTRÓ AL CATCH DE crearConsulta');
+
+        console.log(
+            'RESPUESTA DEL BACKEND:',
+            error?.response?.data
+        );
+
+        return error?.response?.data || {
+            success: false,
+            message: 'No se pudo iniciar la consulta.',
+        };
+    }
+}
 
 export default api;
