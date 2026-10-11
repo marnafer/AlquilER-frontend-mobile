@@ -102,7 +102,6 @@ export default function MyInformationScreen() {
             <ScreenHeader
                 title="Mi información"
                 subtitle="Gestioná tu cuenta y tu actividad"
-                showBackButton
             />
             
 
@@ -260,7 +259,7 @@ export default function MyInformationScreen() {
                         style={styles.menuItem}
                         activeOpacity={0.8}
                         onPress={() =>
-                            router.push('/consultas')
+                            router.push('/messages')
                         }
                     >
                         <View style={styles.menuIcon}>
