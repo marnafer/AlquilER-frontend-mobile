@@ -23,6 +23,8 @@ import PropertySelect from '../components/PropertySelect';
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
+import ScreenHeader from '../components/ScreenHeader';
+
 const MAX_IMAGENES_POR_PROPIEDAD = 10;
 
 const esNumeroPositivo = (valor: string): boolean => {
@@ -664,15 +666,10 @@ export default function PublicarPropiedad() {
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>
-                        Publicar propiedad
-                    </Text>
-
-                    <Text style={styles.headerSubtitle}>
-                        Completá los datos de la propiedad
-                    </Text>
-                </View>
+               <ScreenHeader
+                    title="Publicar propiedad"
+                    subtitle="Completá los datos de la propiedad"
+                />
 
                 {errorCatalogos ? (
                     <View style={styles.errorContainer}>
@@ -1215,30 +1212,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: theme.spacing.md,
         paddingTop: theme.spacing.md,
         paddingBottom: 100,
-    },
-
-    header: {
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.md,
-        paddingBottom: theme.spacing.lg,
-        backgroundColor: theme.colors.primary,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-    },
-
-    headerTitle: {
-        color: '#ffffff',
-        fontSize: 28,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    headerSubtitle: {
-        marginTop: theme.spacing.sm,
-        color: '#ffffff',
-        fontSize: 14,
-        textAlign: 'center',
-        opacity: 0.9,
     },
 
     sectionTitleFirst: {
