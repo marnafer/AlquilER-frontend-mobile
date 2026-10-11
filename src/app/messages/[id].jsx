@@ -409,6 +409,7 @@ export default function ChatScreen() {
         }
     };
 
+    
     const enviar = async () => {
         const mensajeTexto = texto.trim();
 
@@ -423,10 +424,18 @@ export default function ChatScreen() {
                 mensajeTexto
             );
 
-            if (respuesta?.success === false) {
-                throw new Error(
-                    respuesta.message || 'No se pudo enviar el mensaje.'
-                );
+            if (
+                respuesta?.success === false ||
+                respuesta?.data?.success === false
+            ) {
+                const mensajeError =
+                    respuesta?.message ||
+                    respuesta?.error ||
+                    respuesta?.data?.message ||
+                    respuesta?.data?.error ||
+                    'No se pudo enviar el mensaje.';
+
+                throw new Error(mensajeError);
             }
 
             const mensajeCreado = extraerDatos(respuesta);
@@ -456,15 +465,31 @@ export default function ChatScreen() {
                     animated: true,
                 });
             });
-
         } catch (e) {
-            setError(
-                e.message || 'No se pudo enviar el mensaje.'
-            );
+            const errorApi = e?.response?.data;
+
+            const erroresValidacion =
+                errorApi?.validation_errors;
+
+            const primerError = erroresValidacion
+                ? Object.values(erroresValidacion)
+                    .flat()
+                    .find((mensaje) => typeof mensaje === 'string')
+                : null;
+
+            const mensajeError =
+                primerError ||
+                errorApi?.message ||
+                errorApi?.error ||
+                e?.message ||
+                'No se pudo enviar el mensaje. Intentá nuevamente.';
+
+            setError(String(mensajeError));
         } finally {
             setSending(false);
         }
     };
+
 
     const manejarContenido = (ancho, alto) => {
         if (mantenerPosicionRef.current) {
