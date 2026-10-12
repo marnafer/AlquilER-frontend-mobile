@@ -22,7 +22,7 @@ import {
     marcarNotificacionLeida,
     marcarTodasNotificacionesLeidas,
     obtenerNotificaciones,
-} from '../services/api';
+} from '../services/notificationService';
 
 import ScreenHeader from '../components/ScreenHeader';
 import { useLayout } from '../context/LayoutContext';
