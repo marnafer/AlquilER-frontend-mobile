@@ -12,7 +12,7 @@ import {
 import PropertyCard from '../components/PropertyCard';
 import ScreenHeader from '../components/ScreenHeader';
 import { useLayout } from '../context/LayoutContext';
-import { obtenerFavoritos } from '../services/api';
+import { obtenerFavoritos } from '../services/favoriteService';
 import { abrirPropiedad } from '../services/propertyNavigation';
 import { theme } from '../theme/theme';
 

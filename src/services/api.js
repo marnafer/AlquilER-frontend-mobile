@@ -10,7 +10,7 @@ export async function estaAutenticado() {
 }
 
 const api = axios.create({
-    baseURL: 'http://192.168.100.37:8000/api', //192.168.100.37
+    baseURL: 'http://192.168.100.17:8000/api', //192.168.100.37
 });
 
 let refreshing = false;
