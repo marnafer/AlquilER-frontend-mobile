@@ -40,9 +40,9 @@ export default function NotificacionesScreen() {
     const [error, setError] = useState('');
 
     const rutasPorTipo = {
-        reserva_nueva: '/reservas',
-        reserva_confirmada: '/reservas',
-        reserva_rechazada: '/reservas',
+        reserva_nueva: '/reservations',
+        reserva_confirmada: '/reservations',
+        reserva_rechazada: '/reservations',
         consulta_nueva: '/messages',
         mensaje_nuevo: '/messages',
     };
