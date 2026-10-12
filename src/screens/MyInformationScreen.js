@@ -1,12 +1,6 @@
 import {
-    useFocusEffect,
-    useRouter,
+    useRouter
 } from 'expo-router';
-
-import {
-    useCallback,
-    useState,
-} from 'react';
 
 import {
     ActivityIndicator,
@@ -19,52 +13,16 @@ import {
 
 import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 import { theme } from '../theme/theme';
 
 export default function MyInformationScreen() {
     const router = useRouter();
 
-    const [usuario, setUsuario] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    const { logout } = useAuth();
-
-    const cargarUsuario = async () => {
-        try {
-            setLoading(true);
-            setError('');
-
-            const response = await api.get('/usuarios/me');
-
-            if (response.data?.success) {
-                setUsuario(response.data.data);
-            } else {
-                setUsuario(null);
-            }
-        } catch (error) {
-            console.error(
-                'MY INFORMATION: error al cargar usuario',
-                error.response?.data
-            );
-
-            setUsuario(null);
-
-            setError(
-                error.response?.data?.error ||
-                'No se pudo cargar tu información'
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useFocusEffect(
-        useCallback(() => {
-            cargarUsuario();
-        }, [])
-    );
+    const {
+        usuario,
+        loading,
+        logout,
+    } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -103,15 +61,6 @@ export default function MyInformationScreen() {
                 title="Mi información"
                 subtitle="Gestioná tu cuenta y tu actividad"
             />
-            
-
-            {error ? (
-                <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>
-                        {error}
-                    </Text>
-                </View>
-            ) : null}
 
             {usuario ? (
                 <View style={styles.profileCard}>
@@ -231,7 +180,7 @@ export default function MyInformationScreen() {
                         style={styles.menuItem}
                         activeOpacity={0.8}
                         onPress={() =>
-                            router.push('/reservas')
+                            router.push('/reservations')
                         }
                     >
                         <View style={styles.menuIcon}>
@@ -374,25 +323,6 @@ const styles = StyleSheet.create({
         color:
             theme.colors.textMuted,
         fontSize: 14,
-    },
-
-    errorBox: {
-        marginHorizontal:
-            theme.spacing.md,
-        marginTop:
-            theme.spacing.md,
-        padding:
-            theme.spacing.md,
-        borderRadius: 10,
-        backgroundColor:
-            theme.colors.errorBg,
-    },
-
-    errorText: {
-        color:
-            theme.colors.errorText,
-        fontSize: 14,
-        textAlign: 'center',
     },
 
     profileCard: {
