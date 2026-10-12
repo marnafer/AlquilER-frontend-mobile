@@ -3,6 +3,7 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -12,17 +13,15 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../../components/ScreenHeader';
-import { obtenerReserva } from '../../services/api';
+import {
+    confirmarReserva,
+    obtenerReserva,
+    rechazarReserva,
+} from '../../services/reservationService';
 
-const COLORES = {
-    fondo: '#F7F8FA',
-    tarjeta: '#FFFFFF',
-    primario: '#2563EB',
-    texto: '#172033',
-    secundario: '#667085',
-    borde: '#E4E7EC',
-    error: '#B42318',
-};
+import { useAuth } from '../../context/AuthContext';
+
+import { theme } from '../../theme/theme';
 
 function obtenerValor(objeto, claves) {
     for (const clave of claves) {
@@ -68,6 +67,8 @@ function Dato({ etiqueta, valor }) {
 }
 
 export default function DetalleReservaScreen() {
+
+    const { usuario } = useAuth();
     const { id } = useLocalSearchParams();
 
     const reservaId = Array.isArray(id) ? id[0] : id;
@@ -76,6 +77,8 @@ export default function DetalleReservaScreen() {
     const [cargando, setCargando] = useState(true);
     const [actualizando, setActualizando] = useState(false);
     const [error, setError] = useState('');
+
+    const [procesandoAccion, setProcesandoAccion] = useState(false);
 
     const cargarReserva = useCallback(async (manual = false) => {
         if (!reservaId) {
@@ -121,6 +124,82 @@ export default function DetalleReservaScreen() {
         }
     }, [reservaId]);
 
+    const confirmarSolicitud = async () => {
+    try {
+        setProcesandoAccion(true);
+
+        const respuesta = await confirmarReserva(reservaId);
+
+        if (!respuesta?.success) {
+            throw new Error(
+                respuesta?.message ||
+                respuesta?.error ||
+                'No se pudo confirmar la reserva.'
+            );
+        }
+
+        await cargarReserva(true);
+
+        Alert.alert(
+            'Reserva confirmada',
+            'La solicitud de reserva se confirmó correctamente.'
+        );
+    } catch (e) {
+        Alert.alert(
+            'Error',
+            e.message || 'No se pudo confirmar la reserva.'
+        );
+    } finally {
+        setProcesandoAccion(false);
+    }
+};
+
+const rechazarSolicitud = () => {
+    Alert.alert(
+        'Rechazar reserva',
+        '¿Estás seguro de que querés rechazar esta solicitud?',
+        [
+            {
+                text: 'Volver',
+                style: 'cancel',
+            },
+            {
+                text: 'Rechazar',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        setProcesandoAccion(true);
+
+                        const respuesta = await rechazarReserva(reservaId);
+
+                        if (!respuesta?.success) {
+                            throw new Error(
+                                respuesta?.message ||
+                                respuesta?.error ||
+                                'No se pudo rechazar la reserva.'
+                            );
+                        }
+
+                        await cargarReserva(true);
+
+                        Alert.alert(
+                            'Solicitud rechazada',
+                            'La reserva se rechazó correctamente.'
+                        );
+                    } catch (e) {
+                        Alert.alert(
+                            'Error',
+                            e.message || 'No se pudo rechazar la reserva.'
+                        );
+                    } finally {
+                        setProcesandoAccion(false);
+                    }
+                },
+            },
+        ]
+    );
+};
+
     useFocusEffect(
         useCallback(() => {
             cargarReserva();
@@ -128,13 +207,25 @@ export default function DetalleReservaScreen() {
     );
 
     const propiedad = reserva?.propiedad;
-    const usuario = reserva?.usuario;
-
-    const tituloPropiedad = obtenerValor(propiedad, [
-        'titulo'
-    ]) || 'Propiedad reservada';
+    const usuarioReserva = reserva?.usuario;
 
     const estado = obtenerValor(reserva, ['estado']);
+
+    const propietarioId = obtenerValor(
+        propiedad,
+        ['usuario_id']
+    );
+
+    const usuarioActualId = obtenerValor(
+        usuario,
+        ['id']
+    );
+
+    const puedeGestionarReserva =
+        propietarioId !== null &&
+        usuarioActualId !== null &&
+        String(propietarioId) === String(usuarioActualId) &&
+        estado === 'pendiente';
 
     const fechaInicio = obtenerValor(reserva, [
         'fecha_inicio_alquiler',
@@ -152,13 +243,8 @@ export default function DetalleReservaScreen() {
         'fecha_confirmacion',
     ]);
 
-    const nombreUsuario = obtenerValor(usuario, [
-        'nombre'
-    ]);
-
-     const apellidoUsuario = obtenerValor(usuario, [
-        'apellido'
-    ]);
+    const nombreUsuario = obtenerValor(usuarioReserva, ['nombre']);
+    const apellidoUsuario = obtenerValor(usuarioReserva, ['apellido']);
 
 
     return (
@@ -175,8 +261,8 @@ export default function DetalleReservaScreen() {
                     <RefreshControl
                         refreshing={actualizando}
                         onRefresh={() => cargarReserva(true)}
-                        colors={[COLORES.primario]}
-                        tintColor={COLORES.primario}
+                        colors={[theme.colors.primary]}
+                        tintColor={theme.colors.primary}
                     />
                 }
             >
@@ -184,7 +270,7 @@ export default function DetalleReservaScreen() {
                     <View style={styles.loading}>
                         <ActivityIndicator
                             size="large"
-                            color={COLORES.primario}
+                            color={theme.colors.primary}
                         />
                         <Text style={styles.loadingText}>
                             Cargando detalle...
@@ -272,6 +358,40 @@ export default function DetalleReservaScreen() {
                             />
                         </View>
 
+                        {puedeGestionarReserva && (
+                            <View style={styles.accionesContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.accionButton,
+                                        styles.confirmarButton,
+                                    ]}
+                                    onPress={confirmarSolicitud}
+                                    disabled={procesandoAccion}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.accionButtonText}>
+                                        {procesandoAccion
+                                            ? 'Procesando...'
+                                            : 'Confirmar reserva'}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.accionButton,
+                                        styles.rechazarButton,
+                                    ]}
+                                    onPress={rechazarSolicitud}
+                                    disabled={procesandoAccion}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.accionButtonText}>
+                                        Rechazar reserva
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
                         <TouchableOpacity
                             style={styles.refreshButton}
                             onPress={() => cargarReserva(true)}
@@ -294,7 +414,7 @@ export default function DetalleReservaScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORES.fondo,
+        backgroundColor: theme.colors.background,
     },
     scrollView: {
         flex: 1,
@@ -304,23 +424,23 @@ const styles = StyleSheet.create({
         paddingBottom: 125,
     },
     card: {
-        backgroundColor: COLORES.tarjeta,
+        backgroundColor: theme.colors.background,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: COLORES.borde,
+        borderColor: theme.colors.border,
         padding: 18,
         marginBottom: 16,
     },
     seccionTitulo: {
         fontSize: 18,
         fontWeight: '700',
-        color: COLORES.texto,
+        color: theme.colors.textDark,
         marginBottom: 14,
     },
     tituloPropiedad: {
         fontSize: 20,
         fontWeight: '700',
-        color: COLORES.texto,
+        color: theme.colors.textDark,
         marginBottom: 12,
     },
     dato: {
@@ -328,12 +448,12 @@ const styles = StyleSheet.create({
     },
     etiqueta: {
         fontSize: 13,
-        color: COLORES.secundario,
+        color: theme.colors.textMuted,
         marginBottom: 4,
     },
     valor: {
         fontSize: 15,
-        color: COLORES.texto,
+        color: theme.colors.textDark,
         lineHeight: 21,
     },
     estadoContainer: {
@@ -345,7 +465,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     estadoTexto: {
-        color: COLORES.primario,
+        color: theme.colors.primary,
         fontSize: 14,
         fontWeight: '700',
         textTransform: 'capitalize',
@@ -357,7 +477,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: COLORES.secundario,
+        color: theme.colors.textMuted,
     },
     errorCard: {
         backgroundColor: '#FEF3F2',
@@ -365,7 +485,7 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     errorText: {
-        color: COLORES.error,
+        color: theme.colors.errorText,
         fontSize: 14,
         lineHeight: 20,
     },
@@ -375,11 +495,11 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     retryText: {
-        color: COLORES.error,
+        color: theme.colors.errorText,
         fontWeight: '700',
     },
     refreshButton: {
-        backgroundColor: COLORES.primario,
+        backgroundColor: theme.colors.primary,
         borderRadius: 12,
         padding: 15,
         alignItems: 'center',
@@ -389,4 +509,31 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '700',
     },
+
+    accionesContainer: {
+    gap: 12,
+    marginBottom: 16,
+},
+
+accionButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+},
+
+confirmarButton: {
+    backgroundColor: '#15803D',
+},
+
+rechazarButton: {
+    backgroundColor: '#B42318',
+},
+
+accionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+},
 });

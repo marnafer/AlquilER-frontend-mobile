@@ -2,13 +2,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
-    Switch,
     Text,
-    TextInput,
     TouchableOpacity,
     useWindowDimensions,
     View
@@ -18,12 +19,16 @@ import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
 import api, {
     agregarFavorito,
-    crearConsulta,
     eliminarFavorito,
     estaAutenticado,
     obtenerFavoritos,
     obtenerPerfil
 } from '../../services/api';
+
+import ApplicantProfileForm from '@/components/ApplicantProfileForm';
+import ReservationRequestForm from '@/components/ReservationRequestForm';
+
+import { crearReserva } from '../../services/reservationService';
 
 interface Servicio {
     id: number;
@@ -72,28 +77,11 @@ interface Propiedad {
     imagen_principal: Imagen | null;
 }
 
-type PerfilInteresado = {
-    fecha_mudanza: string;
-    cantidad_ocupantes: number;
-    tiene_mascotas: boolean;
-    cantidad_mascotas: number;
-    garantias: string[];
-};
-
 export default function PropiedadDetailScreen() {
 
     const router = useRouter();
 
     const [mostrarFormularioPerfil, setMostrarFormularioPerfil] = useState(false);
-
-    const [erroresPerfil, setErroresPerfil] = useState<ErroresPerfil>({});
-
-    const [fechaMudanza, setFechaMudanza] = useState('');
-    const [cantidadOcupantes, setCantidadOcupantes] = useState('1');
-    const [tieneMascotas, setTieneMascotas] = useState(false);
-    const [cantidadMascotas, setCantidadMascotas] = useState('0');
-
-    const [garantias, setGarantias] = useState<string[]>([]);
 
     const [usuarioActualId, setUsuarioActualId] =
         useState<number | null>(null);
@@ -132,6 +120,18 @@ export default function PropiedadDetailScreen() {
 
     const [creandoConsulta, setCreandoConsulta] = useState(false);
     const [errorConsulta, setErrorConsulta] = useState('');
+
+    const [mostrarFormularioReserva, setMostrarFormularioReserva] =
+        useState(false);
+
+    const [creandoReserva, setCreandoReserva] =
+        useState(false);
+
+    const [errorReserva, setErrorReserva] =
+        useState('');
+
+    const scrollViewRef = useRef<ScrollView>(null);
+    const [posicionFormulario, setPosicionFormulario] = useState(0);
 
     const cargarEstadoFavorito = useCallback(async () => {
         if (!propiedad?.id) return;
@@ -307,6 +307,24 @@ export default function PropiedadDetailScreen() {
         cargarEstadoFavorito();
     }, [cargarEstadoFavorito]);
 
+    useEffect(() => {
+        if (!mostrarFormularioPerfil && !mostrarFormularioReserva) {
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => {
+            scrollViewRef.current?.scrollTo({
+                y: Math.max(0, posicionFormulario - 20),
+                animated: true,
+            });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [
+        mostrarFormularioPerfil,
+        mostrarFormularioReserva,
+        posicionFormulario,
+    ]);
 
     useEffect(() => {
         const cargarPropiedad = async () => {
@@ -412,113 +430,18 @@ export default function PropiedadDetailScreen() {
         setMostrarFormularioPerfil(true);
     };
 
-    type ErroresPerfil = {
-        fecha_mudanza?: string;
-        cantidad_ocupantes?: string;
-        tiene_mascotas?: string;
-        cantidad_mascotas?: string;
-        garantias?: string;
-        general?: string;
-    };
-
-    const enviarConsulta = async () => {
-
-        setErroresPerfil({});
-
-        if (!propiedad?.id || creandoConsulta) return;
-
-        setErrorConsulta('');
-
-        // Validar la fecha ingresada.
-        const fechaValida =
-            /^\d{4}-\d{2}-\d{2}$/.test(fechaMudanza) &&
-            !Number.isNaN(Date.parse(`${fechaMudanza}T00:00:00`)) &&
-            new Date(`${fechaMudanza}T00:00:00`).toISOString().slice(0, 10) === fechaMudanza;
-
-       if (!fechaValida) {
-            setErroresPerfil({
-                fecha_mudanza: 'Ingresá una fecha válida en formato AAAA-MM-DD.',
-            });
-            return;
-        }
-
-        const ocupantes = Number(cantidadOcupantes);
-        const mascotas = Number(cantidadMascotas);
-
-        if (!Number.isInteger(ocupantes) || ocupantes < 1 || ocupantes > 50) {
-            setErroresPerfil({
-                cantidad_ocupantes: 'La cantidad de ocupantes debe estar entre 1 y 50.',
-            });
-            return;
-        }
-
-        if (
-            !Number.isInteger(mascotas) ||
-            mascotas < 0 ||
-            mascotas > 20 ||
-            (tieneMascotas && mascotas < 1) ||
-            (!tieneMascotas && mascotas !== 0)
-        ) {
-            setErroresPerfil({
-                cantidad_mascotas: tieneMascotas
-                    ? 'Indicá entre 1 y 20 mascotas.'
-                    : 'La cantidad de mascotas debe ser 0 si no tenés mascotas.',
-            });
-            return;
-        }
-
-        const perfilInteresado: PerfilInteresado = {
-            fecha_mudanza: fechaMudanza,
-            cantidad_ocupantes: ocupantes,
-            tiene_mascotas: tieneMascotas,
-            cantidad_mascotas: tieneMascotas ? mascotas : 0,
-            garantias,
-        };
-
-        try {
-            setCreandoConsulta(true);
-
-            const response = await crearConsulta(
-                propiedad.id,
-                perfilInteresado
-            );
-
-            if (!response?.success || !response?.data?.id) {
-        const errores = response?.validation_errors?.perfil_interesado;
-
-        setErroresPerfil({
-            fecha_mudanza: errores?.fecha_mudanza,
-            cantidad_ocupantes: errores?.cantidad_ocupantes,
-            tiene_mascotas: errores?.tiene_mascotas,
-            cantidad_mascotas: errores?.cantidad_mascotas,
-            garantias: errores?.garantias,
-            general: !errores
-                ? response?.message ||
-                response?.error ||
-                'No se pudo iniciar la consulta.'
-                : undefined,
-        });
-
-        return;
-    }
-
-    setErroresPerfil({});
-
-            router.push(`/messages/${response.data.id}`);
-        } catch (error) {
-            console.error('Error al iniciar consulta:', error);
-            setErrorConsulta('Ocurrió un error al iniciar la consulta.');
-        } finally {
-            setCreandoConsulta(false);
-        }
-    };
-
     const esPropietario =
     usuarioActualId !== null &&
     Number(usuarioActualId) === Number(propiedad.usuario_id);
 
     return (
+    <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
         <ScrollView
+            ref={scrollViewRef}
             style={styles.container}
             contentContainerStyle={[
                 styles.content,
@@ -876,198 +799,123 @@ export default function PropiedadDetailScreen() {
             </View>
 
             {perfilCargado && !esPropietario && (
-            <>
-                {mostrarFormularioPerfil && (
-                    <View style={styles.formularioPerfil}>
-                        <Text style={styles.sectionTitle}>
-                            Perfil del interesado
-                        </Text>
-
-                        <Text style={styles.textMuted}>
-                            Completá estos datos para acompañar tu consulta al propietario.
-                        </Text>
-
-                        <Text style={styles.labelFormulario}>
-                            Fecha estimada de mudanza
-                        </Text>
-                        <TextInput
-                            style={styles.inputFormulario}
-                            value={fechaMudanza}
-                            onChangeText={setFechaMudanza}
-                            placeholder="AAAA-MM-DD"
-                            placeholderTextColor={theme.colors.textMuted}
-                            keyboardType="numbers-and-punctuation"
-                            maxLength={10}
-                        />
-
-                        {erroresPerfil.fecha_mudanza && (
-                            <Text style={styles.errorText}>
-                                {erroresPerfil.fecha_mudanza}
-                            </Text>
-                        )}
-
-                        <Text style={styles.labelFormulario}>
-                            Cantidad de ocupantes
-                        </Text>
-                        <TextInput
-                            style={styles.inputFormulario}
-                            value={cantidadOcupantes}
-                            onChangeText={setCantidadOcupantes}
-                            keyboardType="number-pad"
-                            maxLength={2}
-                            placeholder="Ej.: 3"
-                            placeholderTextColor={theme.colors.textMuted}
-                        />
-
-                        {erroresPerfil.cantidad_ocupantes && (
-                            <Text style={styles.errorText}>
-                                {erroresPerfil.cantidad_ocupantes}
-                            </Text>
-                        )}
-
-                        <View style={styles.filaMascotas}>
-                            <Text style={styles.labelFormulario}>
-                                ¿Tenés mascotas?
-                            </Text>
-
-                            <Switch
-                                value={tieneMascotas}
-                                onValueChange={(valor) => {
-                                    setTieneMascotas(valor);
-                                    setCantidadMascotas(valor ? '1' : '0');
-                                }}
-                                trackColor={{ true: theme.colors.primary }}
-                            />
-                        </View>
-
-                        {tieneMascotas && (
-                            <>
-                                <Text style={styles.labelFormulario}>
-                                    Cantidad de mascotas
-                                </Text>
-
-                                <TextInput
-                                    style={styles.inputFormulario}
-                                    value={cantidadMascotas}
-                                    onChangeText={setCantidadMascotas}
-                                    keyboardType="number-pad"
-                                    maxLength={2}
-                                    placeholder="Ej.: 1"
-                                    placeholderTextColor={theme.colors.textMuted}
-                                />
-                            </>
-                        )}
-
-                        {erroresPerfil.cantidad_mascotas && (
-                            <Text style={styles.errorText}>
-                                {erroresPerfil.cantidad_mascotas}
-                            </Text>
-                        )}
-
-                        <Text style={styles.labelFormulario}>
-                            ¿Qué garantías podés presentar?
-                        </Text>
-
-                        {[
-                            { value: 'recibo_sueldo', label: 'Recibo de sueldo' },
-                            { value: 'garantia_propietaria', label: 'Garantía propietaria' },
-                            { value: 'seguro_caucion', label: 'Seguro de caución' },
-                            { value: 'garante', label: 'Garante' },
-                        ].map((opcion) => {
-                            const seleccionada = garantias.includes(opcion.value);
-
-                            return (
-                                <TouchableOpacity
-                                    key={opcion.value}
-                                    style={styles.opcionGarantia}
-                                    onPress={() => {
-                                        setGarantias((actuales) =>
-                                            seleccionada
-                                                ? actuales.filter(
-                                                    (item) => item !== opcion.value
-                                                )
-                                                : [...actuales, opcion.value]
-                                        );
-                                    }}
-                                    activeOpacity={0.7}
-                                >
-                                    <Text style={styles.checkboxGarantia}>
-                                        {seleccionada ? '☑' : '□'}
-                                    </Text>
-
-                                    <Text style={styles.textoGarantia}>
-                                        {opcion.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-
-                        {erroresPerfil.garantias && (
-                            <Text style={styles.errorText}>
-                                {erroresPerfil.garantias}
-                            </Text>
-                        )}
-
-                        <TouchableOpacity
-                            style={[
-                                styles.consultarButton,
-                                creandoConsulta && styles.consultarButtonDisabled,
-                            ]}
-                            onPress={enviarConsulta}
-                            disabled={creandoConsulta}
-                            activeOpacity={0.8}
-                        >
-                            {creandoConsulta ? (
-                                <ActivityIndicator color="#FFFFFF" />
-                            ) : (
-                                <Text style={styles.consultarButtonText}>
-                                    Enviar perfil y abrir chat
-                                </Text>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.cancelarFormulario}
-                            onPress={() => {
-                                setMostrarFormularioPerfil(false);
-                                setErrorConsulta('');
-                            }}
-                        >
-                            <Text style={styles.textoCancelar}>
-                                Cancelar
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {!mostrarFormularioPerfil && (
+                <View 
+                    style={styles.accionesPropiedad}
+                    onLayout={(event) => {
+                        setPosicionFormulario(event.nativeEvent.layout.y);
+                    }}
+                >
                     <TouchableOpacity
                         style={styles.consultarButton}
                         onPress={consultarPropiedad}
+                        disabled={creandoConsulta}
                         activeOpacity={0.8}
                     >
                         <Text style={styles.consultarButtonText}>
                             Consultar por esta propiedad
                         </Text>
                     </TouchableOpacity>
-                )}
-            </>
-        )}
 
-            {errorConsulta !== '' && (
-                <Text style={styles.errorConsulta}>
-                    {errorConsulta}
-                </Text>
-            )}
+                    {mostrarFormularioPerfil && (
+                        <ApplicantProfileForm
+                            propiedadId={propiedad.id}
+                            onCancel={() => {
+                                setMostrarFormularioPerfil(false);
+                                setErrorConsulta('');
+                            }}
+                            onConsultaCreada={(consultaId) => {
+                                setMostrarFormularioPerfil(false);
+                                router.push(`/messages/${consultaId}`);
+                            }}
+                        />
+                    )}
 
-            {erroresPerfil.general && (
-                <Text style={styles.errorText}>
-                    {erroresPerfil.general}
-                </Text>
-            )}
-            
+                    {propiedad.disponible && (
+                        <TouchableOpacity
+                            style={[
+                                styles.consultarButton,
+                                styles.reservarButton,
+                            ]}
+                            onPress={async () => {
+                                setErrorReserva('');
 
-        </ScrollView>
+                                const autenticado = await estaAutenticado();
+
+                                if (!autenticado) {
+                                    router.push('/login');
+                                    return;
+                                }
+
+                                setMostrarFormularioReserva(true);
+                            }}
+                            disabled={creandoReserva}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.consultarButtonText}>
+                                Solicitar reserva
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {mostrarFormularioReserva && (
+                        <ReservationRequestForm
+                            onCancel={() => {
+                                setMostrarFormularioReserva(false);
+                                setErrorReserva('');
+                            }}
+                            onSubmit={async (fechaInicio, fechaFin) => {
+                                if (!propiedad.id || creandoReserva) {
+                                    return;
+                                }
+
+                                setErrorReserva('');
+                                setCreandoReserva(true);
+
+                                try {
+                                    const response = await crearReserva(
+                                        propiedad.id,
+                                        fechaInicio,
+                                        fechaFin
+                                    );
+                                    if (!response?.success || !response?.data?.id) {
+                                        setErrorReserva(
+                                            response?.message ||
+                                            response?.error ||
+                                            'No se pudo crear la solicitud de reserva.'
+                                        );
+
+                                        return;
+                                    }
+                                    setMostrarFormularioReserva(false);
+                                    setErrorReserva('');
+
+                                    Alert.alert(
+                                        '¡Solicitud enviada!',
+                                        'Tu solicitud de reserva se creó correctamente y quedó pendiente de confirmación por parte del propietario.',
+                                        [
+                                            {
+                                                text: 'Aceptar',
+                                                onPress: () => {},
+                                            },
+                                        ]
+                                    );
+                                } finally {
+                                    setCreandoReserva(false);
+                                }
+                            }}
+                        />
+                    )}
+
+                    {errorReserva !== '' && (
+                        <Text style={styles.errorConsulta}>
+                            {errorReserva}
+                        </Text>
+                    )}
+                </View>
+            )}      
+
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -1402,6 +1250,18 @@ const styles = StyleSheet.create({
         color: theme.colors.textMuted,
         fontSize: 15,
         fontWeight: '600',
+    },
+
+    accionesPropiedad: {
+        marginTop: theme.spacing.md,
+    },
+
+    reservarButton: {
+        backgroundColor: theme.colors.primaryDark,
+    },
+
+    keyboardAvoiding: {
+        flex: 1,
     },
 
 });

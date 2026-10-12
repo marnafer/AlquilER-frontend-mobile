@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../components/ScreenHeader';
-import { obtenerReservas } from '../services/api';
+import { obtenerReservas } from '../services/reservationService';
 
 const COLORES = {
     fondo: '#F7F8FA',
@@ -41,10 +41,18 @@ function obtenerValor(objeto, claves) {
 function formatearFecha(valor) {
     if (!valor) return null;
 
+    const texto = String(valor);
+    const coincidencia = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (coincidencia) {
+        const [, anio, mes, dia] = coincidencia;
+        return `${dia}/${mes}/${anio}`;
+    }
+
     const fecha = new Date(valor);
 
     if (Number.isNaN(fecha.getTime())) {
-        return String(valor);
+        return texto;
     }
 
     return fecha.toLocaleDateString('es-AR');
@@ -65,13 +73,14 @@ function formatearFecha(valor) {
         const estado = obtenerValor(reserva, ['estado']);
 
         const fechaInicio = obtenerValor(reserva, [
+            'fecha_inicio_alquiler',
             'fecha_inicio',
             'fecha_desde',
             'fecha_entrada',
-            'fecha_reserva',
         ]);
 
         const fechaFin = obtenerValor(reserva, [
+            'fecha_fin_alquiler',
             'fecha_fin',
             'fecha_hasta',
             'fecha_salida',
@@ -82,7 +91,7 @@ function formatearFecha(valor) {
         const abrirDetalle = () => {
             if (id === null) return;
 
-            router.push(`/reservas/${id}`);
+            router.push(`/reservations/${id}`);
         };
 
         return (
@@ -153,6 +162,7 @@ function SeccionReservas({ titulo, reservas, mensajeVacio }) {
 }
 
 export default function ReservasScreen() {
+
     const [misReservas, setMisReservas] = useState([]);
     const [reservasPropiedades, setReservasPropiedades] =
         useState([]);
@@ -171,6 +181,10 @@ export default function ReservasScreen() {
 
         try {
             const respuesta = await obtenerReservas();
+            console.log(
+    'RESPUESTA DE RESERVAS:',
+    JSON.stringify(respuesta, null, 2)
+);
 
             if (!respuesta?.success) {
                 throw new Error(
@@ -180,19 +194,31 @@ export default function ReservasScreen() {
                 );
             }
 
+            
             const datos = respuesta.data;
 
+            if (
+                !datos ||
+                typeof datos !== 'object' ||
+                Array.isArray(datos)
+            ) {
+                throw new Error(
+                    'La respuesta del servidor no tiene el formato esperado.'
+                );
+            }
+
             setMisReservas(
-                Array.isArray(datos?.mis_reservas)
+                Array.isArray(datos.mis_reservas)
                     ? datos.mis_reservas
                     : []
             );
 
             setReservasPropiedades(
-                Array.isArray(datos?.reservas_de_mis_propiedades)
+                Array.isArray(datos.reservas_de_mis_propiedades)
                     ? datos.reservas_de_mis_propiedades
                     : []
             );
+
         } catch (e) {
             setError(
                 e.message || 'Ocurrió un error al cargar las reservas.'

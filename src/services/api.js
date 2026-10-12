@@ -10,7 +10,7 @@ export async function estaAutenticado() {
 }
 
 const api = axios.create({
-    baseURL: 'http://192.168.100.17:8000/api', //192.168.100.37
+    baseURL: 'http://192.168.100.37:8000/api', //192.168.100.37
 });
 
 let refreshing = false;
@@ -259,7 +259,7 @@ export async function obtenerFavoritos() {
 
     export async function obtenerReservas() {
         try {
-            const response = await api.get('/reservas');
+            const response = await api.get('/reservations');
 
             return response.data;
         } catch (error) {

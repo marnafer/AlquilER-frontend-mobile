@@ -34,6 +34,8 @@ export const theme = {
         errorBg: '#fee2e2',
         errorText: '#ef4444',
         disabled: '#94a3b8',
+        success: '#15803D',
+        danger: '#B42318',
     },
 
     sizes: {
