@@ -14,7 +14,9 @@ import {
 
 import ScreenHeader from '../../components/ScreenHeader';
 import {
+    cancelarReserva,
     confirmarReserva,
+    finalizarReserva,
     obtenerReserva,
     rechazarReserva,
 } from '../../services/reservationService';
@@ -200,6 +202,97 @@ const rechazarSolicitud = () => {
     );
 };
 
+    const cancelarSolicitud = () => {
+        Alert.alert(
+            'Cancelar solicitud',
+            '¿Estás seguro de que querés cancelar esta solicitud?',
+            [
+                {
+                    text: 'Volver',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Cancelar solicitud',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setProcesandoAccion(true);
+
+                            const respuesta = await cancelarReserva(reservaId);
+
+                            if (!respuesta?.success) {
+                                throw new Error(
+                                    respuesta?.message ||
+                                    respuesta?.error ||
+                                    'No se pudo cancelar la reserva.'
+                                );
+                            }
+
+                            await cargarReserva(true);
+
+                            Alert.alert(
+                                'Reserva cancelada',
+                                'La reserva se canceló correctamente.'
+                            );
+                        } catch (e) {
+                            Alert.alert(
+                                'Error',
+                                e.message || 'No se pudo cancelar la reserva.'
+                            );
+                        } finally {
+                            setProcesandoAccion(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const finalizarSolicitud = () => {
+        Alert.alert(
+            'Finalizar reserva',
+            '¿Confirmás que la reserva se realizó y querés marcarla como finalizada?',
+            [
+                {
+                    text: 'Volver',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Finalizar reserva',
+                    onPress: async () => {
+                        try {
+                            setProcesandoAccion(true);
+
+                            const respuesta = await finalizarReserva(reservaId);
+
+                            if (!respuesta?.success) {
+                                throw new Error(
+                                    respuesta?.message ||
+                                    respuesta?.error ||
+                                    'No se pudo finalizar la reserva.'
+                                );
+                            }
+
+                            await cargarReserva(true);
+
+                            Alert.alert(
+                                'Reserva finalizada',
+                                'La reserva se marcó como finalizada correctamente.'
+                            );
+                        } catch (e) {
+                            Alert.alert(
+                                'Error',
+                                e.message || 'No se pudo finalizar la reserva.'
+                            );
+                        } finally {
+                            setProcesandoAccion(false);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     useFocusEffect(
         useCallback(() => {
             cargarReserva();
@@ -220,6 +313,18 @@ const rechazarSolicitud = () => {
         usuario,
         ['id']
     );
+
+    const puedeCancelarReserva =
+        usuarioActualId !== null &&
+        obtenerValor(reserva, ['usuario_id']) !== null &&
+        String(obtenerValor(reserva, ['usuario_id'])) === String(usuarioActualId) &&
+        estado === 'pendiente';
+
+    const puedeFinalizarReserva =
+        propietarioId !== null &&
+        usuarioActualId !== null &&
+        String(propietarioId) === String(usuarioActualId) &&
+        estado === 'confirmada';
 
     const puedeGestionarReserva =
         propietarioId !== null &&
@@ -392,6 +497,46 @@ const rechazarSolicitud = () => {
                             </View>
                         )}
 
+                        {(puedeCancelarReserva || puedeFinalizarReserva) && (
+                            <View style={styles.accionesContainer}>
+                                {puedeCancelarReserva && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.accionButton,
+                                            styles.rechazarButton,
+                                        ]}
+                                        onPress={cancelarSolicitud}
+                                        disabled={procesandoAccion}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.accionButtonText}>
+                                            {procesandoAccion
+                                                ? 'Procesando...'
+                                                : 'Cancelar solicitud'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {puedeFinalizarReserva && (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.accionButton,
+                                            styles.finalizarButton,
+                                        ]}
+                                        onPress={finalizarSolicitud}
+                                        disabled={procesandoAccion}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.accionButtonText}>
+                                            {procesandoAccion
+                                                ? 'Procesando...'
+                                                : 'Finalizar reserva'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+
                         <TouchableOpacity
                             style={styles.refreshButton}
                             onPress={() => cargarReserva(true)}
@@ -536,4 +681,9 @@ accionButtonText: {
     fontSize: 15,
     fontWeight: '600',
 },
+
+finalizarButton: {
+    backgroundColor: '#175CD3',
+},
+
 });

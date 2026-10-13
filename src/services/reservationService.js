@@ -72,3 +72,27 @@ export async function crearReserva(
     }
 }
 
+export async function cancelarReserva(id) {
+    try {
+        const response = await api.put(`/reservas/${id}/cancelar`);
+        return response.data;
+    } catch (error) {
+        return error.response?.data || {
+            success: false,
+            message: 'No se pudo cancelar la reserva.',
+        };
+    }
+}
+
+export async function finalizarReserva(id) {
+    try {
+        const response = await api.put(`/reservas/${id}/finalizar`);
+        return response.data;
+    } catch (error) {
+        return error.response?.data || {
+            success: false,
+            message: 'No se pudo finalizar la reserva.',
+        };
+    }
+}
+
