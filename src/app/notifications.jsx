@@ -43,6 +43,7 @@ export default function NotificacionesScreen() {
         reserva_nueva: '/reservations',
         reserva_confirmada: '/reservations',
         reserva_rechazada: '/reservations',
+        reserva_finalizada: '/reservations',
         consulta_nueva: '/messages',
         mensaje_nuevo: '/messages',
     };

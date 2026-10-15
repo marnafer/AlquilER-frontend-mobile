@@ -25,6 +25,9 @@ import { useAuth } from '../../context/AuthContext';
 
 import { theme } from '../../theme/theme';
 
+import ReviewButton from '../../components/ReviewButton';
+import { obtenerResenasReserva } from '../../services/reviewService';
+
 function obtenerValor(objeto, claves) {
     for (const clave of claves) {
         const valor = clave
@@ -82,6 +85,8 @@ export default function DetalleReservaScreen() {
 
     const [procesandoAccion, setProcesandoAccion] = useState(false);
 
+    const [resenas, setResenas] = useState(null);
+
     const cargarReserva = useCallback(async (manual = false) => {
         if (!reservaId) {
             setError('No se recibió el identificador de la reserva.');
@@ -116,6 +121,33 @@ export default function DetalleReservaScreen() {
             }
 
             setReserva(datos);
+            setResenas(null);
+
+            try {
+                const respuestaResenas = await obtenerResenasReserva(
+                    reservaId
+                );
+
+                if (!respuestaResenas?.success) {
+                    throw new Error(
+                        respuestaResenas?.message ||
+                        'No se pudieron consultar las reseñas.'
+                    );
+                }
+
+                setResenas(
+                    Array.isArray(respuestaResenas.data)
+                        ? respuestaResenas.data
+                        : []
+                );
+            } catch (e) {
+                console.error(
+                    'Error al consultar las reseñas de la reserva:',
+                    e
+                );
+
+                setResenas(null);
+            }
         } catch (e) {
             setError(
                 e.message || 'Ocurrió un error al cargar la reserva.'
@@ -462,6 +494,12 @@ const rechazarSolicitud = () => {
                                 valor={ `${nombreUsuario} ${apellidoUsuario}` }
                             />
                         </View>
+
+                        <ReviewButton
+                            reserva={reserva}
+                            usuarioId={usuario?.id}
+                            resenas={resenas}
+                        />
 
                         {puedeGestionarReserva && (
                             <View style={styles.accionesContainer}>

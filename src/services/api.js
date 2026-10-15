@@ -284,7 +284,7 @@ export async function obtenerFavoritos() {
 
     export async function obtenerNotificaciones() {
         try {
-            const response = await api.get('/notificaciones');
+            const response = await api.get('/notificaciones');  
             return response.data;
         } catch (error) {
             return error.response?.data || {

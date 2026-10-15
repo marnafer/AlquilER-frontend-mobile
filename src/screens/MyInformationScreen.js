@@ -235,6 +235,32 @@ export default function MyInformationScreen() {
                     <TouchableOpacity
                         style={styles.menuItem}
                         activeOpacity={0.8}
+                        onPress={() => router.push('/reviews')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <Text style={styles.menuIconText}>
+                                ⭐
+                            </Text>
+                        </View>
+
+                        <View style={styles.menuContent}>
+                            <Text style={styles.menuTitle}>
+                                Mis reseñas
+                            </Text>
+
+                            <Text style={styles.menuDescription}>
+                                Consultá las reseñas que realizaste y las de tus propiedades
+                            </Text>
+                        </View>
+
+                        <Text style={styles.menuArrow}>
+                            ›
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        activeOpacity={0.8}
                         onPress={() =>
                             router.push('/favorites')
                         }
