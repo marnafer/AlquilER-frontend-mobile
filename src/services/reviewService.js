@@ -73,6 +73,18 @@ export async function obtenerResenasDeMisPropiedades() {
     );
 }
 
+
+/**
+ * Obtiene las reseñas recibidas por el usuario como inquilino.
+ */
+export async function obtenerResenasDeMisEstadias(usuarioId) {
+    return manejarSolicitud(
+        api.get(`/resenas/usuario/${usuarioId}`),
+        'No se pudieron cargar las reseñas de tus estadías.'
+    );
+}
+
+
 /**
  * Crea una reseña para una reserva finalizada.
  * El backend determina el tipo y el calificador.

@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 
 import ScreenHeader from '../components/ScreenHeader';
 import {
+    obtenerResenasDeMisEstadias,
     obtenerResenasDeMisPropiedades,
     obtenerResenasRealizadas,
 } from '../services/reviewService';
@@ -119,7 +120,7 @@ function ResenaCard({ resena, recibida }) {
             {nombrePersona !== '' && (
                 <Text style={styles.persona}>
                     {recibida
-                        ? `Calificador: ${nombrePersona}`
+                        ? `Calificado por: ${nombrePersona}`
                         : `Inquilino: ${nombrePersona}`}
                 </Text>
             )}
@@ -180,9 +181,10 @@ function SeccionResenas({
 
 export default function ReviewsScreen() {
 
-    const { usuario } = useAuth();
+    const { usuario, loading: cargandoSesion } = useAuth();
     const [misResenas, setMisResenas] = useState([]);
     const [resenasPropiedades, setResenasPropiedades] = useState([]);
+    const [resenasEstadias, setResenasEstadias] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [actualizando, setActualizando] = useState(false);
     const [error, setError] = useState('');
@@ -197,6 +199,10 @@ export default function ReviewsScreen() {
 
         setError('');
 
+        if (cargandoSesion) {
+            return;
+        }
+
         if (!usuario?.id) {
             setError('No se pudo identificar al usuario autenticado.');
             setCargando(false);
@@ -205,11 +211,15 @@ export default function ReviewsScreen() {
         }
 
         try {
-            const [respuestaRealizadas, respuestaRecibidas] =
-                await Promise.all([
-                    obtenerResenasRealizadas(usuario.id),
-                    obtenerResenasDeMisPropiedades(),
-                ]);
+            const [
+                respuestaRealizadas,
+                respuestaRecibidas,
+                respuestaEstadias,
+            ] = await Promise.all([
+                obtenerResenasRealizadas(usuario.id),
+                obtenerResenasDeMisPropiedades(),
+                obtenerResenasDeMisEstadias(usuario.id),
+            ]);
 
             if (!respuestaRealizadas?.success) {
                 throw new Error(
@@ -225,8 +235,16 @@ export default function ReviewsScreen() {
                 );
             }
 
+            if (!respuestaEstadias?.success) {
+                throw new Error(
+                    respuestaEstadias?.message ||
+                    'No se pudieron cargar las reseñas de tus estadías.'
+                );
+            }
+
             const datosRealizadas = respuestaRealizadas.data;
             const datosRecibidas = respuestaRecibidas.data;
+            const datosEstadias = respuestaEstadias.data;
 
             setMisResenas(
                 Array.isArray(datosRealizadas)
@@ -243,6 +261,14 @@ export default function ReviewsScreen() {
                         ? datosRecibidas.items
                         : []
             );
+
+            setResenasEstadias(
+                Array.isArray(datosEstadias)
+                    ? datosEstadias
+                    : Array.isArray(datosEstadias?.items)
+                        ? datosEstadias.items
+                        : []
+            );
         } catch (e) {
             setError(
                 e.message || 'Ocurrió un error al cargar las reseñas.'
@@ -251,12 +277,14 @@ export default function ReviewsScreen() {
             setCargando(false);
             setActualizando(false);
         }
-    }, [usuario?.id]);
+    }, [usuario?.id, cargandoSesion]);
 
     useFocusEffect(
         useCallback(() => {
-            cargarResenas();
-        }, [cargarResenas])
+            if (!cargandoSesion) {
+                cargarResenas();
+            }
+        }, [cargandoSesion, cargarResenas])
     );
 
 
@@ -322,6 +350,13 @@ export default function ReviewsScreen() {
                             resenas={resenasPropiedades}
                             recibida={true}
                             mensajeVacio="Cuando alguien deje una reseña sobre una de tus propiedades, aparecerá acá."
+                        />
+
+                        <SeccionResenas
+                            titulo="Reseñas de mis estadías"
+                            resenas={resenasEstadias}
+                            recibida={true}
+                            mensajeVacio="Cuando un propietario te deje una reseña como inquilino, aparecerá acá."
                         />
 
                         <TouchableOpacity
