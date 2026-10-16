@@ -46,6 +46,7 @@ export default function NotificacionesScreen() {
         reserva_finalizada: '/reservations',
         consulta_nueva: '/messages',
         mensaje_nuevo: '/messages',
+        resena_nueva: '/reviews'
     };
 
     const handleNotificacionPress = async (notificacion) => {
