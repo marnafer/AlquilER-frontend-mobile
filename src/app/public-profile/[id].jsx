@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../../components/ScreenHeader';
-import { obtenerPerfilPublico } from '../../services/api';
+import { obtenerPerfilPublico } from '../../services/userService';
 import { theme } from '../../theme/theme';
 
 function FormatearCalificacion({ titulo, valor }) {

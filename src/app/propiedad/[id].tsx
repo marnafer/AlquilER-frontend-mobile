@@ -21,9 +21,10 @@ import api, {
     agregarFavorito,
     eliminarFavorito,
     estaAutenticado,
-    obtenerFavoritos,
-    obtenerPerfil
+    obtenerFavoritos
 } from '../../services/api';
+
+import { obtenerPerfil } from '../../services/userService';
 
 import ApplicantProfileForm from '@/components/ApplicantProfileForm';
 import ReservationRequestForm from '@/components/ReservationRequestForm';
