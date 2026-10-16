@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useState,
@@ -38,9 +39,9 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const refrescarUsuario = async () => {
+    const refrescarUsuario = useCallback(async () => {
         return await cargarUsuario();
-    };
+    }, [cargarUsuario]);
 
     const logout = async () => {
         await AsyncStorage.removeItem(TOKEN_KEY);

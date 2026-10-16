@@ -1,6 +1,11 @@
 import {
-    useRouter
+    useFocusEffect,
+    useRouter,
 } from 'expo-router';
+
+import {
+    useCallback,
+} from 'react';
 
 import {
     ActivityIndicator,
@@ -22,7 +27,8 @@ export default function MyInformationScreen() {
         usuario,
         loading,
         logout,
-    } = useAuth();
+        refrescarUsuario,
+    } = useAuth();  
 
     const handleLogout = async () => {
         try {
@@ -35,6 +41,14 @@ export default function MyInformationScreen() {
             );
         }
     };
+
+    useFocusEffect(
+        useCallback(() => {
+            if (!loading) {
+                refrescarUsuario();
+            }
+        }, [loading, refrescarUsuario])
+    );
 
     if (loading) {
         return (
