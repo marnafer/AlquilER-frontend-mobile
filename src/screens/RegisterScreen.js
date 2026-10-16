@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { useLayout } from '../context/LayoutContext';
-import { register } from '../services/api';
+import { register } from '../services/authService';
 import { theme } from '../theme/theme';
 
 export default function RegisterScreen() {
