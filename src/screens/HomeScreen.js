@@ -13,9 +13,9 @@ import {
 import PropertyCard from '../components/PropertyCard';
 import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
 import { useAuth } from '../context/AuthContext';
-import api, {
+import {
     obtenerCantidadNotificacionesNoLeidas,
-} from '../services/api';
+} from '../services/notificationService';
 import { abrirPropiedad } from '../services/propertyNavigation';
 import {
     obtenerPropiedadesVistas
