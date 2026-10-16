@@ -28,8 +28,9 @@ import {
     enviarMensaje,
     obtenerConsulta,
     obtenerMensajes,
-    obtenerPerfil,
-} from '../../services/api';
+} from '../../services/messageService';
+
+import { obtenerPerfil } from '../../services/userService';
 
 import { theme } from '../../theme/theme';
 

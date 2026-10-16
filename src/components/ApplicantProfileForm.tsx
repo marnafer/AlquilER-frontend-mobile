@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { theme } from '@/theme/theme';
-import { crearConsulta } from '../services/api';
+import { crearConsulta } from '../services/messageService';
 
 interface PerfilInteresado {
     fecha_mudanza: string;

@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 
 import ScreenHeader from '../components/ScreenHeader';
-import { obtenerPerfil, obtenerTodasLasConsultas } from '../services/api';
+import { obtenerTodasLasConsultas } from '../services/messageService';
+import { obtenerPerfil } from '../services/userService';
 import { theme } from '../theme/theme';
 
 function agruparConversaciones(consultas) {
