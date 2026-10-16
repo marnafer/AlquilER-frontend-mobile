@@ -17,12 +17,16 @@ import {
 
 import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
+
 import api, {
+    estaAutenticado
+} from '../../services/api';
+
+import {
     agregarFavorito,
     eliminarFavorito,
-    estaAutenticado,
-    obtenerFavoritos
-} from '../../services/api';
+    obtenerFavoritos,
+} from '../../services/favoriteService';
 
 import { obtenerPerfil } from '../../services/userService';
 
