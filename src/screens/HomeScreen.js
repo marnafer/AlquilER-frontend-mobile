@@ -10,6 +10,8 @@ import {
     View,
 } from 'react-native';
 
+import api from '../services/api';
+
 import PropertyCard from '../components/PropertyCard';
 import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
 import { useAuth } from '../context/AuthContext';
