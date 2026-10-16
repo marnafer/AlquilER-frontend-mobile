@@ -17,10 +17,9 @@ import {
 
 import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
+import api from '../../services/api';
 
-import api, {
-    estaAutenticado
-} from '../../services/api';
+import { estaAutenticado } from '../../services/authService';
 
 import {
     agregarFavorito,

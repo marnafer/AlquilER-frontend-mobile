@@ -1,5 +1,14 @@
 import api from './api';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const TOKEN_KEY = '@alquiler_token';
+
+export async function estaAutenticado() {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    return !!token;
+}
+
 export async function register(userData) {
     try {
         const response = await api.post(
