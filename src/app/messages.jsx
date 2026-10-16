@@ -174,6 +174,31 @@ export default function MensajesScreen() {
         return 'Contacto';
     }
 
+    function obtenerIdContacto(consulta) {
+        const interesadoId = Number(consulta.usuario_id);
+        const propietarioId = Number(
+            consulta.propiedad?.usuario_id
+        );
+
+        if (usuarioActualId === null) {
+            return null;
+        }
+
+        if (usuarioActualId === interesadoId) {
+            return propietarioId !== usuarioActualId
+                ? propietarioId
+                : null;
+        }
+
+        if (usuarioActualId === propietarioId) {
+            return interesadoId !== usuarioActualId
+                ? interesadoId
+                : null;
+        }
+
+        return null;
+    }
+
     const formatearFechaActividad = (fecha) => {
         if (!fecha) {
             return '';
@@ -211,46 +236,79 @@ export default function MensajesScreen() {
         });
     };
 
-    
-    const renderConsulta = ({ item }) => (
-        <Pressable
-            style={({ pressed }) => [
-                styles.conversationCard,
-                pressed && styles.cardPressed,
-            ]}
-            onPress={() => router.push(`/messages/${item.id}`)}
-        >
-            <View style={styles.avatar}>
-                <Text style={styles.avatarText}>💬</Text>
-            </View>
 
-            <View style={styles.conversationInfo}>
-                <Text
-                    style={styles.propertyName}
-                    numberOfLines={1}
-                >
-                    {obtenerNombrePropiedad(item)}
-                </Text>
+        const renderConsulta = ({ item }) => {
+            const nombreContacto = obtenerNombreContacto(item);
+            const contactoId = obtenerIdContacto(item);
 
-                <Text style={styles.conversationDate}>
-                    {formatearFechaActividad(item.fecha_consulta)}
-                </Text>
+            return (
+                <View style={styles.conversationCard}>
+                    {/* Acceso al perfil público */}
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.profileRow,
+                            pressed && styles.cardPressed,
+                        ]}
+                        disabled={!contactoId}
+                        onPress={() => {
+                            router.push({
+                                pathname: '/public-profile/[id]',
+                                params: { id: String(contactoId) },
+                            });
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ver perfil de ${nombreContacto}`}
+                    >
+                        <Text
+                            style={styles.profileText}
+                            numberOfLines={1}
+                        >
+                            Ver perfil de {nombreContacto}
+                        </Text>
 
-                <Text style={styles.nombreContacto}>
-                    {obtenerNombreContacto(item)}
-                </Text>
+                        <Text style={styles.arrow}>›</Text>
+                    </Pressable>
 
-                <Text
-                    style={styles.ultimoMensaje}
-                    numberOfLines={1}
-                >
-                    {item.ultimo_mensaje || 'Iniciá la conversación'}
-                </Text>
-            </View>
+                    <View style={styles.separator} />
 
-            <Text style={styles.arrow}>›</Text>
-        </Pressable>
-    );
+                    {/* Acceso al chat */}
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.chatRow,
+                            pressed && styles.cardPressed,
+                        ]}
+                        onPress={() => router.push(`/messages/${item.id}`)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Abrir conversación sobre ${obtenerNombrePropiedad(item)}`}
+                    >
+                        <View style={styles.conversationInfo}>
+                            <Text
+                                style={styles.propertyName}
+                                numberOfLines={1}
+                            >
+                                {obtenerNombrePropiedad(item)}
+                            </Text>
+
+                            <Text style={styles.conversationDate}>
+                                {formatearFechaActividad(
+                                    item.fecha_consulta
+                                )}
+                            </Text>
+
+                            <Text
+                                style={styles.ultimoMensaje}
+                                numberOfLines={1}
+                            >
+                                {item.ultimo_mensaje ||
+                                    'Iniciá la conversación'}
+                            </Text>
+                        </View>
+
+                        <Text style={styles.arrow}>›</Text>
+                    </Pressable>
+                </View>
+            );
+        };
 
     return (
         <View style={styles.container}>
@@ -322,12 +380,10 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
 
-    conversationCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
+  conversationCard: {
         marginHorizontal: theme.spacing.md,
         marginTop: theme.spacing.md,
-        padding: theme.spacing.md,
+        padding: theme.spacing.sm,
         borderRadius: 14,
         backgroundColor: theme.colors.inputBg,
         borderWidth: 1,
@@ -434,5 +490,38 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: theme.colors.textSecondary,
         marginTop: 4,
+    },
+
+    contactoLink: {
+        alignSelf: 'flex-start',
+        marginTop: 6,
+    },
+
+    profileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 44,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xs,
+    },
+
+    profileText: {
+        flex: 1,
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
+    separator: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: theme.colors.border,
+    },
+
+    chatRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.xs,
     },
 });

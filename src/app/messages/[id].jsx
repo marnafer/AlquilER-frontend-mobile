@@ -601,17 +601,27 @@ export default function ChatScreen() {
                 </Pressable>
 
                 <View style={styles.headerInfo}>
-                    <Text
-                        style={styles.nombreContacto}
-                        numberOfLines={1}
+                    <Pressable
+                        disabled={!contacto?.id}
+                        onPress={() => {
+                            router.push({
+                                pathname: '/public-profile/[id]',
+                                params: { id: String(contacto.id) },
+                            });
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ver perfil de ${nombreContacto}`}
+                        style={styles.perfilContacto}
                     >
-                        {nombreContacto}
-                    </Text>
+                        <Text
+                            style={styles.nombreContacto}
+                            numberOfLines={1}
+                        >
+                            {nombreContacto} ↗
+                        </Text>
+                    </Pressable>
 
-                    <Text
-                        style={styles.tituloPropiedad}
-                        numberOfLines={1}
-                    >
+                    <Text style={styles.tituloPropiedad} numberOfLines={1}>
                         {propiedad?.titulo ||
                             propiedad?.nombre ||
                             'Consulta sobre una propiedad'}
