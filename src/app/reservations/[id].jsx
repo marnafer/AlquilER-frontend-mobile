@@ -1,5 +1,9 @@
 
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import {
+    useFocusEffect,
+    useLocalSearchParams,
+    useRouter,
+} from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
@@ -74,6 +78,7 @@ function Dato({ etiqueta, valor }) {
 export default function DetalleReservaScreen() {
 
     const { usuario } = useAuth();
+    const router = useRouter();
     const { id } = useLocalSearchParams();
 
     const reservaId = Array.isArray(id) ? id[0] : id;
@@ -383,6 +388,34 @@ const rechazarSolicitud = () => {
     const nombreUsuario = obtenerValor(usuarioReserva, ['nombre']);
     const apellidoUsuario = obtenerValor(usuarioReserva, ['apellido']);
 
+    const esPropietario =
+        propietarioId !== null &&
+        usuarioActualId !== null &&
+        String(propietarioId) === String(usuarioActualId);
+
+    const otroUsuarioId = esPropietario
+        ? obtenerValor(usuarioReserva, ['id'])
+        : propietarioId;
+
+    const nombreOtraPersona = esPropietario
+        ? [nombreUsuario, apellidoUsuario].filter(Boolean).join(' ')
+        : obtenerValor(propiedad, [
+            'usuario.nombre',
+            'propietario.nombre',
+        ]);
+
+    const apellidoOtraPersona = esPropietario
+        ? ''
+        : obtenerValor(propiedad, [
+            'usuario.apellido',
+            'propietario.apellido',
+        ]);
+
+    const nombreCompletoOtraPersona =
+        [nombreOtraPersona, apellidoOtraPersona]
+            .filter(Boolean)
+            .join(' ') || 'Ver perfil';
+
 
     return (
         <View style={styles.container}>
@@ -430,24 +463,29 @@ const rechazarSolicitud = () => {
                 ) : reserva ? (
                     <>
                         <View style={styles.card}>
-                            <Text style={styles.seccionTitulo}>
-                                Propiedad
-                            </Text>
 
-                            <Text style={styles.tituloPropiedad}>
-                                {obtenerValor(propiedad, ['titulo', 'nombre']) ||
-                                    'Propiedad reservada'}
-                            </Text>
-
-                            <Dato
-                                etiqueta="Dirección"
-                                valor={obtenerValor(propiedad, ['direccion'])}
-                            />
-
-                            <Dato
-                                etiqueta="Localidad"
-                                valor={propiedad?.localidad?.nombre}
-                            />
+                            <TouchableOpacity
+                                disabled={!otroUsuarioId}
+                                onPress={() => {
+                                    router.push({
+                                        pathname: '/public-profile/[id]',
+                                        params: {
+                                            id: String(otroUsuarioId),
+                                        },
+                                    });
+                                }}
+                                activeOpacity={0.7}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Ver perfil de ${nombreCompletoOtraPersona}`}
+                                style={styles.perfilLink}
+                            >
+                                <Text style={styles.perfilLinkText}>
+                                    Ver perfil del {esPropietario ? 'Inquilino' : 'Propietario'}
+                                </Text>
+                                <Text style={styles.perfilLinkHint}>
+                                    Ver perfil público →
+                                </Text>
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.card}>
@@ -481,17 +519,6 @@ const rechazarSolicitud = () => {
                             <Dato
                                 etiqueta="Fecha de confirmación"
                                 valor={formatearFecha(fechaConfirmacion)}
-                            />
-                        </View>
-
-                        <View style={styles.card}>
-                            <Text style={styles.seccionTitulo}>
-                                Usuario
-                            </Text>
-
-                            <Dato
-                                etiqueta="Nombre"
-                                valor={ `${nombreUsuario} ${apellidoUsuario}` }
                             />
                         </View>
 
@@ -722,6 +749,22 @@ accionButtonText: {
 
 finalizarButton: {
     backgroundColor: '#175CD3',
+},
+
+perfilLink: {
+    paddingVertical: 4,
+},
+
+perfilLinkText: {
+    color: theme.colors.primary,
+    fontSize: 16,
+    fontWeight: '700',
+},
+
+perfilLinkHint: {
+    marginTop: 5,
+    color: theme.colors.textMuted,
+    fontSize: 13,
 },
 
 });
