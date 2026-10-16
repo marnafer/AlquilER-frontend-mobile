@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
-import { login as loginApi } from '../services/api';
+import { login as loginApi } from '../services/authService';
 import { theme } from '../theme/theme';
 
 export default function LoginScreen() {

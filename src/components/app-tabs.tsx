@@ -51,6 +51,14 @@ const opcionesNoAutenticado = [
 export default function AppTabs() {
   const router = useRouter();
   const pathname = usePathname();
+  const volver = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  };
+
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { isAuthenticated, loading } = useAuth();
@@ -59,6 +67,15 @@ export default function AppTabs() {
   if (loading) {
     return null;
   }
+
+  // Ocultar la barra en las conversaciones individuales.
+  const estaEnChat = /^\/messages\/[^/]+$/.test(pathname);
+
+  if (estaEnChat) {
+    return null;
+  }
+
+  const mostrarVolver = pathname !== '/home' && !estaEnChat;
 
   const opciones = isAuthenticated
     ? opcionesAutenticado
@@ -85,6 +102,21 @@ export default function AppTabs() {
         ]}
       >
       <View style={styles.bar}>
+        {mostrarVolver && (
+  <TouchableOpacity
+    style={styles.item}
+    onPress={volver}
+    activeOpacity={0.75}
+    accessibilityRole="button"
+    accessibilityLabel="Volver"
+  >
+    <View style={styles.iconContainer}>
+      <Text style={styles.icon}>←</Text>
+    </View>
+
+    <Text style={styles.label}>Volver</Text>
+  </TouchableOpacity>
+)}
         {opciones.map((opcion) => {
           const activo = pathname === opcion.ruta;
 

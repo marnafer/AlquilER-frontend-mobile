@@ -91,7 +91,7 @@ export default function MyPropertiesScreen() {
         >
             <ScreenHeader
                 title="Mis propiedades"
-                subtitle="Administrá las propiedades que publicaste"
+                subtitle="Administrá las propiedades que publicaste"   
             />
 
             {error ? (

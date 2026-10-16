@@ -1,9 +1,12 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -12,15 +15,24 @@ import {
     View
 } from 'react-native';
 
-
 import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
-import api, {
+import api from '../../services/api';
+
+import { estaAutenticado } from '../../services/authService';
+
+import {
     agregarFavorito,
     eliminarFavorito,
-    estaAutenticado,
     obtenerFavoritos,
-} from '../../services/api';
+} from '../../services/favoriteService';
+
+import { obtenerPerfil } from '../../services/userService';
+
+import ApplicantProfileForm from '@/components/ApplicantProfileForm';
+import ReservationRequestForm from '@/components/ReservationRequestForm';
+
+import { crearReserva } from '../../services/reservationService';
 
 interface Servicio {
     id: number;
@@ -70,6 +82,17 @@ interface Propiedad {
 }
 
 export default function PropiedadDetailScreen() {
+
+    const router = useRouter();
+
+    const [mostrarFormularioPerfil, setMostrarFormularioPerfil] = useState(false);
+
+    const [usuarioActualId, setUsuarioActualId] =
+        useState<number | null>(null);
+
+    const [perfilCargado, setPerfilCargado] =
+        useState(false);
+
     const { id } =
         useLocalSearchParams<{ id: string }>();
 
@@ -99,10 +122,25 @@ export default function PropiedadDetailScreen() {
     const [actualizandoFavorito, setActualizandoFavorito] =
     useState(false);
 
+    const [creandoConsulta, setCreandoConsulta] = useState(false);
+    const [errorConsulta, setErrorConsulta] = useState('');
+
+    const [mostrarFormularioReserva, setMostrarFormularioReserva] =
+        useState(false);
+
+    const [creandoReserva, setCreandoReserva] =
+        useState(false);
+
+    const [errorReserva, setErrorReserva] =
+        useState('');
+
+    const scrollViewRef = useRef<ScrollView>(null);
+    const [posicionFormulario, setPosicionFormulario] = useState(0);
+
     const cargarEstadoFavorito = useCallback(async () => {
         if (!propiedad?.id) return;
 
-        const autenticado = await estaAutenticado();
+    const autenticado = await estaAutenticado();
 
         if (!autenticado) {
             setEsFavorito(false);
@@ -162,76 +200,135 @@ export default function PropiedadDetailScreen() {
     };
 
     const toggleFavorito = async () => {
-    if (!propiedad?.id || actualizandoFavorito) return;
+        if (!propiedad?.id || actualizandoFavorito) return;
 
-    const autenticado = await estaAutenticado();
+        const autenticado = await estaAutenticado();
 
-    if (!autenticado) {
-        setMensajeFavorito(
-            'Iniciá sesión para agregar favoritos'
-        );
-
-        setTimeout(() => setMensajeFavorito(''), 2200);
-
-        return;
-    }
-
-    const nuevoEstado = !esFavorito;
-
-    // Cambio visual inmediato
-    setEsFavorito(nuevoEstado);
-    setActualizandoFavorito(true);
-    setMensajeFavorito(
-        nuevoEstado
-            ? '♥ Agregada a favoritos'
-            : '♡ Eliminada de favoritos'
-    );
-
-    animarFavorito();
-
-    try {
-        const response = nuevoEstado
-            ? await agregarFavorito(propiedad.id)
-            : await eliminarFavorito(propiedad.id);
-
-        if (!response?.success) {
-            // Si el backend rechaza la operación,
-            // volvemos al estado anterior.
-            setEsFavorito(!nuevoEstado);
-
+        if (!autenticado) {
             setMensajeFavorito(
-                response?.error ||
-                response?.message ||
-                'No se pudo actualizar el favorito'
+                'Iniciá sesión para agregar favoritos'
             );
+
+            setTimeout(() => setMensajeFavorito(''), 2200);
 
             return;
         }
 
-        // El mensaje ya está visible desde el comienzo.
-        setTimeout(() => {
-            setMensajeFavorito('');
-        }, 2200);
-    } catch (error) {
-        console.error(
-            'FAVORITO - error:',
-            error
-        );
+        const nuevoEstado = !esFavorito;
 
-        setEsFavorito(!nuevoEstado);
-
+        // Cambio visual inmediato
+        setEsFavorito(nuevoEstado);
+        setActualizandoFavorito(true);
         setMensajeFavorito(
-            'No se pudo actualizar el favorito'
+            nuevoEstado
+                ? '♥ Agregada a favoritos'
+                : '♡ Eliminada de favoritos'
         );
-    } finally {
-        setActualizandoFavorito(false);
-    }
-};
+
+        animarFavorito();
+
+        try {
+            const response = nuevoEstado
+                ? await agregarFavorito(propiedad.id)
+                : await eliminarFavorito(propiedad.id);
+
+            if (!response?.success) {
+                // Si el backend rechaza la operación,
+                // volvemos al estado anterior.
+                setEsFavorito(!nuevoEstado);
+
+                setMensajeFavorito(
+                    response?.error ||
+                    response?.message ||
+                    'No se pudo actualizar el favorito'
+                );
+
+                return;
+            }
+
+            // El mensaje ya está visible desde el comienzo.
+            setTimeout(() => {
+                setMensajeFavorito('');
+            }, 2200);
+        } catch (error) {
+            console.error(
+                'FAVORITO - error:',
+                error
+            );
+
+            setEsFavorito(!nuevoEstado);
+
+            setMensajeFavorito(
+                'No se pudo actualizar el favorito'
+            );
+        } finally {
+            setActualizandoFavorito(false);
+        }
+    };
+
+    useEffect(() => {
+        let activo = true;
+
+        const cargarPerfilActual = async () => {
+            try {
+                const autenticado = await estaAutenticado();
+
+                if (!autenticado) {
+                    return;
+                }
+
+                const response = await obtenerPerfil();
+
+                if (!response?.success) {
+                    return;
+                }
+
+                const perfil = response.data;
+
+                if (activo && perfil?.id != null) {
+                    setUsuarioActualId(Number(perfil.id));
+                }
+            } catch (error) {
+                console.error(
+                    'Error al cargar el perfil actual:',
+                    error
+                );
+            } finally {
+                if (activo) {
+                    setPerfilCargado(true);
+                }
+            }
+        };
+
+        cargarPerfilActual();
+
+        return () => {
+            activo = false;
+        };
+    }, []);
 
     useEffect(() => {
         cargarEstadoFavorito();
     }, [cargarEstadoFavorito]);
 
+    useEffect(() => {
+        if (!mostrarFormularioPerfil && !mostrarFormularioReserva) {
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => {
+            scrollViewRef.current?.scrollTo({
+                y: Math.max(0, posicionFormulario - 20),
+                animated: true,
+            });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [
+        mostrarFormularioPerfil,
+        mostrarFormularioReserva,
+        posicionFormulario,
+    ]);
 
     useEffect(() => {
         const cargarPropiedad = async () => {
@@ -315,8 +412,40 @@ export default function PropiedadDetailScreen() {
         ),
     ];
 
+    const consultarPropiedad = async () => {
+        if (!propiedad?.id || creandoConsulta) return;
+
+        if (
+            usuarioActualId !== null &&
+            Number(usuarioActualId) === Number(propiedad.usuario_id)
+        ) {
+            return;
+        }
+
+        setErrorConsulta('');
+
+        const autenticado = await estaAutenticado();
+
+        if (!autenticado) {
+            router.push('/login');
+            return;
+        }
+
+        setMostrarFormularioPerfil(true);
+    };
+
+    const esPropietario =
+    usuarioActualId !== null &&
+    Number(usuarioActualId) === Number(propiedad.usuario_id);
+
     return (
+    <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
         <ScrollView
+            ref={scrollViewRef}
             style={styles.container}
             contentContainerStyle={[
                 styles.content,
@@ -487,6 +616,8 @@ export default function PropiedadDetailScreen() {
                     </View>
                 )}
             </View>
+
+            
 
             {/* INFORMACIÓN PRINCIPAL */}
             <View style={styles.header}>
@@ -670,7 +801,125 @@ export default function PropiedadDetailScreen() {
                         : 'No disponible'}
                 </Text>
             </View>
-        </ScrollView>
+
+            {perfilCargado && !esPropietario && (
+                <View 
+                    style={styles.accionesPropiedad}
+                    onLayout={(event) => {
+                        setPosicionFormulario(event.nativeEvent.layout.y);
+                    }}
+                >
+                    <TouchableOpacity
+                        style={styles.consultarButton}
+                        onPress={consultarPropiedad}
+                        disabled={creandoConsulta}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.consultarButtonText}>
+                            Consultar por esta propiedad
+                        </Text>
+                    </TouchableOpacity>
+
+                    {mostrarFormularioPerfil && (
+                        <ApplicantProfileForm
+                            propiedadId={propiedad.id}
+                            onCancel={() => {
+                                setMostrarFormularioPerfil(false);
+                                setErrorConsulta('');
+                            }}
+                            onConsultaCreada={(consultaId) => {
+                                setMostrarFormularioPerfil(false);
+                                router.push(`/messages/${consultaId}`);
+                            }}
+                        />
+                    )}
+
+                    {propiedad.disponible && (
+                        <TouchableOpacity
+                            style={[
+                                styles.consultarButton,
+                                styles.reservarButton,
+                            ]}
+                            onPress={async () => {
+                                setErrorReserva('');
+
+                                const autenticado = await estaAutenticado();
+
+                                if (!autenticado) {
+                                    router.push('/login');
+                                    return;
+                                }
+
+                                setMostrarFormularioReserva(true);
+                            }}
+                            disabled={creandoReserva}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.consultarButtonText}>
+                                Solicitar reserva
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {mostrarFormularioReserva && (
+                        <ReservationRequestForm
+                            onCancel={() => {
+                                setMostrarFormularioReserva(false);
+                                setErrorReserva('');
+                            }}
+                            onSubmit={async (fechaInicio, fechaFin) => {
+                                if (!propiedad.id || creandoReserva) {
+                                    return;
+                                }
+
+                                setErrorReserva('');
+                                setCreandoReserva(true);
+
+                                try {
+                                    const response = await crearReserva(
+                                        propiedad.id,
+                                        fechaInicio,
+                                        fechaFin
+                                    );
+                                    if (!response?.success || !response?.data?.id) {
+                                        setErrorReserva(
+                                            response?.message ||
+                                            response?.error ||
+                                            'No se pudo crear la solicitud de reserva.'
+                                        );
+
+                                        return;
+                                    }
+                                    setMostrarFormularioReserva(false);
+                                    setErrorReserva('');
+
+                                    Alert.alert(
+                                        '¡Solicitud enviada!',
+                                        'Tu solicitud de reserva se creó correctamente y quedó pendiente de confirmación por parte del propietario.',
+                                        [
+                                            {
+                                                text: 'Aceptar',
+                                                onPress: () => {},
+                                            },
+                                        ]
+                                    );
+                                } finally {
+                                    setCreandoReserva(false);
+                                }
+                            }}
+                        />
+                    )}
+
+                    {errorReserva !== '' && (
+                        <Text style={styles.errorConsulta}>
+                            {errorReserva}
+                        </Text>
+                    )}
+                </View>
+            )}      
+
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -701,9 +950,10 @@ const styles = StyleSheet.create({
     },
 
     errorText: {
-        color: theme.colors.textDark,
-        fontSize: 16,
-        textAlign: 'center',
+        color: theme.colors.errorText,
+        fontSize: 13,
+        marginTop: 4,
+        marginBottom: 4,
     },
 
     header: {
@@ -910,4 +1160,112 @@ const styles = StyleSheet.create({
             height: 2,
         },
     },
+
+    consultarButton: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    elevation: 2,
+},
+
+    consultarButtonDisabled: {
+        opacity: 0.7,
+    },
+
+    consultarButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+
+    errorConsulta: {
+        marginHorizontal: theme.spacing.lg,
+        marginBottom: theme.spacing.md,
+        color: theme.colors.errorText,
+        fontSize: 14,
+        textAlign: 'center',
+    },
+
+    
+    formularioPerfil: {
+        marginHorizontal: theme.spacing.lg,
+        marginTop: theme.spacing.md,
+        padding: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 12,
+        backgroundColor: theme.colors.background,
+    },
+
+    labelFormulario: {
+        marginTop: theme.spacing.md,
+        marginBottom: theme.spacing.sm,
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.colors.textDark,
+    },
+
+    inputFormulario: {
+        minHeight: 46,
+        paddingHorizontal: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 8,
+        color: theme.colors.textDark,
+        fontSize: 15,
+    },
+
+    filaMascotas: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: theme.spacing.sm,
+    },
+
+    opcionGarantia: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: theme.spacing.sm,
+    },
+
+    checkboxGarantia: {
+        width: 28,
+        fontSize: 22,
+        color: theme.colors.primary,
+    },
+
+    textoGarantia: {
+        fontSize: 15,
+        color: theme.colors.textDark,
+    },
+
+    cancelarFormulario: {
+        alignItems: 'center',
+        paddingVertical: theme.spacing.md,
+    },
+
+    textoCancelar: {
+        color: theme.colors.textMuted,
+        fontSize: 15,
+        fontWeight: '600',
+    },
+
+    accionesPropiedad: {
+        marginTop: theme.spacing.md,
+    },
+
+    reservarButton: {
+        backgroundColor: theme.colors.primaryDark,
+    },
+
+    keyboardAvoiding: {
+        flex: 1,
+    },
+
 });

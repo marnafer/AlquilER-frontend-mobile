@@ -160,16 +160,6 @@ export default function ProfileScreen() {
                                 {usuario.domicilio}
                             </Text>
                         </View>
-
-                        <View style={styles.field}>
-                            <Text style={styles.label}>
-                                Rol
-                            </Text>
-
-                            <Text style={styles.value}>
-                                {usuario.rol?.nombre}
-                            </Text>
-                        </View>
                     </View>
                 </View>
             ) : null}

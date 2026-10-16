@@ -1,12 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useState,
 } from 'react';
 
-import { setSessionExpiredHandler } from '../services/api';
+import api, {
+    setSessionExpiredHandler,
+} from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -16,7 +19,29 @@ const REFRESH_TOKEN_KEY = '@alquiler_refresh_token';
 export function AuthProvider({ children }) {
     const [token, setToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
+    const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const cargarUsuario = async () => {
+        try {
+            const response = await api.get('/usuarios/me');
+
+            if (response.data?.success) {
+                setUsuario(response.data.data);
+                return response.data.data;
+            }
+
+            setUsuario(null);
+            return null;
+        } catch (error) {
+            setUsuario(null);
+            return null;
+        }
+    };
+
+    const refrescarUsuario = useCallback(async () => {
+        return await cargarUsuario();
+    }, [cargarUsuario]);
 
     const logout = async () => {
         await AsyncStorage.removeItem(TOKEN_KEY);
@@ -24,6 +49,7 @@ export function AuthProvider({ children }) {
 
         setToken(null);
         setRefreshToken(null);
+        setUsuario(null);
     };
 
     const cargarSesion = async () => {
@@ -35,8 +61,15 @@ export function AuthProvider({ children }) {
 
             setToken(storedToken);
             setRefreshToken(storedRefreshToken);
+
+            if (storedToken) {
+                await cargarUsuario();
+            } else {
+                setUsuario(null);
+            }
         } catch (error) {
             console.error('Error al cargar la sesión:', error);
+            setUsuario(null);
         } finally {
             setLoading(false);
         }
@@ -56,6 +89,10 @@ export function AuthProvider({ children }) {
 
         setToken(newToken);
         setRefreshToken(newRefreshToken);
+        setUsuario(null);
+
+        // El interceptor de Axios debe utilizar el token nuevo.
+        await cargarUsuario();
     };
 
     useEffect(() => {
@@ -75,10 +112,12 @@ export function AuthProvider({ children }) {
             value={{
                 token,
                 refreshToken,
+                usuario,
                 loading,
                 isAuthenticated: !!token,
                 login,
                 logout,
+                refrescarUsuario,
             }}
         >
             {children}
