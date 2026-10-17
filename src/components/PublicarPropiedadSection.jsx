@@ -113,8 +113,8 @@ export default function PublicarPropiedadSection() {
             </View>
 
             <TouchableOpacity
-                style={styles.publishCard}
-                activeOpacity={0.85}
+                style={styles.publishButton}
+                activeOpacity={0.8}
                 onPress={handlePublicarPropiedad}
             >
                 <View style={styles.publishIconContainer}>
@@ -125,9 +125,17 @@ export default function PublicarPropiedadSection() {
 
                 <View style={styles.publishContent}>
                     <Text style={styles.publishTitle}>
-                        Publicar propiedad →
+                        Publicar una propiedad
+                    </Text>
+
+                    <Text style={styles.publishDescription}>
+                        Agregá una nueva propiedad a AlquilER
                     </Text>
                 </View>
+
+                <Text style={styles.menuArrow}>
+                    ›
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -166,43 +174,56 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 
-    publishCard: {
+    publishButton: {
+        minHeight: 76,
         width: '90%',
         alignSelf: 'center',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: 16,
+        backgroundColor: theme.colors.inputBg,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.primaryDark,
-        borderRadius: 16,
-        paddingVertical: 6,
-        paddingHorizontal: 6,
-        marginTop: 6,
     },
 
     publishIconContainer: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colorConOpacidad(
-            theme.colors.background,
-            0.15
-        ),
-        marginRight: 6,
+        backgroundColor: theme.colors.primary,
     },
 
     publishIcon: {
-        fontSize: 30,
+        fontSize: 20,
     },
 
     publishContent: {
         flex: 1,
+        minWidth: 0,
+        marginLeft: theme.spacing.md,
     },
 
     publishTitle: {
-        color: theme.colors.background,
-        fontSize: 16,
+        color: theme.colors.textDark,
+        fontSize: 15,
         fontWeight: '700',
-        textAlign: 'center',
+    },
+
+    publishDescription: {
+        marginTop: 3,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        lineHeight: 17,
+    },
+
+    menuArrow: {
+        marginLeft: theme.spacing.sm,
+        color: theme.colors.textMuted,
+        fontSize: 28,
+        fontWeight: '300',
     },
 });
