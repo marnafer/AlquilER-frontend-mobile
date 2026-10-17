@@ -3,10 +3,11 @@ import { useCallback, useState } from 'react';
 
 import {
     ActivityIndicator,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    View
 } from 'react-native';
 
 import ScreenHeader from '../../components/ScreenHeader';
@@ -78,6 +79,12 @@ export default function PublicProfileScreen() {
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    const [inquilinoExpandido, setInquilinoExpandido] =
+        useState(false);
+
+    const [propietarioExpandido, setPropietarioExpandido] =
+        useState(false);
 
     const cargarPerfil = useCallback(async () => {
         if (!id || Array.isArray(id)) {
@@ -151,6 +158,7 @@ export default function PublicProfileScreen() {
             ) : null}
 
             {usuario ? (
+                
                 <View style={styles.card}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>
@@ -167,63 +175,106 @@ export default function PublicProfileScreen() {
                     <View style={styles.separador} />
 
                     <Text style={styles.seccionTitulo}>
-                        Calificaciones
+                        HISTORIAL DE CALIFICACIONES Y RESEÑAS
                     </Text>
 
-                    <FormatearCalificacion
-                        titulo="Como inquilino"
-                        valor={usuario.calificaciones?.inquilino}
-                    />
+                    {/* Como inquilino */}
+                    <Pressable
+                        style={styles.acordeon}
+                        onPress={() =>
+                            setInquilinoExpandido(!inquilinoExpandido)
+                        }
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: inquilinoExpandido }}
+                    >
+                        <View style={styles.acordeonTexto}>
+                            <Text style={styles.acordeonTitulo}>
+                                Calificaciones y reseñas que recibió como inquilino
+                            </Text>
 
-                    {usuario.calificaciones?.propiedades != null ? (
-                        <FormatearCalificacion
-                            titulo="Como propietario"
-                            valor={usuario.calificaciones.propiedades}
-                        />
+                            <Text style={styles.acordeonSubtitulo}>
+                                Desplegar para ver mas
+                            </Text>
+                        </View>
+
+                        <Text style={styles.acordeonFlecha}>
+                            {inquilinoExpandido ? '▲' : '▼'}
+                        </Text>
+                    </Pressable>
+
+                    {inquilinoExpandido ? (
+                        <View style={styles.acordeonContenido}>
+                            <FormatearCalificacion
+                                titulo="Calificación promedio"
+                                valor={usuario.calificaciones?.inquilino}
+                            />
+
+                            {usuario.resenas?.inquilino?.length > 0 ? (
+                                usuario.resenas.inquilino.map((resena) => (
+                                    <TarjetaResena
+                                        key={resena.id}
+                                        resena={resena}
+                                    />
+                                ))
+                            ) : (
+                                <Text style={styles.resenasVacias}>
+                                    Todavía no tiene reseñas como inquilino.
+                                </Text>
+                            )}
+                        </View>
                     ) : null}
 
-                    <View style={styles.separador} />
-
-                        <Text style={styles.seccionTitulo}>
-                            Reseñas como inquilino
-                        </Text>
-
-                        {usuario.resenas?.inquilino?.length > 0 ? (
-                            usuario.resenas.inquilino.map((resena) => (
-                                <TarjetaResena
-                                    key={resena.id}
-                                    resena={resena}
-                                />
-                            ))
-                        ) : (
-                            <Text style={styles.resenasVacias}>
-                                Todavía no tiene reseñas como inquilino.
-                            </Text>
-                        )}
-
-                        {usuario.calificaciones?.propiedades != null ? (
-                            <>
-                                <View style={styles.separador} />
-
-                                <Text style={styles.seccionTitulo}>
-                                    Reseñas de sus propiedades
-                                </Text>
-
-                                {usuario.resenas?.propiedades?.length > 0 ? (
-                                    usuario.resenas.propiedades.map((resena) => (
-                                        <TarjetaResena
-                                            key={resena.id}
-                                            resena={resena}
-                                        />
-                                    ))
-                                ) : (
-                                    <Text style={styles.resenasVacias}>
-                                        Todavía no tiene reseñas sobre sus propiedades.
+                    {/* Como propietario */}
+                    {usuario.calificaciones?.propiedades != null ? (
+                        <>
+                            <Pressable
+                                style={styles.acordeon}
+                                onPress={() =>
+                                    setPropietarioExpandido(!propietarioExpandido)
+                                }
+                                accessibilityRole="button"
+                                accessibilityState={{ expanded: propietarioExpandido }}
+                            >
+                                <View style={styles.acordeonTexto}>
+                                    <Text style={styles.acordeonTitulo}>
+                                        Calificaciones y reseñas que recibió de sus propiedades
                                     </Text>
-                                )}
-                            </>
-                        ) : null}
+
+                                    <Text style={styles.acordeonSubtitulo}>
+                                        Desplegar para ver mas
+                                    </Text>
+                                </View>
+
+                                <Text style={styles.acordeonFlecha}>
+                                    {propietarioExpandido ? '▲' : '▼'}
+                                </Text>
+                            </Pressable>
+
+                            {propietarioExpandido ? (
+                                <View style={styles.acordeonContenido}>
+                                    <FormatearCalificacion
+                                        titulo="Calificación promedio"
+                                        valor={usuario.calificaciones.propiedades}
+                                    />
+
+                                    {usuario.resenas?.propiedades?.length > 0 ? (
+                                        usuario.resenas.propiedades.map((resena) => (
+                                            <TarjetaResena
+                                                key={resena.id}
+                                                resena={resena}
+                                            />
+                                        ))
+                                    ) : (
+                                        <Text style={styles.resenasVacias}>
+                                            Todavía no tiene reseñas sobre sus propiedades.
+                                        </Text>
+                                    )}
+                                </View>
+                            ) : null}
+                        </>
+                    ) : null}
                 </View>
+
             ) : null}
         </ScrollView>
     );
@@ -390,4 +441,47 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
     },
+
+    
+    acordeon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        borderRadius: 12,
+        backgroundColor: theme.colors.background,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+    },
+
+    acordeonTexto: {
+        flex: 1,
+        paddingRight: theme.spacing.sm,
+    },
+
+    acordeonTitulo: {
+        color: theme.colors.textDark,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+
+    acordeonSubtitulo: {
+        marginTop: 4,
+        color: theme.colors.textMuted,
+        fontSize: 12,
+        lineHeight: 17,
+    },
+
+    acordeonFlecha: {
+        color: theme.colors.primary,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+
+    acordeonContenido: {
+        paddingHorizontal: theme.spacing.sm,
+        paddingBottom: theme.spacing.md,
+    },
+
 });
