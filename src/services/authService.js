@@ -27,24 +27,13 @@ export async function register(userData) {
 
 export async function login(userData) {
     try {
-        console.log('📤 LOGIN - enviando:', userData);
-
         const response = await api.post(
             '/autenticador/login',
             userData
-        );
-
-        console.log('📥 LOGIN - status:', response.status);
-        console.log('📥 LOGIN - respuesta:', response.data);
+        );  
 
         return response.data;
     } catch (error) {
-        console.error('❌ LOGIN - error:', error);
-        console.error('❌ LOGIN - mensaje:', error.message);
-        console.error(
-            '❌ LOGIN - respuesta backend:',
-            error.response?.data
-        );
 
         return error.response?.data || {
             success: false,

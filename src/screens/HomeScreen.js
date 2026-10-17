@@ -297,15 +297,6 @@ export default function HomeScreen() {
             const propiedadesData =
                 propiedadesResponse.data?.data?.items || [];
 
-                console.log(
-    'PROPIEDADES RECIBIDAS:',
-    propiedadesData.map((p) => ({
-        id: p.id,
-        titulo: p.titulo,
-        created_at: p.created_at,
-    }))
-);
-
             setPropiedades(propiedadesData);
         } catch (error) {
             console.error('HOME: ERROR', error);

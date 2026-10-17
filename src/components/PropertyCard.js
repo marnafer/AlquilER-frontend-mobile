@@ -53,15 +53,6 @@ const PropertyCard = ({
         propiedad.imagen_url
     );
 
-    console.log(
-        'PROPERTY CARD:',
-        propiedad.id,
-        'imagen_url:',
-        propiedad.imagen_url,
-        'URL final:',
-        imagenUrl
-    );
-
     return (
         <TouchableOpacity
             style={[

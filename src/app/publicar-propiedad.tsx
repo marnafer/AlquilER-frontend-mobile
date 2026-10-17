@@ -553,21 +553,6 @@ export default function PublicarPropiedad() {
             }, 2000);
 
         } catch (error: any) {
-            console.log(
-                'ERROR PUBLICAR:',
-                error
-            );
-
-            console.log(
-                'STATUS:',
-                error?.response?.status
-            );
-
-            console.log(
-                'DATA:',
-                error?.response?.data
-            );
-
             const validationErrors =
                 error?.response?.data?.validation_errors;
 
