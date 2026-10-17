@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     ScrollView,
@@ -246,10 +246,6 @@ export default function HomeScreen() {
     const [notificacionesNoLeidas, setNotificacionesNoLeidas] =
     useState(0);
 
-    useEffect(() => {
-        cargarDatos();
-    }, []);
-
     const cargarPropiedadesVistas = async () => {
         const idsVistos = await obtenerPropiedadesVistas();
 
@@ -265,7 +261,7 @@ export default function HomeScreen() {
         setPropiedadesVistas(vistas);
     };
 
-    const cargarDatos = async () => {
+    const cargarDatos = useCallback(async () => {
         try {
             setLoading(true);
             setError('');
@@ -275,7 +271,11 @@ export default function HomeScreen() {
                 categoriasResponse,
                 localidadesResponse,
             ] = await Promise.all([
-                api.get('/propiedades'),
+                api.get('/propiedades', {
+                    params: {
+                        limit: 5,
+                    },
+                }),
                 api.get('/categorias'),
                 api.get('/localidades'),
             ]);
@@ -297,6 +297,15 @@ export default function HomeScreen() {
             const propiedadesData =
                 propiedadesResponse.data?.data?.items || [];
 
+                console.log(
+    'PROPIEDADES RECIBIDAS:',
+    propiedadesData.map((p) => ({
+        id: p.id,
+        titulo: p.titulo,
+        created_at: p.created_at,
+    }))
+);
+
             setPropiedades(propiedadesData);
         } catch (error) {
             console.error('HOME: ERROR', error);
@@ -307,13 +316,17 @@ export default function HomeScreen() {
                 error.response?.data
             );
 
-            setError(
-                'No se pudieron cargar los datos'
-            );
+            setError('No se pudieron cargar los datos');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            cargarDatos();
+        }, [cargarDatos])
+    );
 
     const cargarNotificacionesNoLeidas = async () => {
         try {
@@ -754,7 +767,7 @@ export default function HomeScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.propertiesScroll}
                     >
-                        {propiedades.slice(0, 5).map((propiedad) => (
+                        {propiedades.map((propiedad) => (
                             <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
