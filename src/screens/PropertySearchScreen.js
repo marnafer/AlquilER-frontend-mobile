@@ -42,40 +42,6 @@ const normalizarParametro = (valor) => {
     return [String(valor)];
 };
 
-const convertirNumero = (valor) => {
-    if (
-        valor === undefined ||
-        valor === null ||
-        valor === ''
-    ) {
-        return 0;
-    }
-
-    const normalizado = String(valor)
-        .replace(',', '.')
-        .trim();
-
-    const numero = Number(normalizado);
-
-    return Number.isFinite(numero)
-        ? numero
-        : 0;
-};
-
-const obtenerFechaPublicacion = (propiedad) => {
-    const fecha = propiedad?.fecha_publicacion;
-
-    if (!fecha) {
-        return 0;
-    }
-
-    const timestamp = new Date(fecha).getTime();
-
-    return Number.isFinite(timestamp)
-        ? timestamp
-        : 0;
-};
-
 const opcionesOrden = [
     {
         valor: 'antiguedad_desc',
@@ -201,7 +167,11 @@ export default function PropertySearchScreen() {
         );
     };
 
-    const construirQuery = (filtros, paginaSolicitada = 1) => {
+    const construirQuery = (
+        filtros,
+        paginaSolicitada = 1,
+        ordenSolicitado = 'antiguedad_desc'
+    ) => {
         const params = [];
 
         const agregarIds = (nombre, valores) => {
@@ -249,7 +219,10 @@ export default function PropertySearchScreen() {
             }
         });
 
-        // Parámetros de paginación del backend.
+        // Parámetros de ordenamiento y paginación.
+        params.push(
+            `orden=${encodeURIComponent(ordenSolicitado)}`
+        );
         params.push(`page=${paginaSolicitada}`);
         params.push(`per_page=${POR_PAGINA}`);
 
@@ -258,7 +231,8 @@ export default function PropertySearchScreen() {
 
     const cargarPropiedades = async (
         filtros = {},
-        paginaSolicitada = 1
+        paginaSolicitada = 1,
+        ordenSolicitado = orden
     ) => {
         try {
             setLoading(true);
@@ -266,7 +240,8 @@ export default function PropertySearchScreen() {
 
             const query = construirQuery(
                 filtros,
-                paginaSolicitada
+                paginaSolicitada,
+                ordenSolicitado
             );
 
             const response = await api.get(
@@ -335,7 +310,8 @@ export default function PropertySearchScreen() {
 
                 await cargarPropiedades(
                     filtrosIniciales,
-                    1
+                    1,
+                    'antiguedad_desc'
                 );
             } catch (error) {
                 console.error(
@@ -364,7 +340,7 @@ export default function PropertySearchScreen() {
         setFiltrosActivos(filtros);
         setPagina(1);
 
-        await cargarPropiedades(filtros, 1);
+        await cargarPropiedades(filtros, 1, orden);
     };
 
     const cambiarPagina = async (nuevaPagina) => {
@@ -379,48 +355,21 @@ export default function PropertySearchScreen() {
 
         await cargarPropiedades(
             filtrosActivos,
-            nuevaPagina
+            nuevaPagina,
+            orden
         );
     };
 
-    const propiedadesOrdenadas = useMemo(() => {
-        const resultado = [...propiedades];
-
-        resultado.sort((a, b) => {
-            switch (orden) {
-                case 'precio_asc':
-                    return (
-                        convertirNumero(a.precio) -
-                        convertirNumero(b.precio)
-                    );
-
-                case 'precio_desc':
-                    return (
-                        convertirNumero(b.precio) -
-                        convertirNumero(a.precio)
-                    );
-
-                case 'antiguedad_asc':
-                    return (
-                        obtenerFechaPublicacion(a) -
-                        obtenerFechaPublicacion(b)
-                    );
-
-                case 'antiguedad_desc':
-                default:
-                    return (
-                        obtenerFechaPublicacion(b) -
-                        obtenerFechaPublicacion(a)
-                    );
-            }
-        });
-
-        return resultado;
-    }, [propiedades, orden]);
-
-    const ordenarSeleccion = (nuevoOrden) => {
+    const ordenarSeleccion = async (nuevoOrden) => {
         setOrden(nuevoOrden);
         setOrdenAbierto(false);
+        setPagina(1);
+
+        await cargarPropiedades(
+            filtrosActivos,
+            1,
+            nuevoOrden
+        );
     };
 
     const ordenActual = opcionesOrden.find(
@@ -482,7 +431,8 @@ export default function PropertySearchScreen() {
                             onPress={() =>
                                 cargarPropiedades(
                                     filtrosActivos,
-                                    pagina
+                                    pagina,
+                                    orden
                                 )
                             }
                             activeOpacity={0.8}
@@ -571,7 +521,7 @@ export default function PropertySearchScreen() {
                         </View>
                     </View>
 
-                    {propiedadesOrdenadas.length === 0 ? (
+                    {propiedades.length === 0 ? (
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyTitle}>
                                 No se encontraron propiedades
@@ -584,7 +534,7 @@ export default function PropertySearchScreen() {
                     ) : (
                         <>
                             <View style={styles.propertiesGrid}>
-                                {propiedadesOrdenadas.map((propiedad) => (
+                                {propiedades.map((propiedad) => (
                                     <PropertyCard
                                         key={propiedad.id}
                                         propiedad={propiedad}
