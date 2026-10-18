@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const cargarUsuario = async () => {
+    const cargarUsuario = useCallback(async () => {
         try {
             const response = await api.get('/usuarios/me');
 
@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
             setUsuario(null);
             return null;
         }
-    };
+    }, []);
 
     const refrescarUsuario = useCallback(async () => {
         return await cargarUsuario();
