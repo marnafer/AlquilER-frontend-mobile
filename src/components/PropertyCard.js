@@ -24,7 +24,7 @@ const PropertyCard = ({
         (anchoDisponible - theme.spacing.md) / 2;
 
     const anchoCard = compacto
-        ? width * 0.48
+        ? width * 0.40
         : anchoGrid;
 
     const alturaCard = compacto

@@ -409,7 +409,7 @@ export default function HomeScreen() {
         }
 
         router.push({
-            pathname: '/propiedades',
+            pathname: '/properties',
             params,
         });
     };
@@ -726,6 +726,7 @@ export default function HomeScreen() {
                                 <PropertyCard
                                     key={propiedad.id}
                                     propiedad={propiedad}
+                                    compacto
                                     onPress={() => handlePropiedadVista(propiedad)}
                                 />
                             ))}
@@ -770,6 +771,7 @@ export default function HomeScreen() {
                             <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
+                                compacto
                                 onPress={() =>
                                     handlePropiedadVista(propiedad)
                                 }
