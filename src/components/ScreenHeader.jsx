@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     titleContainer: {
         alignItems: 'center',
         width: '100%',
+        paddingHorizontal: 53,
     },
 
     title: {
@@ -55,6 +56,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: '700',
         textAlign: 'center',
+        flexShrink: 1,
     },
 
     subtitle: {
