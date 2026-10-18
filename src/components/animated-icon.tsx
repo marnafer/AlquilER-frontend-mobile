@@ -118,7 +118,7 @@ export function AnimatedIcon() {
         >
           <Image
             style={styles.image}
-            source={require('@/assets/images/icon.png')}
+            source={require('@/assets/images/logo.webp')}
             contentFit="contain"
           />
         </Animated.View>

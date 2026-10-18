@@ -1,20 +1,18 @@
-
 import {
+    Image,
     StyleSheet,
     Text,
-    View
+    View,
 } from 'react-native';
 
 import { theme } from '../theme/theme';
 
 const ScreenHeader = ({
     title,
-    subtitle
+    subtitle,
 }) => {
-    
     return (
         <View style={styles.container}>
-
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>
                     {title}
@@ -26,6 +24,12 @@ const ScreenHeader = ({
                     </Text>
                 ) : null}
             </View>
+
+            <Image
+                source={require('../../assets/images/logo512.png')}
+                style={styles.logo}
+                resizeMode="contain"
+            />
         </View>
     );
 };
@@ -43,6 +47,7 @@ const styles = StyleSheet.create({
 
     titleContainer: {
         alignItems: 'center',
+        width: '100%',
     },
 
     title: {
@@ -61,6 +66,13 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
 
-    });
+    logo: {
+        position: 'absolute',
+        top: -4,
+        right: theme.spacing.sm,
+        width: 76,
+        height: 76,
+    },
+});
 
 export default ScreenHeader;

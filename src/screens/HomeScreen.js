@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -434,9 +435,16 @@ export default function HomeScreen() {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
+
             {/* HERO */}
             <View style={styles.hero}>
                 <View style={styles.heroHeader}>
+                    <Image
+                        source={require('../../assets/images/logo512.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+
                     <Text style={styles.heroTitle}>
                         AlquilER
                     </Text>
@@ -836,6 +844,7 @@ const crearEstilos = (responsive) => {
             paddingBottom: separacionMedia,
             borderBottomLeftRadius: radioGrande,
             borderBottomRightRadius: radioGrande,
+            alignItems: 'center'
         },
 
         heroTitle: {
@@ -844,6 +853,14 @@ const crearEstilos = (responsive) => {
             fontWeight: '700',
             textAlign: 'center',
             paddingVertical: separacionMedia,
+        },
+
+        heroHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            maxWidth: '100%',
         },
 
     notificationButton: {
@@ -1148,6 +1165,11 @@ const crearEstilos = (responsive) => {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+    },
+
+    logo: {
+        width: 64,
+        height: 64,
     },
     });
 };
