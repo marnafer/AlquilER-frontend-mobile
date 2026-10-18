@@ -439,37 +439,45 @@ export default function HomeScreen() {
             {/* HERO */}
             <View style={styles.hero}>
                 <View style={styles.heroHeader}>
-                    <Image
-                        source={require('../../assets/images/logo512.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
+                    <View style={styles.heroHeaderSide}>
+                        <Image
+                            source={require('../../assets/images/logo512.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+                    </View>
 
-                    <Text style={styles.heroTitle}>
+                    <Text
+                        style={styles.heroTitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                    >
                         AlquilER
                     </Text>
 
-                    {isAuthenticated ? (
-                        <TouchableOpacity
-                            style={styles.notificationButton}
-                            onPress={() => router.push('/notifications')}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={styles.notificationIcon}>
-                                🔔
-                            </Text>
+                    <View style={styles.heroHeaderSide}>
+                        {isAuthenticated ? (
+                            <TouchableOpacity
+                                style={styles.notificationButton}
+                                onPress={() => router.push('/notifications')}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.notificationIcon}>
+                                    🔔
+                                </Text>
 
-                            {notificacionesNoLeidas > 0 ? (
-                                <View style={styles.notificationBadge}>
-                                    <Text style={styles.notificationBadgeText}>
-                                        {notificacionesNoLeidas > 9
-                                            ? '9+'
-                                            : notificacionesNoLeidas}
-                                    </Text>
-                                </View>
-                            ) : null}
-                        </TouchableOpacity>
-                    ) : null}
+                                {notificacionesNoLeidas > 0 ? (
+                                    <View style={styles.notificationBadge}>
+                                        <Text style={styles.notificationBadgeText}>
+                                            {notificacionesNoLeidas > 9
+                                                ? '9+'
+                                                : notificacionesNoLeidas}
+                                        </Text>
+                                    </View>
+                                ) : null}
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
                 </View>
 
                 <View style={styles.descriptionCard}>
@@ -850,42 +858,36 @@ const crearEstilos = (responsive) => {
         },
 
         heroTitle: {
+            flex: 1,
             color: '#ffffff',
             fontSize: fontHeroTitle,
             fontWeight: '700',
             textAlign: 'center',
-            paddingVertical: separacionMedia,
+            paddingHorizontal: 4,
         },
 
         heroHeader: {
+            width: '100%',
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: separacionPequena,
+        },
+
+        heroHeaderSide: {
+            width: 48,
+            height: 48,
+            alignItems: 'center',
             justifyContent: 'center',
-            gap: 8,
-            maxWidth: '100%',
         },
 
     notificationButton: {
-        position: 'absolute',
-        right: 0,
-        top: '50%',
-        transform: [
-            {
-                translateY: -20,
-            },
-        ],
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: colorConOpacidad(
-            '#FFFFFF',
-            0.15
-        ),
+        backgroundColor: colorConOpacidad('#FFFFFF', 0.15),
         borderWidth: 1,
-        borderColor: colorConOpacidad(
-            '#FFFFFF',
-            0.25
-        ),
+        borderColor: colorConOpacidad('#FFFFFF', 0.25),
         justifyContent: 'center',
         alignItems: 'center',
     },
