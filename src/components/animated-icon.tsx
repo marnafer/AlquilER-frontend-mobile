@@ -1,9 +1,17 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
+import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  Keyframe,
+  ZoomIn,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { theme } from '../theme/theme';
+
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
@@ -97,14 +105,44 @@ const glowKeyframe = new Keyframe({
 
 export function AnimatedIcon() {
   return (
-    <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
+    <View style={styles.loadingContainer}>
+      <View style={styles.iconContainer}>
+        <Animated.View
+          entering={ZoomIn.duration(700).easing(Easing.out(Easing.back(1.2)))}
+          style={styles.background}
+        />
 
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
+        <Animated.View
+          entering={FadeIn.duration(800)}
+          style={styles.imageContainer}
+        >
+          <Image
+            style={styles.image}
+            source={require('@/assets/images/logo.webp')}
+            contentFit="contain"
+          />
+        </Animated.View>
+      </View>
+
+      <Animated.Text
+        entering={FadeInDown.delay(250).duration(500)}
+        style={styles.loadingTitle}
+      >
+        Preparando tu próximo lugar
+      </Animated.Text>
+
+      <Animated.View
+        entering={FadeIn.delay(450).duration(500)}
+        style={styles.loadingStatus}
+      >
+        <ActivityIndicator
+          size="small"
+          color={theme.colors.primary}
+        />
+
+        <Text style={styles.loadingText}>
+          Cargando propiedades...
+        </Text>
       </Animated.View>
     </View>
   );
@@ -133,16 +171,43 @@ const styles = StyleSheet.create({
   },
   background: {
     borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
+    experimental_backgroundImage:
+        `linear-gradient(180deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`,
     width: 128,
     height: 128,
     position: 'absolute',
-  },
+},
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: theme.colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
-  },
+},
+loadingContainer: {
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: theme.spacing.lg,
+},
+
+loadingTitle: {
+  marginTop: theme.spacing.lg,
+  fontSize: 20,
+  fontWeight: '700',
+  color: theme.colors.textDark,
+  textAlign: 'center',
+},
+
+loadingStatus: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: theme.spacing.sm,
+  marginTop: theme.spacing.md,
+},
+
+loadingText: {
+  fontSize: theme.sizes.body,
+  color: theme.colors.textMuted,
+},
 });

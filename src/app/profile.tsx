@@ -18,7 +18,7 @@ import {
 import ScreenHeader from '../components/ScreenHeader';
 import {
     obtenerPerfil,
-} from '../services/api';
+} from '../services/userService';
 import { theme } from '../theme/theme';
 
 export default function ProfileScreen() {

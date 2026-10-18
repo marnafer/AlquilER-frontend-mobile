@@ -24,7 +24,7 @@ const PropertyCard = ({
         (anchoDisponible - theme.spacing.md) / 2;
 
     const anchoCard = compacto
-        ? width * 0.48
+        ? width * 0.40
         : anchoGrid;
 
     const alturaCard = compacto
@@ -51,15 +51,6 @@ const PropertyCard = ({
 
     const imagenUrl = construirUrlImagen(
         propiedad.imagen_url
-    );
-
-    console.log(
-        'PROPERTY CARD:',
-        propiedad.id,
-        'imagen_url:',
-        propiedad.imagen_url,
-        'URL final:',
-        imagenUrl
     );
 
     return (

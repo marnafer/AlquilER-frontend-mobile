@@ -4,11 +4,11 @@
     "slug": "AlquilER",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.webp",
     "scheme": "alquiler",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/logo.webp"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,9 +28,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "image": "./assets/images/logo.webp",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#3b82f6"
         }
       ],
       "expo-secure-store"

@@ -12,9 +12,11 @@ import {
     View
 } from 'react-native';
 
+import ScreenHeader from '../components/ScreenHeader';
 import { useLayout } from '../context/LayoutContext';
 import { register } from '../services/authService';
 import { theme } from '../theme/theme';
+
 
 export default function RegisterScreen() {
     const [formData, setFormData] = useState({
@@ -124,6 +126,12 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
+
+            <ScreenHeader
+                    title="Crear cuenta"
+                    subtitle="Registrate para alquilar o publicar propiedades"
+                />
+
             <ScrollView
                     contentContainerStyle={[
                         styles.scrollContent,
@@ -134,11 +142,6 @@ export default function RegisterScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <Text style={styles.title}>Crear cuenta</Text>
-
-                <Text style={styles.subtitle}>
-                    Registrate para alquilar o publicar propiedades
-                </Text>
 
                 {success ? ( 
                     <View style={styles.successToast}> 

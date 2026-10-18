@@ -181,11 +181,7 @@ export default function ReservasScreen() {
 
         try {
             const respuesta = await obtenerReservas();
-            console.log(
-    'RESPUESTA DE RESERVAS:',
-    JSON.stringify(respuesta, null, 2)
-);
-
+            
             if (!respuesta?.success) {
                 throw new Error(
                     respuesta?.message ||

@@ -16,9 +16,11 @@ import {
     View,
 } from 'react-native';
 
+import PublicarPropiedadSection from '@/components/PublicarPropiedadSection';
 import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/theme';
+
 
 export default function MyInformationScreen() {
     const router = useRouter();
@@ -302,37 +304,8 @@ export default function MyInformationScreen() {
                 </View>
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                    Publicar
-                </Text>
+                <PublicarPropiedadSection />
 
-                <TouchableOpacity
-                    style={styles.publishButton}
-                    activeOpacity={0.8}
-                    onPress={() =>
-                        router.push('/publicar-propiedad')
-                    }
-                >
-                    <Text style={styles.publishIcon}>
-                        ＋
-                    </Text>
-
-                    <View style={styles.publishContent}>
-                        <Text style={styles.publishTitle}>
-                            Publicar una propiedad
-                        </Text>
-
-                        <Text style={styles.publishDescription}>
-                            Agregá una nueva propiedad al sistema
-                        </Text>
-                    </View>
-
-                    <Text style={styles.menuArrow}>
-                        ›
-                    </Text>
-                </TouchableOpacity>
-            </View>
         </ScrollView>
     );
 }
@@ -508,56 +481,6 @@ const styles = StyleSheet.create({
             theme.colors.textMuted,
         fontSize: 28,
         fontWeight: '300',
-    },
-
-    publishButton: {
-        minHeight: 76,
-        paddingHorizontal:
-            theme.spacing.md,
-        paddingVertical:
-            theme.spacing.sm,
-        borderRadius: 16,
-        backgroundColor:
-            theme.colors.inputBg,
-        borderWidth: 1,
-        borderColor:
-            theme.colors.border,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-
-    publishIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        textAlign: 'center',
-        textAlignVertical: 'center',
-        backgroundColor:
-            theme.colors.primary,
-        color: '#ffffff',
-        fontSize: 25,
-        lineHeight: 42,
-    },
-
-    publishContent: {
-        flex: 1,
-        marginLeft:
-            theme.spacing.md,
-    },
-
-    publishTitle: {
-        color:
-            theme.colors.textDark,
-        fontSize: 15,
-        fontWeight: '700',
-    },
-
-    publishDescription: {
-        marginTop: 3,
-        color:
-            theme.colors.textMuted,
-        fontSize: 12,
-        lineHeight: 17,
     },
 
     logoutButton: {

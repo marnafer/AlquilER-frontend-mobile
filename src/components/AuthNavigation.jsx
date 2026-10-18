@@ -18,18 +18,24 @@ export default function AuthNavigation() {
             '/home',
             '/login',
             '/register',
+            '/properties',
         ];
 
-        if (
-            !isAuthenticated &&
-            !rutasPublicas.includes(pathname)
-        ) {
+        const esDetallePropiedad =
+            /^\/property\/[^/]+$/.test(pathname);
+
+        const esRutaPublica =
+            rutasPublicas.includes(pathname) ||
+            esDetallePropiedad;
+
+        if (!isAuthenticated && !esRutaPublica) {
             router.replace('/home');
         }
     }, [
         isAuthenticated,
         loading,
         pathname,
+        router,
     ]);
 
     return null;

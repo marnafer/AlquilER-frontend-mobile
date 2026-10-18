@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -246,10 +247,6 @@ export default function HomeScreen() {
     const [notificacionesNoLeidas, setNotificacionesNoLeidas] =
     useState(0);
 
-    useEffect(() => {
-        cargarDatos();
-    }, []);
-
     const cargarPropiedadesVistas = async () => {
         const idsVistos = await obtenerPropiedadesVistas();
 
@@ -265,7 +262,7 @@ export default function HomeScreen() {
         setPropiedadesVistas(vistas);
     };
 
-    const cargarDatos = async () => {
+    const cargarDatos = useCallback(async () => {
         try {
             setLoading(true);
             setError('');
@@ -275,7 +272,11 @@ export default function HomeScreen() {
                 categoriasResponse,
                 localidadesResponse,
             ] = await Promise.all([
-                api.get('/propiedades'),
+                api.get('/propiedades', {
+                    params: {
+                        limit: 5,
+                    },
+                }),
                 api.get('/categorias'),
                 api.get('/localidades'),
             ]);
@@ -307,13 +308,17 @@ export default function HomeScreen() {
                 error.response?.data
             );
 
-            setError(
-                'No se pudieron cargar los datos'
-            );
+            setError('No se pudieron cargar los datos');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            cargarDatos();
+        }, [cargarDatos])
+    );
 
     const cargarNotificacionesNoLeidas = async () => {
         try {
@@ -404,7 +409,7 @@ export default function HomeScreen() {
         }
 
         router.push({
-            pathname: '/propiedades',
+            pathname: '/properties',
             params,
         });
     };
@@ -430,34 +435,49 @@ export default function HomeScreen() {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
+
             {/* HERO */}
             <View style={styles.hero}>
                 <View style={styles.heroHeader}>
-                    <Text style={styles.heroTitle}>
+                    <View style={styles.heroHeaderSide}>
+                        <Image
+                            source={require('../../assets/images/logo512.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+                    </View>
+
+                    <Text
+                        style={styles.heroTitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                    >
                         AlquilER
                     </Text>
 
-                    {isAuthenticated ? (
-                        <TouchableOpacity
-                            style={styles.notificationButton}
-                            onPress={() => router.push('/notifications')}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={styles.notificationIcon}>
-                                🔔
-                            </Text>
+                    <View style={styles.heroHeaderSide}>
+                        {isAuthenticated ? (
+                            <TouchableOpacity
+                                style={styles.notificationButton}
+                                onPress={() => router.push('/notifications')}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.notificationIcon}>
+                                    🔔
+                                </Text>
 
-                            {notificacionesNoLeidas > 0 ? (
-                                <View style={styles.notificationBadge}>
-                                    <Text style={styles.notificationBadgeText}>
-                                        {notificacionesNoLeidas > 9
-                                            ? '9+'
-                                            : notificacionesNoLeidas}
-                                    </Text>
-                                </View>
-                            ) : null}
-                        </TouchableOpacity>
-                    ) : null}
+                                {notificacionesNoLeidas > 0 ? (
+                                    <View style={styles.notificationBadge}>
+                                        <Text style={styles.notificationBadgeText}>
+                                            {notificacionesNoLeidas > 9
+                                                ? '9+'
+                                                : notificacionesNoLeidas}
+                                        </Text>
+                                    </View>
+                                ) : null}
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
                 </View>
 
                 <View style={styles.descriptionCard}>
@@ -714,6 +734,7 @@ export default function HomeScreen() {
                                 <PropertyCard
                                     key={propiedad.id}
                                     propiedad={propiedad}
+                                    compacto
                                     onPress={() => handlePropiedadVista(propiedad)}
                                 />
                             ))}
@@ -754,10 +775,11 @@ export default function HomeScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.propertiesScroll}
                     >
-                        {propiedades.slice(0, 5).map((propiedad) => (
+                        {propiedades.map((propiedad) => (
                             <PropertyCard
                                 key={propiedad.id}
                                 propiedad={propiedad}
+                                compacto
                                 onPress={() =>
                                     handlePropiedadVista(propiedad)
                                 }
@@ -832,37 +854,40 @@ const crearEstilos = (responsive) => {
             paddingBottom: separacionMedia,
             borderBottomLeftRadius: radioGrande,
             borderBottomRightRadius: radioGrande,
+            alignItems: 'center'
         },
 
         heroTitle: {
+            flex: 1,
             color: '#ffffff',
             fontSize: fontHeroTitle,
             fontWeight: '700',
             textAlign: 'center',
-            paddingVertical: separacionMedia,
+            paddingHorizontal: 4,
+        },
+
+        heroHeader: {
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: separacionPequena,
+        },
+
+        heroHeaderSide: {
+            width: 48,
+            height: 48,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
 
     notificationButton: {
-        position: 'absolute',
-        right: 0,
-        top: '50%',
-        transform: [
-            {
-                translateY: -20,
-            },
-        ],
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: colorConOpacidad(
-            '#FFFFFF',
-            0.15
-        ),
+        backgroundColor: colorConOpacidad('#FFFFFF', 0.15),
         borderWidth: 1,
-        borderColor: colorConOpacidad(
-            '#FFFFFF',
-            0.25
-        ),
+        borderColor: colorConOpacidad('#FFFFFF', 0.25),
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1144,6 +1169,11 @@ const crearEstilos = (responsive) => {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+    },
+
+    logo: {
+        width: 64,
+        height: 64,
     },
     });
 };
