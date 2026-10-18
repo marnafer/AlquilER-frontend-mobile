@@ -12,9 +12,11 @@ import {
     View
 } from 'react-native';
 
+import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
 import { login as loginApi } from '../services/authService';
 import { theme } from '../theme/theme';
+
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -105,18 +107,19 @@ export default function LoginScreen() {
                 </Text>
             </View>
         ) : null}
+
+        <ScreenHeader
+                    title="Iniciar sesión"
+                    subtitle="Ingresá a tu cuenta para continuar"
+                />
         
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <Text style={styles.title}>Iniciar sesión</Text>
 
-                <Text style={styles.subtitle}>
-                    Ingresá a tu cuenta para continuar
-                </Text>
-
+            
                 {error ? (
                     <View style={styles.alertError}>
                         <Text style={styles.errorText}>{error}</Text>
