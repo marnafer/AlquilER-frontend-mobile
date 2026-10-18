@@ -1,3 +1,4 @@
+
 import {
     useLocalSearchParams,
     useRouter,
@@ -17,7 +18,6 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useWindowDimensions,
     View,
 } from 'react-native';
 
@@ -25,9 +25,10 @@ import PropertyAdvancedFilter from '../components/PropertyAdvancedFilter';
 import PropertyCard from '../components/PropertyCard';
 import ScreenHeader from '../components/ScreenHeader';
 import api from '../services/api';
+import { abrirPropiedad } from '../services/propertyNavigation';
 import { theme } from '../theme/theme';
 
-import { abrirPropiedad } from '../services/propertyNavigation';
+const POR_PAGINA = 10;
 
 const normalizarParametro = (valor) => {
     if (valor === undefined || valor === null) {
@@ -109,31 +110,20 @@ export default function PropertySearchScreen() {
         capacidad,
     } = useLocalSearchParams();
 
-    const { width } = useWindowDimensions();
+    const [propiedades, setPropiedades] = useState([]);
+    const [categorias, setCategorias] = useState([]);
+    const [localidades, setLocalidades] = useState([]);
+    const [servicios, setServicios] = useState([]);
 
-    const [propiedades, setPropiedades] =
-        useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const [categorias, setCategorias] =
-        useState([]);
+    const [orden, setOrden] = useState('antiguedad_desc');
+    const [ordenAbierto, setOrdenAbierto] = useState(false);
 
-    const [localidades, setLocalidades] =
-        useState([]);
-
-    const [servicios, setServicios] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [error, setError] =
-        useState('');
-
-    const [orden, setOrden] =
-        useState('antiguedad_desc');
-
-    const [ordenAbierto, setOrdenAbierto] =
-        useState(false);
+    const [pagina, setPagina] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [ultimaPagina, setUltimaPagina] = useState(1);
 
     const categoriasIniciales = useMemo(
         () => normalizarParametro(categoria_id),
@@ -152,32 +142,15 @@ export default function PropertySearchScreen() {
 
     const filtrosIniciales = useMemo(
         () => ({
-            categoria_id:
-                categoriasIniciales,
-
-            localidad_id:
-                localidadesIniciales,
-
-            servicio_id:
-                serviciosIniciales,
-
-            precio_min:
-                precio_min ?? '',
-
-            precio_max:
-                precio_max ?? '',
-
-            cantidad_ambientes:
-                cantidad_ambientes ?? '',
-
-            cantidad_dormitorios:
-                cantidad_dormitorios ?? '',
-
-            cantidad_banos:
-                cantidad_banos ?? '',
-
-            capacidad:
-                capacidad ?? '',
+            categoria_id: categoriasIniciales,
+            localidad_id: localidadesIniciales,
+            servicio_id: serviciosIniciales,
+            precio_min: precio_min ?? '',
+            precio_max: precio_max ?? '',
+            cantidad_ambientes: cantidad_ambientes ?? '',
+            cantidad_dormitorios: cantidad_dormitorios ?? '',
+            cantidad_banos: cantidad_banos ?? '',
+            capacidad: capacidad ?? '',
         }),
         [
             categoriasIniciales,
@@ -191,6 +164,9 @@ export default function PropertySearchScreen() {
             capacidad,
         ]
     );
+
+    const [filtrosActivos, setFiltrosActivos] =
+        useState(filtrosIniciales);
 
     const cargarCatalogos = async () => {
         const [
@@ -225,13 +201,10 @@ export default function PropertySearchScreen() {
         );
     };
 
-    const construirQuery = (filtros) => {
+    const construirQuery = (filtros, paginaSolicitada = 1) => {
         const params = [];
 
-        const agregarIds = (
-            nombre,
-            valores
-        ) => {
+        const agregarIds = (nombre, valores) => {
             if (!Array.isArray(valores)) {
                 return;
             }
@@ -243,28 +216,15 @@ export default function PropertySearchScreen() {
                     String(id).trim() !== ''
                 ) {
                     params.push(
-                        `${nombre}[]=${encodeURIComponent(
-                            String(id)
-                        )}`
+                        `${nombre}[]=${encodeURIComponent(String(id))}`
                     );
                 }
             });
         };
 
-        agregarIds(
-            'categoria_id',
-            filtros.categoria_id
-        );
-
-        agregarIds(
-            'localidad_id',
-            filtros.localidad_id
-        );
-
-        agregarIds(
-            'servicio_id',
-            filtros.servicio_id
-        );
+        agregarIds('categoria_id', filtros.categoria_id);
+        agregarIds('localidad_id', filtros.localidad_id);
+        agregarIds('servicio_id', filtros.servicio_id);
 
         const camposSimples = [
             'precio_min',
@@ -284,37 +244,62 @@ export default function PropertySearchScreen() {
                 String(valor).trim() !== ''
             ) {
                 params.push(
-                    `${campo}=${encodeURIComponent(
-                        String(valor)
-                    )}`
+                    `${campo}=${encodeURIComponent(String(valor))}`
                 );
             }
         });
 
-        return params.length > 0
-            ? `?${params.join('&')}`
-            : '';
+        // Parámetros de paginación del backend.
+        params.push(`page=${paginaSolicitada}`);
+        params.push(`per_page=${POR_PAGINA}`);
+
+        return `?${params.join('&')}`;
     };
 
     const cargarPropiedades = async (
-        filtros = {}
+        filtros = {},
+        paginaSolicitada = 1
     ) => {
         try {
             setLoading(true);
             setError('');
 
-            const query =
-                construirQuery(filtros);
+            const query = construirQuery(
+                filtros,
+                paginaSolicitada
+            );
 
-            const response =
-                await api.get(
-                    `/propiedades${query}`
-                );
+            const response = await api.get(
+                `/propiedades${query}`
+            );
 
-            setPropiedades(
-                response.data?.data?.items ||
-                response.data?.data ||
-                []
+            const payload = response.data?.data;
+
+            const items = Array.isArray(payload?.items)
+                ? payload.items
+                : Array.isArray(payload)
+                    ? payload
+                    : [];
+
+            const paginacion = payload?.pagination;
+
+            setPropiedades(items);
+
+            setTotal(
+                Number.isFinite(Number(payload?.total))
+                    ? Number(payload.total)
+                    : items.length
+            );
+
+            setPagina(
+                Number(paginacion?.current_page) || paginaSolicitada
+            );
+
+            setUltimaPagina(
+                Math.max(
+                    1,
+                    Number(paginacion?.last_page) || 1
+                )
             );
         } catch (error) {
             console.error(
@@ -332,6 +317,9 @@ export default function PropertySearchScreen() {
             );
 
             setPropiedades([]);
+            setTotal(0);
+            setPagina(1);
+            setUltimaPagina(1);
         } finally {
             setLoading(false);
         }
@@ -346,7 +334,8 @@ export default function PropertySearchScreen() {
                 await cargarCatalogos();
 
                 await cargarPropiedades(
-                    filtrosIniciales
+                    filtrosIniciales,
+                    1
                 );
             } catch (error) {
                 console.error(
@@ -371,75 +360,71 @@ export default function PropertySearchScreen() {
     }, []);
 
     const handleBuscar = async (filtros) => {
-        await cargarPropiedades(filtros);
+        // Una búsqueda nueva siempre comienza en la página 1.
+        setFiltrosActivos(filtros);
+        setPagina(1);
+
+        await cargarPropiedades(filtros, 1);
+    };
+
+    const cambiarPagina = async (nuevaPagina) => {
+        if (
+            loading ||
+            nuevaPagina < 1 ||
+            nuevaPagina > ultimaPagina ||
+            nuevaPagina === pagina
+        ) {
+            return;
+        }
+
+        await cargarPropiedades(
+            filtrosActivos,
+            nuevaPagina
+        );
     };
 
     const propiedadesOrdenadas = useMemo(() => {
-        const resultado = [
-            ...propiedades,
-        ];
+        const resultado = [...propiedades];
 
         resultado.sort((a, b) => {
             switch (orden) {
                 case 'precio_asc':
                     return (
-                        convertirNumero(
-                            a.precio
-                        ) -
-                        convertirNumero(
-                            b.precio
-                        )
+                        convertirNumero(a.precio) -
+                        convertirNumero(b.precio)
                     );
 
                 case 'precio_desc':
                     return (
-                        convertirNumero(
-                            b.precio
-                        ) -
-                        convertirNumero(
-                            a.precio
-                        )
+                        convertirNumero(b.precio) -
+                        convertirNumero(a.precio)
                     );
 
                 case 'antiguedad_asc':
                     return (
-                        obtenerFechaPublicacion(
-                            a
-                        ) -
-                        obtenerFechaPublicacion(
-                            b
-                        )
+                        obtenerFechaPublicacion(a) -
+                        obtenerFechaPublicacion(b)
                     );
 
                 case 'antiguedad_desc':
                 default:
                     return (
-                        obtenerFechaPublicacion(
-                            b
-                        ) -
-                        obtenerFechaPublicacion(
-                            a
-                        )
+                        obtenerFechaPublicacion(b) -
+                        obtenerFechaPublicacion(a)
                     );
             }
         });
 
         return resultado;
-    }, [
-        propiedades,
-        orden,
-    ]);
+    }, [propiedades, orden]);
 
-    const ordenarSeleccion = (
-        nuevoOrden
-    ) => {
+    const ordenarSeleccion = (nuevoOrden) => {
         setOrden(nuevoOrden);
         setOrdenAbierto(false);
     };
 
     const ordenActual = opcionesOrden.find(
-        (opcion) =>
-            opcion.valor === orden
+        (opcion) => opcion.valor === orden
     );
 
     if (loading) {
@@ -447,9 +432,7 @@ export default function PropertySearchScreen() {
             <View style={styles.loadingContainer}>
                 <ActivityIndicator
                     size="large"
-                    color={
-                        theme.colors.primary
-                    }
+                    color={theme.colors.primary}
                 />
 
                 <Text style={styles.loadingText}>
@@ -462,19 +445,11 @@ export default function PropertySearchScreen() {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={
-                Platform.OS === 'ios'
-                    ? 'padding'
-                    : 'height'
-            }
-            keyboardVerticalOffset={
-                Platform.OS === 'ios' ? 90 : 0
-            }
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
             <ScrollView
-                contentContainerStyle={
-                    styles.content
-                }
+                contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}
@@ -489,204 +464,130 @@ export default function PropertySearchScreen() {
                         categorias={categorias}
                         localidades={localidades}
                         servicios={servicios}
-                        initialCategorias={
-                            filtrosIniciales.categoria_id
-                        }
-                        initialLocalidades={
-                            filtrosIniciales.localidad_id
-                        }
-                        initialServicios={
-                            filtrosIniciales.servicio_id
-                        }
+                        initialCategorias={filtrosIniciales.categoria_id}
+                        initialLocalidades={filtrosIniciales.localidad_id}
+                        initialServicios={filtrosIniciales.servicio_id}
                         onSearch={handleBuscar}
                     />
                 </View>
 
                 {error ? (
                     <View style={styles.errorBox}>
-                        <Text
-                            style={styles.errorText}
-                        >
+                        <Text style={styles.errorText}>
                             {error}
                         </Text>
+
+                        <TouchableOpacity
+                            style={styles.retryButton}
+                            onPress={() =>
+                                cargarPropiedades(
+                                    filtrosActivos,
+                                    pagina
+                                )
+                            }
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.retryButtonText}>
+                                Reintentar
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 ) : null}
 
                 <View style={styles.resultsSection}>
-                    <View
-                        style={styles.resultsHeader}
-                    >
-                        <View
-                            style={
-                                styles.resultsHeaderText
-                            }
-                        >
-                            <Text
-                                style={
-                                    styles.resultsTitle
-                                }
-                            >
+                    <View style={styles.resultsHeader}>
+                        <View style={styles.resultsHeaderText}>
+                            <Text style={styles.resultsTitle}>
                                 Propiedades
                             </Text>
 
-                            <Text
-                                style={
-                                    styles.resultsCount
-                                }
-                            >
-                                {propiedadesOrdenadas.length}{' '}
-                                {propiedadesOrdenadas.length ===
-                                1
-                                    ? 'resultado'
-                                    : 'resultados'}
+                            <Text style={styles.resultsCount}>
+                                {total}{' '}
+                                {total === 1 ? 'resultado' : 'resultados'}
                             </Text>
                         </View>
 
-                        <View
-                            style={
-                                styles.sortContainer
-                            }
-                        >
+                        <View style={styles.sortContainer}>
                             <TouchableOpacity
-                                style={
-                                    styles.sortHeader
-                                }
+                                style={styles.sortHeader}
                                 onPress={() =>
-                                    setOrdenAbierto(
-                                        (actual) =>
-                                            !actual
-                                    )
+                                    setOrdenAbierto((actual) => !actual)
                                 }
                                 activeOpacity={0.8}
                             >
-                                <View
-                                    style={
-                                        styles.sortHeaderText
-                                    }
-                                >
-                                    <Text
-                                        style={
-                                            styles.sortLabel
-                                        }
-                                    >
+                                <View style={styles.sortHeaderText}>
+                                    <Text style={styles.sortLabel}>
                                         Ordenar por
                                     </Text>
 
                                     <Text
-                                        style={
-                                            styles.sortSummary
-                                        }
+                                        style={styles.sortSummary}
                                         numberOfLines={1}
                                     >
-                                        {
-                                            ordenActual
-                                                ?.etiqueta
-                                        }
+                                        {ordenActual?.etiqueta}
                                     </Text>
                                 </View>
 
-                                <Text
-                                    style={
-                                        styles.sortArrow
-                                    }
-                                >
-                                    {ordenAbierto
-                                        ? '▲'
-                                        : '▼'}
+                                <Text style={styles.sortArrow}>
+                                    {ordenAbierto ? '▲' : '▼'}
                                 </Text>
                             </TouchableOpacity>
 
                             {ordenAbierto ? (
-                                <View
-                                    style={
-                                        styles.sortDropdown
-                                    }
-                                >
-                                    {opcionesOrden.map(
-                                        (opcion) => {
-                                            const seleccionada =
-                                                opcion.valor ===
-                                                orden;
+                                <View style={styles.sortDropdown}>
+                                    {opcionesOrden.map((opcion) => {
+                                        const seleccionada =
+                                            opcion.valor === orden;
 
-                                            return (
-                                                <TouchableOpacity
-                                                    key={
+                                        return (
+                                            <TouchableOpacity
+                                                key={opcion.valor}
+                                                style={[
+                                                    styles.sortOption,
+                                                    seleccionada &&
+                                                        styles.sortOptionSelected,
+                                                ]}
+                                                onPress={() =>
+                                                    ordenarSeleccion(
                                                         opcion.valor
-                                                    }
+                                                    )
+                                                }
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text
                                                     style={[
-                                                        styles.sortOption,
+                                                        styles.sortOptionText,
                                                         seleccionada &&
-                                                            styles.sortOptionSelected,
+                                                            styles.sortOptionTextSelected,
                                                     ]}
-                                                    onPress={() =>
-                                                        ordenarSeleccion(
-                                                            opcion.valor
-                                                        )
-                                                    }
-                                                    activeOpacity={
-                                                        0.8
-                                                    }
                                                 >
-                                                    <Text
-                                                        style={[
-                                                            styles.sortOptionText,
-                                                            seleccionada &&
-                                                                styles.sortOptionTextSelected,
-                                                        ]}
-                                                    >
-                                                        {
-                                                            opcion.etiqueta
-                                                        }
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            );
-                                        }
-                                    )}
+                                                    {opcion.etiqueta}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </View>
                             ) : null}
                         </View>
                     </View>
 
-                    {propiedadesOrdenadas.length ===
-                    0 ? (
-                        <View
-                            style={
-                                styles.emptyContainer
-                            }
-                        >
-                            <Text
-                                style={
-                                    styles.emptyTitle
-                                }
-                            >
-                                No se encontraron
-                                propiedades
+                    {propiedadesOrdenadas.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyTitle}>
+                                No se encontraron propiedades
                             </Text>
 
-                            <Text
-                                style={
-                                    styles.emptyText
-                                }
-                            >
-                                Probá modificando los
-                                filtros de búsqueda.
+                            <Text style={styles.emptyText}>
+                                Probá modificando los filtros de búsqueda.
                             </Text>
                         </View>
                     ) : (
-                        <View
-                            style={
-                                styles.propertiesGrid
-                            }
-                        >
-                            {propiedadesOrdenadas.map(
-                                (propiedad) => (
+                        <>
+                            <View style={styles.propertiesGrid}>
+                                {propiedadesOrdenadas.map((propiedad) => (
                                     <PropertyCard
-                                        key={
-                                            propiedad.id
-                                        }
-                                        propiedad={
-                                            propiedad
-                                        }
+                                        key={propiedad.id}
+                                        propiedad={propiedad}
                                         onPress={() =>
                                             abrirPropiedad(
                                                 router,
@@ -694,9 +595,69 @@ export default function PropertySearchScreen() {
                                             )
                                         }
                                     />
-                                )
-                            )}
-                        </View>
+                                ))}
+                            </View>
+
+                            <View style={styles.paginationContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.paginationButton,
+                                        pagina <= 1 &&
+                                            styles.paginationButtonDisabled,
+                                    ]}
+                                    onPress={() =>
+                                        cambiarPagina(pagina - 1)
+                                    }
+                                    disabled={pagina <= 1 || loading}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.paginationButtonText,
+                                            pagina <= 1 &&
+                                                styles.paginationButtonTextDisabled,
+                                        ]}
+                                    >
+                                        Anterior
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.paginationInfo}>
+                                    <Text style={styles.paginationPage}>
+                                        {pagina} de {ultimaPagina}
+                                    </Text>
+
+                                    <Text style={styles.paginationCaption}>
+                                        Página
+                                    </Text>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.paginationButton,
+                                        pagina >= ultimaPagina &&
+                                            styles.paginationButtonDisabled,
+                                    ]}
+                                    onPress={() =>
+                                        cambiarPagina(pagina + 1)
+                                    }
+                                    disabled={
+                                        pagina >= ultimaPagina || loading
+                                    }
+                                    activeOpacity={0.8}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.paginationButtonText,
+                                            pagina >= ultimaPagina &&
+                                                styles.paginationButtonTextDisabled,
+                                        ]}
+                                    >
+                                        Siguiente
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </>
                     )}
                 </View>
             </ScrollView>
@@ -707,24 +668,19 @@ export default function PropertySearchScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor:
-            theme.colors.background,
+        backgroundColor: theme.colors.background,
     },
 
     content: {
-        paddingBottom:
-            theme.spacing.xl +
-            90,
+        paddingBottom: theme.spacing.xl + 90,
     },
 
     loadingContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor:
-            theme.colors.background,
-        paddingHorizontal:
-            theme.spacing.lg,
+        backgroundColor: theme.colors.background,
+        paddingHorizontal: theme.spacing.lg,
     },
 
     loadingText: {
@@ -735,18 +691,15 @@ const styles = StyleSheet.create({
 
     filtersContainer: {
         marginTop: theme.spacing.md,
-        marginHorizontal:
-            theme.spacing.md,
+        marginHorizontal: theme.spacing.md,
     },
 
     errorBox: {
-        marginHorizontal:
-            theme.spacing.md,
+        marginHorizontal: theme.spacing.md,
         marginTop: theme.spacing.md,
         padding: theme.spacing.md,
         borderRadius: 10,
-        backgroundColor:
-            theme.colors.errorBg,
+        backgroundColor: theme.colors.errorBg,
     },
 
     errorText: {
@@ -755,15 +708,28 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
+    retryButton: {
+        alignSelf: 'center',
+        marginTop: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: 8,
+        backgroundColor: theme.colors.primary,
+    },
+
+    retryButtonText: {
+        color: '#ffffff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+
     resultsSection: {
         marginTop: theme.spacing.sm,
     },
 
     resultsHeader: {
-        paddingHorizontal:
-            theme.spacing.md,
-        marginBottom:
-            theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        marginBottom: theme.spacing.md,
         zIndex: 10,
     },
 
@@ -793,15 +759,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor:
-            theme.colors.border,
+        borderColor: theme.colors.border,
         borderRadius: 10,
-        backgroundColor:
-            theme.colors.inputBg,
+        backgroundColor: theme.colors.inputBg,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent:
-            'space-between',
+        justifyContent: 'space-between',
     },
 
     sortHeaderText: {
@@ -830,11 +793,9 @@ const styles = StyleSheet.create({
         marginTop: 6,
         padding: 6,
         borderWidth: 1,
-        borderColor:
-            theme.colors.border,
+        borderColor: theme.colors.border,
         borderRadius: 10,
-        backgroundColor:
-            theme.colors.background,
+        backgroundColor: theme.colors.background,
     },
 
     sortOption: {
@@ -844,8 +805,7 @@ const styles = StyleSheet.create({
     },
 
     sortOptionSelected: {
-        backgroundColor:
-            theme.colors.primary,
+        backgroundColor: theme.colors.primary,
     },
 
     sortOptionText: {
@@ -866,24 +826,61 @@ const styles = StyleSheet.create({
         rowGap: theme.spacing.md,
     },
 
-    propertyRow: {
+    paginationContainer: {
         flexDirection: 'row',
-        gap: theme.spacing.md,
-        marginBottom:
-            theme.spacing.md,
-        alignItems: 'stretch',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: theme.spacing.xl,
+        marginHorizontal: theme.spacing.md,
+        gap: theme.spacing.sm,
     },
 
-    propertyItem: {
-        flexShrink: 0,
+    paginationButton: {
+        minHeight: 44,
+        minWidth: 100,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.primary,
+    },
+
+    paginationButtonDisabled: {
+        backgroundColor: theme.colors.border,
+    },
+
+    paginationButtonText: {
+        color: '#ffffff',
+        fontSize: 13,
+        fontWeight: '600',
+    },
+
+    paginationButtonTextDisabled: {
+        color: theme.colors.textMuted,
+    },
+
+    paginationInfo: {
+        flex: 1,
+        alignItems: 'center',
+    },
+
+    paginationPage: {
+        color: theme.colors.textDark,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+
+    paginationCaption: {
+        marginTop: 2,
+        color: theme.colors.textMuted,
+        fontSize: 12,
     },
 
     emptyContainer: {
         alignItems: 'center',
-        paddingHorizontal:
-            theme.spacing.lg,
-        paddingVertical:
-            theme.spacing.xl,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.xl,
     },
 
     emptyTitle: {
