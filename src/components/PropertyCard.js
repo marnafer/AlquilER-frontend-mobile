@@ -53,6 +53,12 @@ const PropertyCard = ({
         propiedad.imagen_url
     );
 
+    const aceptaMascotas =
+        Boolean(Number(propiedad.acepta_mascotas));
+
+    const aceptaHijos =
+        Boolean(Number(propiedad.acepta_hijos));
+
     return (
         <TouchableOpacity
             style={[
@@ -189,6 +195,28 @@ const PropertyCard = ({
                         👥{' '}
                         {propiedad.capacidad || 0}
                     </Text>
+
+                    {Boolean(Number(propiedad.acepta_mascotas)) && (
+                        <Text
+                            style={[
+                                styles.feature,
+                                compacto && styles.featureCompacto,
+                            ]}
+                        >
+                            🐾 <Text style={styles.checkVerde}>✓</Text>
+                        </Text>
+                    )}
+
+                    {Boolean(Number(propiedad.acepta_hijos)) && (
+                        <Text
+                            style={[
+                                styles.feature,
+                                compacto && styles.featureCompacto,
+                            ]}
+                        >
+                            👶 <Text style={styles.checkVerde}>✓</Text>
+                        </Text>
+                    )}
                 </View>
             </View>
         </TouchableOpacity>

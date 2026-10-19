@@ -74,6 +74,8 @@ export default function PropertySearchScreen() {
         cantidad_dormitorios,
         cantidad_banos,
         capacidad,
+        acepta_mascotas,
+        acepta_hijos,
     } = useLocalSearchParams();
 
     const [propiedades, setPropiedades] = useState([]);
@@ -117,6 +119,8 @@ export default function PropertySearchScreen() {
             cantidad_dormitorios: cantidad_dormitorios ?? '',
             cantidad_banos: cantidad_banos ?? '',
             capacidad: capacidad ?? '',
+            acepta_mascotas: acepta_mascotas ?? '',
+            acepta_hijos: acepta_hijos ?? '',
         }),
         [
             categoriasIniciales,
@@ -128,6 +132,8 @@ export default function PropertySearchScreen() {
             cantidad_dormitorios,
             cantidad_banos,
             capacidad,
+            acepta_mascotas,
+            acepta_hijos,
         ]
     );
 
@@ -203,6 +209,8 @@ export default function PropertySearchScreen() {
             'cantidad_dormitorios',
             'cantidad_banos',
             'capacidad',
+            'acepta_mascotas',
+            'acepta_hijos',
         ];
 
         camposSimples.forEach((campo) => {
@@ -416,6 +424,8 @@ export default function PropertySearchScreen() {
                         initialCategorias={filtrosIniciales.categoria_id}
                         initialLocalidades={filtrosIniciales.localidad_id}
                         initialServicios={filtrosIniciales.servicio_id}
+                        initialAceptaMascotas={filtrosIniciales.acepta_mascotas}
+                        initialAceptaHijos={filtrosIniciales.acepta_hijos}
                         onSearch={handleBuscar}
                     />
                 </View>
