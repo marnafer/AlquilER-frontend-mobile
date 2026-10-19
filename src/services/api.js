@@ -5,7 +5,9 @@ const TOKEN_KEY = '@alquiler_token';
 const REFRESH_TOKEN_KEY = '@alquiler_refresh_token';
 
 const api = axios.create({
-    baseURL: 'http://192.168.100.37:8000/api', //192.168.100.37
+  baseURL:
+    process.env.EXPO_PUBLIC_API_URL ||
+    'http://192.168.100.37:8000/api',
 });
 
 let refreshing = false;

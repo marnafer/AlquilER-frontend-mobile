@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 
 import {
@@ -16,6 +17,12 @@ const normalizarIniciales = (valores) =>
         ? valores.map(String)
         : [];
 
+const opcionesAceptacion = [
+    { valor: '', etiqueta: 'Cualquiera' },
+    { valor: '1', etiqueta: 'Sí' },
+    { valor: '0', etiqueta: 'No' },
+];
+
 const PropertyAdvancedFilter = ({
     categorias = [],
     localidades = [],
@@ -23,6 +30,8 @@ const PropertyAdvancedFilter = ({
     initialCategorias = [],
     initialLocalidades = [],
     initialServicios = [],
+    initialAceptaMascotas = '',
+    initialAceptaHijos = '',
     onSearch,
 }) => {
     const [abierto, setAbierto] = useState(false);
@@ -37,19 +46,13 @@ const PropertyAdvancedFilter = ({
         useState(false);
 
     const [categoriasSeleccionadas, setCategoriasSeleccionadas] =
-        useState(
-            normalizarIniciales(initialCategorias)
-        );
+        useState(normalizarIniciales(initialCategorias));
 
     const [localidadesSeleccionadas, setLocalidadesSeleccionadas] =
-        useState(
-            normalizarIniciales(initialLocalidades)
-        );
+        useState(normalizarIniciales(initialLocalidades));
 
     const [serviciosSeleccionados, setServiciosSeleccionados] =
-        useState(
-            normalizarIniciales(initialServicios)
-        );
+        useState(normalizarIniciales(initialServicios));
 
     const [precioMin, setPrecioMin] = useState('');
     const [precioMax, setPrecioMax] = useState('');
@@ -63,8 +66,13 @@ const PropertyAdvancedFilter = ({
     const [cantidadBanos, setCantidadBanos] =
         useState('');
 
-    const [capacidad, setCapacidad] =
-        useState('');
+    const [capacidad, setCapacidad] = useState('');
+
+    const [aceptaMascotas, setAceptaMascotas] =
+        useState(String(initialAceptaMascotas ?? ''));
+
+    const [aceptaHijos, setAceptaHijos] =
+        useState(String(initialAceptaHijos ?? ''));
 
     useEffect(() => {
         setCategoriasSeleccionadas(
@@ -84,6 +92,18 @@ const PropertyAdvancedFilter = ({
         );
     }, [initialServicios]);
 
+    useEffect(() => {
+        setAceptaMascotas(
+            String(initialAceptaMascotas ?? '')
+        );
+    }, [initialAceptaMascotas]);
+
+    useEffect(() => {
+        setAceptaHijos(
+            String(initialAceptaHijos ?? '')
+        );
+    }, [initialAceptaHijos]);
+
     const toggleSeleccion = (
         id,
         seleccionados,
@@ -96,10 +116,7 @@ const PropertyAdvancedFilter = ({
                 ? actuales.filter(
                     (actual) => actual !== idString
                 )
-                : [
-                    ...actuales,
-                    idString,
-                ]
+                : [...actuales, idString]
         );
     };
 
@@ -114,35 +131,26 @@ const PropertyAdvancedFilter = ({
         setCantidadDormitorios('');
         setCantidadBanos('');
         setCapacidad('');
+
+        setAceptaMascotas('');
+        setAceptaHijos('');
     };
 
     const handleBuscar = () => {
         onSearch?.({
-            categoria_id:
-                categoriasSeleccionadas,
+            categoria_id: categoriasSeleccionadas,
+            localidad_id: localidadesSeleccionadas,
+            servicio_id: serviciosSeleccionados,
 
-            localidad_id:
-                localidadesSeleccionadas,
-
-            servicio_id:
-                serviciosSeleccionados,
-
-            precio_min:
-                precioMin,
-
-            precio_max:
-                precioMax,
-
-            cantidad_ambientes:
-                cantidadAmbientes,
-
-            cantidad_dormitorios:
-                cantidadDormitorios,
-
-            cantidad_banos:
-                cantidadBanos,
-
+            precio_min: precioMin,
+            precio_max: precioMax,
+            cantidad_ambientes: cantidadAmbientes,
+            cantidad_dormitorios: cantidadDormitorios,
+            cantidad_banos: cantidadBanos,
             capacidad,
+
+            acepta_mascotas: aceptaMascotas,
+            acepta_hijos: aceptaHijos,
         });
     };
 
@@ -155,7 +163,46 @@ const PropertyAdvancedFilter = ({
         (cantidadAmbientes !== '' ? 1 : 0) +
         (cantidadDormitorios !== '' ? 1 : 0) +
         (cantidadBanos !== '' ? 1 : 0) +
-        (capacidad !== '' ? 1 : 0);
+        (capacidad !== '' ? 1 : 0) +
+        (aceptaMascotas !== '' ? 1 : 0) +
+        (aceptaHijos !== '' ? 1 : 0);
+
+    const renderOpcionesAceptacion = (
+        valorActual,
+        actualizarValor,
+        prefijo
+    ) => (
+        <View style={styles.optionsContainer}>
+            {opcionesAceptacion.map((opcion) => {
+                const seleccionada =
+                    valorActual === opcion.valor;
+
+                return (
+                    <TouchableOpacity
+                        key={`${prefijo}-${opcion.etiqueta}`}
+                        style={[
+                            styles.chip,
+                            seleccionada && styles.chipActive,
+                        ]}
+                        onPress={() =>
+                            actualizarValor(opcion.valor)
+                        }
+                        activeOpacity={0.8}
+                    >
+                        <Text
+                            style={[
+                                styles.chipText,
+                                seleccionada &&
+                                    styles.chipTextActive,
+                            ]}
+                        >
+                            {opcion.etiqueta}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -204,8 +251,7 @@ const PropertyAdvancedFilter = ({
                             </Text>
 
                             <Text style={styles.dropdownSummary}>
-                                {categoriasSeleccionadas.length ===
-                                0
+                                {categoriasSeleccionadas.length === 0
                                     ? 'Todas'
                                     : `${categoriasSeleccionadas.length} seleccionadas`}
                             </Text>
@@ -227,8 +273,7 @@ const PropertyAdvancedFilter = ({
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
-                                            categoriasSeleccionadas.length ===
-                                                0 &&
+                                            categoriasSeleccionadas.length === 0 &&
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
@@ -238,8 +283,7 @@ const PropertyAdvancedFilter = ({
                                         <Text
                                             style={[
                                                 styles.chipText,
-                                                categoriasSeleccionadas.length ===
-                                                    0 &&
+                                                categoriasSeleccionadas.length === 0 &&
                                                     styles.chipTextActive,
                                             ]}
                                         >
@@ -304,8 +348,7 @@ const PropertyAdvancedFilter = ({
                             </Text>
 
                             <Text style={styles.dropdownSummary}>
-                                {localidadesSeleccionadas.length ===
-                                0
+                                {localidadesSeleccionadas.length === 0
                                     ? 'Todas'
                                     : `${localidadesSeleccionadas.length} seleccionadas`}
                             </Text>
@@ -327,8 +370,7 @@ const PropertyAdvancedFilter = ({
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
-                                            localidadesSeleccionadas.length ===
-                                                0 &&
+                                            localidadesSeleccionadas.length === 0 &&
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
@@ -338,8 +380,7 @@ const PropertyAdvancedFilter = ({
                                         <Text
                                             style={[
                                                 styles.chipText,
-                                                localidadesSeleccionadas.length ===
-                                                    0 &&
+                                                localidadesSeleccionadas.length === 0 &&
                                                     styles.chipTextActive,
                                             ]}
                                         >
@@ -404,8 +445,7 @@ const PropertyAdvancedFilter = ({
                             </Text>
 
                             <Text style={styles.dropdownSummary}>
-                                {serviciosSeleccionados.length ===
-                                0
+                                {serviciosSeleccionados.length === 0
                                     ? 'Todos'
                                     : `${serviciosSeleccionados.length} seleccionados`}
                             </Text>
@@ -427,8 +467,7 @@ const PropertyAdvancedFilter = ({
                                     <TouchableOpacity
                                         style={[
                                             styles.chip,
-                                            serviciosSeleccionados.length ===
-                                                0 &&
+                                            serviciosSeleccionados.length === 0 &&
                                                 styles.chipActive,
                                         ]}
                                         onPress={() =>
@@ -438,8 +477,7 @@ const PropertyAdvancedFilter = ({
                                         <Text
                                             style={[
                                                 styles.chipText,
-                                                serviciosSeleccionados.length ===
-                                                    0 &&
+                                                serviciosSeleccionados.length === 0 &&
                                                     styles.chipTextActive,
                                             ]}
                                         >
@@ -504,9 +542,7 @@ const PropertyAdvancedFilter = ({
                                 value={precioMin}
                                 onChangeText={setPrecioMin}
                                 placeholder="$ mínimo"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
+                                placeholderTextColor={theme.colors.textMuted}
                                 keyboardType="decimal-pad"
                             />
                         </View>
@@ -521,9 +557,7 @@ const PropertyAdvancedFilter = ({
                                 value={precioMax}
                                 onChangeText={setPrecioMax}
                                 placeholder="$ máximo"
-                                placeholderTextColor={
-                                    theme.colors.textMuted
-                                }
+                                placeholderTextColor={theme.colors.textMuted}
                                 keyboardType="decimal-pad"
                             />
                         </View>
@@ -545,9 +579,7 @@ const PropertyAdvancedFilter = ({
                             value={cantidadAmbientes}
                             onChangeText={setCantidadAmbientes}
                             placeholder="Ej.: 2"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
+                            placeholderTextColor={theme.colors.textMuted}
                             keyboardType="number-pad"
                         />
                     </View>
@@ -562,9 +594,7 @@ const PropertyAdvancedFilter = ({
                             value={cantidadDormitorios}
                             onChangeText={setCantidadDormitorios}
                             placeholder="Ej.: 2"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
+                            placeholderTextColor={theme.colors.textMuted}
                             keyboardType="number-pad"
                         />
                     </View>
@@ -579,9 +609,7 @@ const PropertyAdvancedFilter = ({
                             value={cantidadBanos}
                             onChangeText={setCantidadBanos}
                             placeholder="Ej.: 1"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
+                            placeholderTextColor={theme.colors.textMuted}
                             keyboardType="number-pad"
                         />
                     </View>
@@ -596,12 +624,36 @@ const PropertyAdvancedFilter = ({
                             value={capacidad}
                             onChangeText={setCapacidad}
                             placeholder="Ej.: 4"
-                            placeholderTextColor={
-                                theme.colors.textMuted
-                            }
+                            placeholderTextColor={theme.colors.textMuted}
                             keyboardType="number-pad"
                         />
                     </View>
+
+                    {/* PREFERENCIAS */}
+
+                    <Text style={styles.sectionTitle}>
+                        Preferencias
+                    </Text>
+
+                    <Text style={styles.label}>
+                        ¿Acepta mascotas?
+                    </Text>
+
+                    {renderOpcionesAceptacion(
+                        aceptaMascotas,
+                        setAceptaMascotas,
+                        'mascotas'
+                    )}
+
+                    <Text style={[styles.label, styles.preferenceLabel]}>
+                        ¿Acepta hijos?
+                    </Text>
+
+                    {renderOpcionesAceptacion(
+                        aceptaHijos,
+                        setAceptaHijos,
+                        'hijos'
+                    )}
 
                     {/* ACCIONES */}
 
@@ -787,6 +839,10 @@ const styles = StyleSheet.create({
 
     fieldFull: {
         marginTop: theme.spacing.sm,
+    },
+
+    preferenceLabel: {
+        marginTop: theme.spacing.md,
     },
 
     label: {
