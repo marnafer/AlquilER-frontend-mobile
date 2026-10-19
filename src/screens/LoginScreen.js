@@ -157,6 +157,16 @@ export default function LoginScreen() {
                 </View>
 
                 <TouchableOpacity
+                    style={styles.forgotPassword}
+                    onPress={() => router.push('/recuperar-contrasena')}
+                    disabled={loading}
+                >
+                    <Text style={styles.link}>
+                        ¿Olvidaste tu contraseña?
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                     style={[styles.button, loading && styles.buttonDisabled]}
                     onPress={handleSubmit}
                     disabled={loading}
@@ -332,4 +342,11 @@ const styles = StyleSheet.create({
         fontSize: theme.sizes.body,
         fontWeight: '600',
     },
+
+    forgotPassword: {
+        alignItems: 'flex-end',
+        marginTop: -theme.spacing.xs,
+        marginBottom: theme.spacing.md,
+    },
+
 });

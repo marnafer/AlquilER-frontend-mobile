@@ -1,56 +1,40 @@
-# Welcome to your Expo app 👋
+# 📱 Aplicación Móvil de Alquiler (`alquiler-frontend-mobile`)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Este repositorio contiene la aplicación móvil desarrollada en **React Native** (utilizando la biblioteca Expo) para la gestión e interacción en tiempo real con la plataforma de alquileres de propiedades AlquilER. Permite a los inquilinos y propietarios explorar inmuebles, gestionar favoritos, enviar consultas, realizar reservas y consultar reseñas.
 
-## Get started
+---
 
-1. Install dependencies
+## ⚡ Guía Rápida para Probar el Proyecto
 
-   ```bash
-   npm install
-   ```
+Sigue estos 4 pasos para poner a funcionar la aplicación móvil en tu equipo:
 
-2. Start the app
+### 1. Requisitos Previos
+Asegúrate de tener corriendo previamente el servidor backend PHP (`alquiler-backend`):
 
-   ```bash
-   npx expo start
-   ```
+# En el directorio del backend
+php -S localhost:8000 -t public
 
-In the output, you'll find options to open the app in a
+### 2. Instalación de Dependencias
+Abre una terminal en la carpeta raíz del proyecto móvil:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+cd alquiler-frontend-mobile
+npm install
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 3. Configurar la Conexión con la API (.env)
+Crea un archivo .env en la raíz del proyecto para definir la dirección IP según tu entorno de ejecución:
 
-## Get a fresh project
+# OPCIÓN A: Emulador Android  (Android Studio)
+EXPO_PUBLIC_API_URL=http://10.2.2:8000/api
 
-When you're ready, run:
+# OPCIÓN B: Simulador iOS o Vista Previa en Navegador Web
+EXPO_PUBLIC_URL=http://localhost:8000/api
 
-```bash
-npm run reset-project
-```
+### 4. Iniciar el Servidor de Desarrollo
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+npx expo start
 
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 5. Abrir la Aplicación
+Dispositivo físico: Escanea el código QR desde la aplicación Expo Go (disponible en Play Store/App Store).
+Emulador Android: Presiona a en la terminal (requiere Android Studio con un dispositivo virtual abierto).
+Emulador iOS: Presiona i en la terminal (requiere Xcode en macOS).
+Web: Presiona w para probar una vista preliminar en el navegador.

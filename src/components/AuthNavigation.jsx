@@ -19,6 +19,8 @@ export default function AuthNavigation() {
             '/login',
             '/register',
             '/properties',
+            '/recuperar-contrasena',
+            '/restablecer-contrasena',
         ];
 
         const esDetallePropiedad =
