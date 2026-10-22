@@ -34,6 +34,8 @@ import ReservationRequestForm from '@/components/ReservationRequestForm';
 
 import { crearReserva } from '../../services/reservationService';
 
+import PropertyReviews from '@/components/PropertyReviews';
+
 interface Servicio {
     id: number;
     nombre: string;
@@ -86,6 +88,8 @@ export default function PropiedadDetailScreen() {
     const router = useRouter();
 
     const [mostrarFormularioPerfil, setMostrarFormularioPerfil] = useState(false);
+
+    const [mostrarDetalles, setMostrarDetalles] = useState(false);
 
     const [usuarioActualId, setUsuarioActualId] =
         useState<number | null>(null);
@@ -649,158 +653,160 @@ export default function PropiedadDetailScreen() {
                 )}
             </View>
 
+           
             <Divisor />
 
-            {/* CARACTERÍSTICAS */}
-            <View style={styles.section}>
-                <Text
-                    style={styles.sectionTitle}
-                >
-                    Características
-                </Text>
+            {/* RESEÑAS: SIEMPRE VISIBLES */}
+            <PropertyReviews propiedadId={propiedad.id} />
 
-                <View style={styles.features}>
-                    <Text style={styles.feature}>
-                        {
-                            propiedad.cantidad_ambientes
-                        }{' '}
-                        ambientes
-                    </Text>
+            <Divisor />
 
-                    <Text style={styles.feature}>
-                        {
-                            propiedad.cantidad_dormitorios
-                        }{' '}
-                        dormitorios
-                    </Text>
-
-                    <Text style={styles.feature}>
-                        {propiedad.cantidad_banos}{' '}
-                        baños
-                    </Text>
-
-                    {propiedad.capacidad !==
-                        null && (
-                        <Text
-                            style={styles.feature}
-                        >
-                            Capacidad:{' '}
-                            {
-                                propiedad.capacidad
-                            }
-                        </Text>
-                    )}
+            {/* DESPLEGABLE DE DETALLES */}
+           
+            <TouchableOpacity
+                style={styles.detailsToggle}
+                onPress={() => setMostrarDetalles((actual) => !actual)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: mostrarDetalles }}
+            >
+                <View style={styles.detailsIconContainer}>
+                    <Text style={styles.detailsIcon}>⌘</Text>
                 </View>
-            </View>
 
-            <Divisor />
-
-            {/* UBICACIÓN */}
-            <View style={styles.section}>
-                <Text
-                    style={styles.sectionTitle}
-                >
-                    Ubicación
-                </Text>
-
-                <Text style={styles.text}>
-                    {propiedad.direccion}
-                </Text>
-
-                <Text style={styles.text}>
-                    {propiedad.localidad.nombre}
-                </Text>
-
-                <Text
-                    style={styles.textMuted}
-                >
-                    Código postal:{' '}
-                    {
-                        propiedad.localidad
-                            .codigo_postal
-                    }
-                </Text>
-            </View>
-
-            <Divisor />
-
-            {/* DESCRIPCIÓN */}
-            <View style={styles.section}>
-                <Text
-                    style={styles.sectionTitle}
-                >
-                    Descripción
-                </Text>
-
-                <Text style={styles.text}>
-                    {propiedad.descripcion}
-                </Text>
-            </View>
-
-            <Divisor />
-
-            {/* SERVICIOS */}
-            <View style={styles.section}>
-                <Text
-                    style={styles.sectionTitle}
-                >
-                    Servicios
-                </Text>
-
-                {propiedad.servicios.length >
-                0 ? (
-                    propiedad.servicios.map(
-                        (servicio) => (
-                            <Text
-                                key={
-                                    servicio.id
-                                }
-                                style={
-                                    styles.service
-                                }
-                            >
-                                •{' '}
-                                {
-                                    servicio.nombre
-                                }
-                            </Text>
-                        )
-                    )
-                ) : (
-                    <Text
-                        style={
-                            styles.textMuted
-                        }
-                    >
-                        No se especificaron
-                        servicios.
+                <View style={styles.detailsToggleContent}>
+                    <Text style={styles.detailsToggleTitle}>
+                        Detalles de la propiedad
                     </Text>
-                )}
-            </View>
+
+                    <Text style={styles.detailsToggleSubtitle}>
+                        Características, ubicación y servicios
+                    </Text>
+                </View>
+
+                <View style={[
+                    styles.detailsChevronContainer,
+                    mostrarDetalles && styles.detailsChevronExpanded,
+                ]}>
+                    <Text style={styles.detailsChevron}>
+                        {mostrarDetalles ? '⌃' : '⌄'}
+                    </Text>
+                </View>
+            </TouchableOpacity>
+
+
+            {mostrarDetalles && (
+                <View style={styles.detailsContent}>
+                    {/* CARACTERÍSTICAS */}
+                    <Divisor />
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Características
+                        </Text>
+
+                        <View style={styles.features}>
+                            <Text style={styles.feature}>
+                                {propiedad.cantidad_ambientes} ambientes
+                            </Text>
+
+                            <Text style={styles.feature}>
+                                {propiedad.cantidad_dormitorios} dormitorios
+                            </Text>
+
+                            <Text style={styles.feature}>
+                                {propiedad.cantidad_banos} baños
+                            </Text>
+
+                            {propiedad.capacidad !== null && (
+                                <Text style={styles.feature}>
+                                    Capacidad: {propiedad.capacidad}
+                                </Text>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* UBICACIÓN */}
+                    <Divisor />
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Ubicación
+                        </Text>
+
+                        <Text style={styles.text}>
+                            {propiedad.direccion}
+                        </Text>
+
+                        <Text style={styles.text}>
+                            {propiedad.localidad.nombre}
+                        </Text>
+
+                        <Text style={styles.textMuted}>
+                            Código postal: {propiedad.localidad.codigo_postal}
+                        </Text>
+                    </View>
+
+                    {/* DESCRIPCIÓN */}
+                    <Divisor />
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Descripción
+                        </Text>
+
+                        <Text style={styles.text}>
+                            {propiedad.descripcion}
+                        </Text>
+                    </View>
+
+                    {/* SERVICIOS */}
+                    <Divisor />
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Servicios
+                        </Text>
+
+                        {propiedad.servicios.length > 0 ? (
+                            propiedad.servicios.map((servicio) => (
+                                <Text key={servicio.id} style={styles.service}>
+                                    • {servicio.nombre}
+                                </Text>
+                            ))
+                        ) : (
+                            <Text style={styles.textMuted}>
+                                No se especificaron servicios.
+                            </Text>
+                        )}
+                    </View>
+
+                    {/* DISPONIBILIDAD */}
+                    <Divisor />
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Disponibilidad
+                        </Text>
+
+                        <Text
+                            style={[
+                                styles.availability,
+                                propiedad.disponible
+                                    ? styles.available
+                                    : styles.unavailable,
+                            ]}
+                        >
+                            {propiedad.disponible
+                                ? 'Disponible'
+                                : 'No disponible'}
+                        </Text>
+                    </View>
+                </View>
+            )}
 
             <Divisor />
 
-            {/* DISPONIBILIDAD */}
-            <View style={styles.section}>
-                <Text
-                    style={styles.sectionTitle}
-                >
-                    Disponibilidad
-                </Text>
-
-                <Text
-                    style={[
-                        styles.availability,
-                        propiedad.disponible
-                            ? styles.available
-                            : styles.unavailable,
-                    ]}
-                >
-                    {propiedad.disponible
-                        ? 'Disponible'
-                        : 'No disponible'}
-                </Text>
-            </View>
 
             {perfilCargado && !esPropietario && (
                 <View 
@@ -986,20 +992,23 @@ const styles = StyleSheet.create({
     },
 
     divider: {
-        height: 1,
-        marginVertical: theme.spacing.sm,
-        backgroundColor:
-            theme.colors.border,
+        height: StyleSheet.hairlineWidth,
+        marginVertical: theme.spacing.md,
+        backgroundColor: theme.colors.border,
+    },
+
+    detailsContent: {
+        gap: 0,
+        paddingTop: theme.spacing.sm,
     },
 
     section: {
-        marginHorizontal:
-            theme.spacing.lg,
+        marginHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.sm,
     },
 
     sectionTitle: {
-        marginBottom:
-            theme.spacing.sm,
+        marginBottom: theme.spacing.md,
         fontSize: 18,
         fontWeight: '700',
         color: theme.colors.textDark,
@@ -1267,5 +1276,72 @@ const styles = StyleSheet.create({
     keyboardAvoiding: {
         flex: 1,
     },
+    
+    detailsToggle: {
+        marginHorizontal: theme.spacing.lg,
+        marginVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing.md,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: 14,
+        backgroundColor: theme.colors.background,
+    },
+
+    detailsIconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: theme.colors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    detailsIcon: {
+        fontSize: 23,
+        fontWeight: '600',
+        color: theme.colors.primary,
+    },
+
+    detailsToggleContent: {
+        flex: 1,
+        gap: 5,
+    },
+
+    detailsToggleTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: theme.colors.textDark,
+    },
+
+    detailsToggleSubtitle: {
+        fontSize: 12,
+        lineHeight: 17,
+        color: theme.colors.textMuted,
+    },
+
+    detailsChevronContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.border,
+    },
+
+    detailsChevronExpanded: {
+        backgroundColor: theme.colors.primary,
+    },
+
+    detailsChevron: {
+        fontSize: 22,
+        lineHeight: 26,
+        color: theme.colors.textDark,
+        textAlign: 'center',
+    },
+
 
 });
