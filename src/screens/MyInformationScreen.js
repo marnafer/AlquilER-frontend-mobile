@@ -1,12 +1,6 @@
-import {
-    useFocusEffect,
-    useRouter,
-} from 'expo-router';
-
-import {
-    useCallback,
-} from 'react';
-
+import { Ionicons } from '@expo/vector-icons'; // Importamos la iconografía vectorial
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import {
     ActivityIndicator,
     ScrollView,
@@ -21,10 +15,8 @@ import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/theme';
 
-
 export default function MyInformationScreen() {
     const router = useRouter();
-
     const {
         usuario,
         loading,
@@ -37,10 +29,7 @@ export default function MyInformationScreen() {
             await logout();
             router.replace('/home');
         } catch (error) {
-            console.error(
-                'Error al cerrar sesión:',
-                error
-            );
+            console.error('Error al cerrar sesión:', error);
         }
     };
 
@@ -59,7 +48,6 @@ export default function MyInformationScreen() {
                     size="large"
                     color={theme.colors.primary}
                 />
-
                 <Text style={styles.loadingText}>
                     Cargando información...
                 </Text>
@@ -82,24 +70,16 @@ export default function MyInformationScreen() {
                 <View style={styles.profileCard}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>
-                            {usuario.nombre
-                                ?.charAt(0)
-                                ?.toUpperCase() || '?'}
+                            {usuario.nombre?.charAt(0)?.toUpperCase() || '?'}
                         </Text>
                     </View>
 
                     <View style={styles.profileInfo}>
-                        <Text
-                            style={styles.userName}
-                            numberOfLines={1}
-                        >
+                        <Text style={styles.userName} numberOfLines={1}>
                             {usuario.nombre} {usuario.apellido}
                         </Text>
 
-                        <Text
-                            style={styles.userEmail}
-                            numberOfLines={1}
-                        >
+                        <Text style={styles.userEmail} numberOfLines={1}>
                             {usuario.email}
                         </Text>
 
@@ -115,197 +95,129 @@ export default function MyInformationScreen() {
                         onPress={handleLogout}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.logoutText}>
-                            Salir
-                        </Text>
+                        <Ionicons name="log-out-outline" size={18} color={theme.colors.errorText} />
+                        <Text style={styles.logoutText}>Salir</Text>
                     </TouchableOpacity>
                 </View>
             ) : null}
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                    Mi cuenta
-                </Text>
+                <Text style={styles.sectionTitle}>Mi cuenta</Text>
 
                 <View style={styles.menu}>
                     <TouchableOpacity
                         style={styles.menuItem}
                         activeOpacity={0.8}
-                        onPress={() =>
-                            router.push('/profile')
-                        }
+                        onPress={() => router.push('/profile')}
                     >
                         <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                👤
-                            </Text>
+                            <Ionicons name="person-outline" size={20} color={theme.colors.primary} />
                         </View>
 
                         <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Información personal
-                            </Text>
-
-                            <Text style={styles.menuDescription}>
-                                Consultá y gestioná tus datos personales
-                            </Text>
+                            <Text style={styles.menuTitle}>Información personal</Text>
+                            <Text style={styles.menuDescription}>Consultá y gestioná tus datos personales</Text>
                         </View>
 
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
+                        <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
                     </TouchableOpacity>
                 </View>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                    Mi actividad
-                </Text>
+                <Text style={styles.sectionTitle}>Mi actividad</Text>
 
-                <View style={styles.menu}>
-                   <TouchableOpacity
-                        style={styles.menuItem}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                            router.push('/my-properties')
-                        }
-                    >
-                        <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                🏠
-                            </Text>
-                        </View>
+                <View style={styles.menuShadowWrapper}>
+                    <View style={styles.menu}>
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/my-properties')}
+                        >
+                            <View style={styles.menuIcon}>
+                                <Ionicons name="home-outline" size={20} color={theme.colors.primary} />
+                            </View>
 
-                        <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Mis propiedades
-                            </Text>
+                            <View style={styles.menuContent}>
+                                <Text style={styles.menuTitle}>Mis propiedades</Text>
+                                <Text style={styles.menuDescription}>Administrá las propiedades que publicaste</Text>
+                            </View>
 
-                            <Text style={styles.menuDescription}>
-                                Administrá las propiedades que publicaste
-                            </Text>
-                        </View>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
 
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/reservations')}
+                        >
+                            <View style={styles.menuIcon}>
+                                <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                            </View>
 
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                            router.push('/reservations')
-                        }
-                    >
-                        <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                📅
-                            </Text>
-                        </View>
+                            <View style={styles.menuContent}>
+                                <Text style={styles.menuTitle}>Mis reservas</Text>
+                                <Text style={styles.menuDescription}>Consultá tus reservas y sus estados</Text>
+                            </View>
 
-                        <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Mis reservas
-                            </Text>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
 
-                            <Text style={styles.menuDescription}>
-                                Consultá tus reservas y sus estados
-                            </Text>
-                        </View>
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/messages')}
+                        >
+                            <View style={styles.menuIcon}>
+                                <Ionicons name="chatbubble-ellipses-outline" size={20} color={theme.colors.primary} />
+                            </View>
 
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
-                    </TouchableOpacity>
+                            <View style={styles.menuContent}>
+                                <Text style={styles.menuTitle}>Mis consultas</Text>
+                                <Text style={styles.menuDescription}>Consultá tus conversaciones</Text>
+                            </View>
 
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                            router.push('/messages')
-                        }
-                    >
-                        <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                💬
-                            </Text>
-                        </View>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
 
-                        <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Mis consultas
-                            </Text>
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/reviews')}
+                        >
+                            <View style={styles.menuIcon}>
+                                <Ionicons name="star-outline" size={20} color={theme.colors.primary} />
+                            </View>
 
-                            <Text style={styles.menuDescription}>
-                                Consultá tus conversaciones
-                            </Text>
-                        </View>
+                            <View style={styles.menuContent}>
+                                <Text style={styles.menuTitle}>Mis reseñas</Text>
+                                <Text style={styles.menuDescription}>Consultá las reseñas que realizaste y las de tus propiedades</Text>
+                            </View>
 
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
-                    </TouchableOpacity>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        activeOpacity={0.8}
-                        onPress={() => router.push('/reviews')}
-                    >
-                        <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                ⭐
-                            </Text>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.menuItem, { borderBottomWidth: 0 }]} // Quitamos borde al último
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/favorites')}
+                        >
+                            <View style={styles.menuIcon}>
+                                <Ionicons name="heart-outline" size={20} color={theme.colors.primary} />
+                            </View>
 
-                        <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Mis reseñas
-                            </Text>
+                            <View style={styles.menuContent}>
+                                <Text style={styles.menuTitle}>Mis favoritos</Text>
+                                <Text style={styles.menuDescription}>Propiedades que guardaste</Text>
+                            </View>
 
-                            <Text style={styles.menuDescription}>
-                                Consultá las reseñas que realizaste y las de tus propiedades
-                            </Text>
-                        </View>
-
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                            router.push('/favorites')
-                        }
-                    >
-                        <View style={styles.menuIcon}>
-                            <Text style={styles.menuIconText}>
-                                ❤️
-                            </Text>
-                        </View>
-
-                        <View style={styles.menuContent}>
-                            <Text style={styles.menuTitle}>
-                                Mis favoritos
-                            </Text>
-
-                            <Text style={styles.menuDescription}>
-                                Propiedades que guardaste
-                            </Text>
-                        </View>
-
-                        <Text style={styles.menuArrow}>
-                            ›
-                        </Text>
-                    </TouchableOpacity>
+                            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
 
-                <PublicarPropiedadSection />
-
+            <PublicarPropiedadSection />
         </ScrollView>
     );
 }
@@ -313,190 +225,155 @@ export default function MyInformationScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor:
-            theme.colors.background,
+        backgroundColor: theme.colors.background,
     },
-
     content: {
-        paddingBottom:
-            theme.spacing.xl + 90,
+        paddingBottom: theme.spacing.xl + 90,
     },
-
     loadingContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor:
-            theme.colors.background,
+        backgroundColor: theme.colors.background,
     },
-
     loadingText: {
-        marginTop:
-            theme.spacing.md,
-        color:
-            theme.colors.textMuted,
-        fontSize: 14,
+        marginTop: theme.spacing.md,
+        color: theme.colors.textMuted,
+        fontSize: 15,
+        fontWeight: '500',
     },
-
     profileCard: {
-        marginHorizontal:
-            theme.spacing.md,
-        marginTop:
-            theme.spacing.lg,
-        padding:
-            theme.spacing.md,
+        marginHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.lg,
+        padding: theme.spacing.md,
         borderRadius: 16,
-        backgroundColor:
-            theme.colors.inputBg,
+        backgroundColor: theme.colors.inputBg,
         borderWidth: 1,
-        borderColor:
-            theme.colors.border,
+        borderColor: theme.colors.border,
         flexDirection: 'row',
         alignItems: 'center',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
     },
-
     avatar: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor:
-            theme.colors.primary,
+        backgroundColor: theme.colors.primary,
+        elevation: 2,
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
-
     avatarText: {
         color: '#ffffff',
-        fontSize: 22,
-        fontWeight: '700',
+        fontSize: 24,
+        fontWeight: '800',
     },
-
     profileInfo: {
         flex: 1,
         minWidth: 0,
-        marginLeft:
-            theme.spacing.md,
+        marginLeft: theme.spacing.md,
     },
-
     userName: {
-        color:
-            theme.colors.textDark,
+        color: theme.colors.textDark,
         fontSize: 18,
         fontWeight: '700',
+        letterSpacing: -0.3,
     },
-
     userEmail: {
-        marginTop: 3,
-        color:
-            theme.colors.textMuted,
+        marginTop: 2,
+        color: theme.colors.textMuted,
         fontSize: 13,
+        fontWeight: '500',
     },
-
     userRole: {
-        marginTop: 3,
-        color:
-            theme.colors.primary,
+        marginTop: 4,
+        color: theme.colors.primary,
         fontSize: 12,
-        fontWeight: '600',
-    },
-
-    section: {
-        marginTop:
-            theme.spacing.xl,
-        paddingHorizontal:
-            theme.spacing.md,
-    },
-
-    sectionTitle: {
-        marginBottom:
-            theme.spacing.sm,
-        color:
-            theme.colors.textDark,
-        fontSize: 18,
         fontWeight: '700',
+        textTransform: 'uppercase',
     },
-
-    menu: {
-        borderRadius: 16,
-        backgroundColor:
-            theme.colors.inputBg,
-        borderWidth: 1,
-        borderColor:
-            theme.colors.border,
-        overflow: 'hidden',
-    },
-
-    menuItem: {
-        minHeight: 76,
-        paddingHorizontal:
-            theme.spacing.md,
-        paddingVertical:
-            theme.spacing.sm,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor:
-            theme.colors.border,
-    },
-
-    menuIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor:
-            theme.colors.background,
-    },
-
-    menuIconText: {
-        fontSize: 20,
-    },
-
-    menuContent: {
-        flex: 1,
-        marginLeft:
-            theme.spacing.md,
-    },
-
-    menuTitle: {
-        color:
-            theme.colors.textDark,
-        fontSize: 15,
-        fontWeight: '700',
-    },
-
-    menuDescription: {
-        marginTop: 3,
-        color:
-            theme.colors.textMuted,
-        fontSize: 12,
-        lineHeight: 17,
-    },
-
-    menuArrow: {
-        marginLeft:
-            theme.spacing.sm,
-        color:
-            theme.colors.textMuted,
-        fontSize: 28,
-        fontWeight: '300',
-    },
-
     logoutButton: {
         marginLeft: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
+        backgroundColor: `${theme.colors.errorText}10`, // Fondo rojo sutil
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 6,
     },
-
     logoutText: {
         color: theme.colors.errorText,
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
+    },
+    section: {
+        marginTop: theme.spacing.xl,
+        paddingHorizontal: theme.spacing.md,
+    },
+    sectionTitle: {
+        marginBottom: theme.spacing.md,
+        color: theme.colors.textDark,
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    menuShadowWrapper: {
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+    },
+    menu: {
+        borderRadius: 16,
+        backgroundColor: theme.colors.inputBg,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        overflow: 'hidden', 
+    },
+    menuItem: {
+        minHeight: 76,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderBottomWidth: StyleSheet.hairlineWidth, 
+        borderBottomColor: theme.colors.border,
+    },
+    menuIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: `${theme.colors.primary}15`, 
+    },
+    menuContent: {
+        flex: 1,
+        marginLeft: 16, 
+        marginRight: theme.spacing.sm,
+    },
+    menuTitle: {
+        color: theme.colors.textDark,
+        fontSize: 15,
+        fontWeight: '700',
+        lineHeight: 35, 
+        paddingTop: 2,  
+    },
+    menuDescription: {
+        marginTop: 2,
+        color: theme.colors.textMuted,
+        fontSize: 13,
+        lineHeight: 20, 
+        paddingBottom: 2, 
     },
 });
