@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons'; // Agregamos la importación
 import {
     Image,
     StyleSheet,
@@ -6,7 +7,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-
 import api from '../services/api';
 import { theme } from '../theme/theme';
 
@@ -90,15 +90,8 @@ const PropertyCard = ({
                     />
                 ) : (
                     <View style={styles.placeholder}>
-                        <Text
-                            style={[
-                                styles.placeholderText,
-                                compacto &&
-                                    styles.placeholderTextCompacto,
-                            ]}
-                        >
-                            🏠
-                        </Text>
+                        {/* Ícono de Casa */}
+                        <Ionicons name="home-outline" size={24} color={theme.colors.textSecondary} />
 
                         <Text
                             style={[
@@ -138,7 +131,8 @@ const PropertyCard = ({
                     ]}
                     numberOfLines={1}
                 >
-                    📍 {propiedad.direccion}
+                    {/* Ícono de Ubicación */}
+                    <Ionicons name="location-outline" size={12} color={theme.colors.text} /> {propiedad.direccion}
                 </Text>
 
                 <Text
@@ -168,9 +162,9 @@ const PropertyCard = ({
                                 styles.featureCompacto,
                         ]}
                     >
-                        🛏{' '}
-                        {propiedad.cantidad_dormitorios ||
-                            0}
+                        {/* Ícono de Cama */}
+                        <Ionicons name="bed-outline" size={12} color={theme.colors.text} />{' '}
+                        {propiedad.cantidad_dormitorios || 0}
                     </Text>
 
                     <Text
@@ -180,9 +174,9 @@ const PropertyCard = ({
                                 styles.featureCompacto,
                         ]}
                     >
-                        🚿{' '}
-                        {propiedad.cantidad_banos ||
-                            0}
+                        {/* Ícono de Ducha */}
+                        <Ionicons name="water-outline" size={12} color={theme.colors.text} />{' '}
+                        {propiedad.cantidad_banos || 0}
                     </Text>
 
                     <Text
@@ -192,7 +186,8 @@ const PropertyCard = ({
                                 styles.featureCompacto,
                         ]}
                     >
-                        👥{' '}
+                        {/* Ícono de Personas */}
+                        <Ionicons name="people-outline" size={12} color={theme.colors.text} />{' '}
                         {propiedad.capacidad || 0}
                     </Text>
 
@@ -203,7 +198,8 @@ const PropertyCard = ({
                                 compacto && styles.featureCompacto,
                             ]}
                         >
-                            🐾 <Text style={styles.checkVerde}>✓</Text>
+                            {/* Ícono de Huella */}
+                            <Ionicons name="paw-outline" size={12} color={theme.colors.text} /> <Text style={styles.checkVerde}>✓</Text>
                         </Text>
                     )}
 
@@ -214,7 +210,8 @@ const PropertyCard = ({
                                 compacto && styles.featureCompacto,
                             ]}
                         >
-                            👶 <Text style={styles.checkVerde}>✓</Text>
+                            {/* Ícono de Niños (usamos 'happy-outline') */}
+                            <Ionicons name="happy-outline" size={12} color={theme.colors.text} /> <Text style={styles.checkVerde}>✓</Text>
                         </Text>
                     )}
                 </View>
