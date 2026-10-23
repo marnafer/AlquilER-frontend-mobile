@@ -11,6 +11,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     useWindowDimensions,
     View
@@ -26,10 +27,13 @@ import {
     eliminarFavorito,
     obtenerFavoritos,
 } from '../../services/favoriteService';
+import {
+    crearConsulta,
+    enviarMensaje,
+} from '../../services/messageService';
 import { crearReserva } from '../../services/reservationService';
 import { obtenerPerfil } from '../../services/userService';
 
-import ApplicantProfileForm from '@/components/ApplicantProfileForm';
 import PropertyReviews from '@/components/PropertyReviews';
 import ReservationRequestForm from '@/components/ReservationRequestForm';
 
@@ -49,7 +53,8 @@ interface Propiedad {
 
 export default function PropiedadDetailScreen() {
     const router = useRouter();
-    const [mostrarFormularioPerfil, setMostrarFormularioPerfil] = useState(false);
+    const [mostrarFormularioMensaje, setMostrarFormularioMensaje] = useState(false);
+    const [mensajeInicial, setMensajeInicial] = useState('');
     const [mostrarDetalles, setMostrarDetalles] = useState(false);
     const [usuarioActualId, setUsuarioActualId] = useState<number | null>(null);
     const [perfilCargado, setPerfilCargado] = useState(false);
@@ -163,14 +168,6 @@ export default function PropiedadDetailScreen() {
     useEffect(() => { cargarEstadoFavorito(); }, [cargarEstadoFavorito]);
 
     useEffect(() => {
-        if (!mostrarFormularioPerfil && !mostrarFormularioReserva) return;
-        const frame = requestAnimationFrame(() => {
-            scrollViewRef.current?.scrollTo({ y: Math.max(0, posicionFormulario - 20), animated: true });
-        });
-        return () => cancelAnimationFrame(frame);
-    }, [mostrarFormularioPerfil, mostrarFormularioReserva, posicionFormulario]);
-
-    useEffect(() => {
         const cargarPropiedad = async () => {
             if (!id) {
                 setError('No se indicó una propiedad.');
@@ -219,14 +216,87 @@ export default function PropiedadDetailScreen() {
 
     const consultarPropiedad = async () => {
         if (!propiedad?.id || creandoConsulta) return;
-        if (usuarioActualId !== null && Number(usuarioActualId) === Number(propiedad.usuario_id)) return;
+
+        if (
+            usuarioActualId !== null &&
+            Number(usuarioActualId) === Number(propiedad.usuario_id)
+        ) {
+            return;
+        }
+
         setErrorConsulta('');
+
         const autenticado = await estaAutenticado();
+
         if (!autenticado) {
             router.push('/login');
             return;
         }
-        setMostrarFormularioPerfil(true);
+
+        setMensajeInicial('');
+        setMostrarFormularioMensaje(true);
+    };
+
+    const enviarConsultaInicial = async () => {
+        if (!propiedad?.id || creandoConsulta) return;
+
+        const mensaje = mensajeInicial.trim();
+
+        if (!mensaje) {
+            setErrorConsulta('Escribí un mensaje para iniciar la consulta.');
+            return;
+        }
+
+        setCreandoConsulta(true);
+        setErrorConsulta('');
+
+        try {
+            // 1. Crear la consulta o recuperar la existente.
+            const respuestaConsulta = await crearConsulta(propiedad.id);
+
+            if (
+                !respuestaConsulta?.success ||
+                !respuestaConsulta?.data?.id
+            ) {
+                setErrorConsulta(
+                    respuestaConsulta?.message ||
+                    respuestaConsulta?.error ||
+                    'No se pudo iniciar la consulta. Intentá nuevamente.'
+                );
+                return;
+            }
+
+            const consultaId = Number(respuestaConsulta.data.id);
+
+            // 2. Guardar el mensaje mediante el servicio habitual del chat.
+            const respuestaMensaje = await enviarMensaje(
+                consultaId,
+                mensaje
+            );
+
+            if (!respuestaMensaje?.success) {
+                setErrorConsulta(
+                    respuestaMensaje?.message ||
+                    respuestaMensaje?.error ||
+                    'La consulta existe, pero no se pudo enviar el mensaje. Podés intentarlo nuevamente.'
+                );
+                return;
+            }
+
+            // 3. Navegar únicamente después de enviar el mensaje.
+            setMostrarFormularioMensaje(false);
+            setMensajeInicial('');
+
+            router.push(`/messages/${consultaId}`);
+        } catch (error) {
+            console.error('Error al iniciar la consulta:', error);
+
+            setErrorConsulta(
+                'Ocurrió un error al iniciar la consulta. Intentá nuevamente.'
+            );
+        } finally {
+            setCreandoConsulta(false);
+        }
     };
 
     const esPropietario = usuarioActualId !== null && Number(usuarioActualId) === Number(propiedad.usuario_id);
@@ -456,19 +526,87 @@ export default function PropiedadDetailScreen() {
                             <Text style={styles.consultarButtonText}>Consultar propiedad</Text>
                         </TouchableOpacity>
 
-                        {mostrarFormularioPerfil && (
-                            <ApplicantProfileForm
-                                propiedadId={propiedad.id}
-                                onCancel={() => {
-                                    setMostrarFormularioPerfil(false);
-                                    setErrorConsulta('');
-                                }}
-                                onConsultaCreada={(consultaId) => {
-                                    setMostrarFormularioPerfil(false);
-                                    router.push(`/messages/${consultaId}`);
-                                }}
-                            />
-                        )}
+                        {mostrarFormularioMensaje && (
+                                <View style={styles.formularioMensaje}>
+                                    <Text style={styles.formularioMensajeTitulo}>
+                                        Consultar por esta propiedad
+                                    </Text>
+
+                                    <Text style={styles.formularioMensajeDescripcion}>
+                                        Escribí un mensaje para presentarte y contarle al propietario
+                                        qué información necesitás sobre la propiedad.
+                                    </Text>
+
+                                    <TextInput
+                                        style={styles.inputMensajeInicial}
+                                        value={mensajeInicial}
+                                        onChangeText={(texto) => {
+                                            setMensajeInicial(texto);
+
+                                            if (errorConsulta) {
+                                                setErrorConsulta('');
+                                            }
+                                        }}
+                                        placeholder="Hola, quisiera obtener más información sobre esta propiedad..."
+                                        placeholderTextColor={theme.colors.textMuted}
+                                        multiline
+                                        maxLength={2000}
+                                        textAlignVertical="top"
+                                        editable={!creandoConsulta}
+                                        accessibilityLabel="Mensaje inicial de la consulta"
+                                    />
+
+                                    <Text style={styles.contadorMensaje}>
+                                        {mensajeInicial.length}/2000
+                                    </Text>
+
+                                    {errorConsulta !== '' && (
+                                        <Text style={styles.errorConsulta}>
+                                            {errorConsulta}
+                                        </Text>
+                                    )}
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.consultarButton,
+                                            styles.enviarMensajeButton,
+                                            creandoConsulta && styles.botonDeshabilitado,
+                                        ]}
+                                        onPress={enviarConsultaInicial}
+                                        disabled={creandoConsulta}
+                                        activeOpacity={0.8}
+                                    >
+                                        {creandoConsulta ? (
+                                            <ActivityIndicator color="#fff" />
+                                        ) : (
+                                            <Ionicons
+                                                name="send-outline"
+                                                size={18}
+                                                color="#fff"
+                                            />
+                                        )}
+
+                                        <Text style={styles.consultarButtonText}>
+                                            {creandoConsulta ? 'Enviando...' : 'Enviar consulta'}
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.cancelarMensajeButton}
+                                        onPress={() => {
+                                            setMostrarFormularioMensaje(false);
+                                            setMensajeInicial('');
+                                            setErrorConsulta('');
+                                        }}
+                                        disabled={creandoConsulta}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.cancelarMensajeTexto}>
+                                            Cancelar
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
 
                         {propiedad.disponible && (
                             <TouchableOpacity
@@ -608,4 +746,65 @@ const styles = StyleSheet.create({
     detailsToggleSubtitle: { fontSize: 13, color: theme.colors.textMuted },
     detailsChevronContainer: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.border },
     detailsChevronExpanded: { backgroundColor: theme.colors.primary },
+
+    formularioMensaje: {
+    marginHorizontal: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBg,
+    gap: 10,
+},
+
+formularioMensajeTitulo: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.textDark,
+},
+
+formularioMensajeDescripcion: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: theme.colors.textMuted,
+},
+
+inputMensajeInicial: {
+    minHeight: 130,
+    maxHeight: 220,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.textDark,
+    backgroundColor: theme.colors.background,
+},
+
+contadorMensaje: {
+    alignSelf: 'flex-end',
+    fontSize: 12,
+    color: theme.colors.textMuted,
+},
+
+enviarMensajeButton: {
+    marginHorizontal: 0,
+    marginTop: 4,
+},
+
+botonDeshabilitado: {
+    opacity: 0.6,
+},
+
+cancelarMensajeButton: {
+    alignItems: 'center',
+    paddingVertical: 10,
+},
+
+cancelarMensajeTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.textMuted,
+},
 });

@@ -96,20 +96,11 @@ export async function obtenerTodasLasConsultas() {
     }
 }
 
-export async function crearConsulta(
-    propiedadId,
-    perfilInteresado
-) {
-    const payload = {
-        propiedad_id: propiedadId,
-    };
-
-    if (perfilInteresado) {
-        payload.perfil_interesado = perfilInteresado;
-    }
-
+export async function crearConsulta(propiedadId) {
     return manejarSolicitud(
-        api.post('/consultas', payload),
+        api.post('/consultas', {
+            propiedad_id: propiedadId,
+        }),
         'No se pudo iniciar la consulta.'
     );
 }
