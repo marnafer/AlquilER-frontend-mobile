@@ -526,20 +526,6 @@ export default function ChatScreen() {
     };
 
     const propiedad = consulta?.propiedad;
-    const usuarioConsulta = consulta?.usuario;
-    const propietario = propiedad?.usuario;
-
-    const esSolicitante =
-        Number(usuarioActual?.id) ===
-        Number(consulta?.usuario_id);
-
-    const contacto = esSolicitante
-        ? propietario
-        : usuarioConsulta;
-
-    const nombreContacto =
-        obtenerNombre(contacto) ||
-        'Conversación';
 
     if (loading) {
         return (
@@ -602,27 +588,10 @@ export default function ChatScreen() {
                 </Pressable>
 
                 <View style={styles.headerInfo}>
-                    <Pressable
-                        disabled={!contacto?.id}
-                        onPress={() => {
-                            router.push({
-                                pathname: '/public-profile/[id]',
-                                params: { id: String(contacto.id) },
-                            });
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Ver perfil de ${nombreContacto}`}
-                        style={styles.perfilContacto}
+                    <Text
+                        style={styles.nombreContacto}
+                        numberOfLines={1}
                     >
-                        <Text
-                            style={styles.nombreContacto}
-                            numberOfLines={1}
-                        >
-                            {nombreContacto} ↗
-                        </Text>
-                    </Pressable>
-
-                    <Text style={styles.tituloPropiedad} numberOfLines={1}>
                         {propiedad?.titulo ||
                             propiedad?.nombre ||
                             'Consulta sobre una propiedad'}
