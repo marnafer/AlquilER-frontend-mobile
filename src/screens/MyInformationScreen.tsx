@@ -14,6 +14,7 @@ import PublicarPropiedadSection from '@/components/PublicarPropiedadSection';
 import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/theme';
+import { esAdministrador } from '../utils/permissions';
 
 export default function MyInformationScreen() {
     const router = useRouter();
@@ -216,6 +217,33 @@ export default function MyInformationScreen() {
                     </View>
                 </View>
             </View>
+
+            {esAdministrador(usuario) ? (
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Administración</Text>
+
+                    <View style={styles.menuShadowWrapper}>
+                        <View style={styles.menu}>
+                            <TouchableOpacity
+                                style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                                activeOpacity={0.8}
+                                onPress={() => router.push('/admin')}
+                            >
+                                <View style={styles.menuIcon}>
+                                    <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
+                                </View>
+
+                                <View style={styles.menuContent}>
+                                    <Text style={styles.menuTitle}>Panel de administración</Text>
+                                    <Text style={styles.menuDescription}>Gestioná usuarios, propiedades y actividad</Text>
+                                </View>
+
+                                <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            ) : null}
 
             <PublicarPropiedadSection />
         </ScrollView>

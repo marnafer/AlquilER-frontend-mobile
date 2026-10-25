@@ -5,6 +5,7 @@ import {
 
 import {
     useCallback,
+    useRef,
     useState,
 } from 'react';
 
@@ -35,45 +36,48 @@ type MyPropertiesData = {
 
 type MyPropertiesResponse = ApiResponse<MyPropertiesData>;
 
-export default async function MyPropertiesScreen() {
+export default function MyPropertiesScreen() {
     const router = useRouter();
 
     const [propiedades, setPropiedades] = useState<Property[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const cargaEnCursoRef = useRef(false);
+    const ultimaCargaRef = useRef(0);
+    const cargaEjecutadaEnFocoRef = useRef(false);
 
-    const response = await api.get<MyPropertiesResponse>(
-            '/propiedades/mis-propiedades'
-        );
+    const cargarPropiedades = useCallback(async () => {
+        const ahora = Date.now();
+        if (
+            cargaEnCursoRef.current ||
+            ahora - ultimaCargaRef.current < 1000
+        ) {
+            return;
+        }
 
-        if (!response.data.success) {
-            setPropiedades([]);
-            setError(
-                response.data.error ||
-                response.data.message ||
-                'No se pudieron cargar tus propiedades'
-            );
-        return;
-    }
+        cargaEnCursoRef.current = true;
+        ultimaCargaRef.current = ahora;
 
-    setPropiedades(response.data.data.items);
-
-    const cargarPropiedades = async () => {
         try {
             setLoading(true);
             setError('');
 
-            const response = await api.get(
+            const response = await api.get<MyPropertiesResponse>(
                 '/propiedades/mis-propiedades'
             );
 
-            const propiedadesData =
-                response.data?.data?.items ||
-                response.data?.data ||
-                [];
+            if (!response.data.success) {
+                setPropiedades([]);
+                setError(
+                    response.data.message ||
+                    response.data.error ||
+                    'No se pudieron cargar tus propiedades'
+                );
+                return;
+            }
 
-            setPropiedades(propiedadesData);
+            setPropiedades(response.data.data.items);
         } catch (error) {
             const apiError = axios.isAxiosError<ApiFailure>(error)
                 ? error.response?.data
@@ -89,15 +93,23 @@ export default async function MyPropertiesScreen() {
                 apiError?.error ||
                 'No se pudieron cargar tus propiedades'
             );
-            } finally {
+        } finally {
+            cargaEnCursoRef.current = false;
             setLoading(false);
         }
-    };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
-            cargarPropiedades();
-        }, [])
+            if (!cargaEjecutadaEnFocoRef.current) {
+                cargaEjecutadaEnFocoRef.current = true;
+                void cargarPropiedades();
+            }
+
+            return () => {
+                cargaEjecutadaEnFocoRef.current = false;
+            };
+        }, [cargarPropiedades])
     );
 
     if (loading) {
