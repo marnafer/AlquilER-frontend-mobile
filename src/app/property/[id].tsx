@@ -37,7 +37,7 @@ import { obtenerPerfil } from '../../services/userService';
 import PropertyReviews from '@/components/PropertyReviews';
 import ReservationRequestForm from '@/components/ReservationRequestForm';
 
-// Interfaces... (Mantenidas iguales)
+
 interface Servicio { id: number; nombre: string; }
 interface Categoria { id: number; nombre: string; }
 interface Localidad { id: number; nombre: string; codigo_postal: string; provincia_id: number; }
@@ -254,19 +254,23 @@ export default function PropiedadDetailScreen() {
             // 1. Crear la consulta o recuperar la existente.
             const respuestaConsulta = await crearConsulta(propiedad.id);
 
-            if (
-                !respuestaConsulta?.success ||
-                !respuestaConsulta?.data?.id
-            ) {
+            if (!respuestaConsulta.success) {
                 setErrorConsulta(
-                    respuestaConsulta?.message ||
-                    respuestaConsulta?.error ||
-                    'No se pudo iniciar la consulta. Intentá nuevamente.'
+                    respuestaConsulta.message ||
+                        respuestaConsulta.error ||
+                        'No se pudo iniciar la consulta. Intentá nuevamente.'
                 );
                 return;
             }
 
-            const consultaId = Number(respuestaConsulta.data.id);
+            const consultaId = respuestaConsulta.data.id;
+
+            if (!consultaId) {
+                setErrorConsulta(
+                    'No se pudo iniciar la consulta. Intentá nuevamente.'
+                );
+                return;
+            }
 
             // 2. Guardar el mensaje mediante el servicio habitual del chat.
             const respuestaMensaje = await enviarMensaje(
@@ -640,10 +644,15 @@ export default function PropiedadDetailScreen() {
                                     setCreandoReserva(true);
                                     try {
                                         const response = await crearReserva(propiedad.id, fechaInicio, fechaFin);
-                                        if (!response?.success || !response?.data?.id) {
-                                            setErrorReserva(response?.message || response?.error || 'No se pudo crear la solicitud de reserva.');
+                                       if (!response.success) {
+                                            setErrorReserva(
+                                                response.message ||
+                                                    response.error ||
+                                                    'No se pudo crear la solicitud de reserva.'
+                                            );
                                             return;
                                         }
+
                                         setMostrarFormularioReserva(false);
                                         Alert.alert(
                                             '¡Solicitud enviada!',
