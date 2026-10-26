@@ -14,6 +14,7 @@ import {
 
 import ScreenHeader from '../components/ScreenHeader';
 import { crearResena } from '../services/reviewService';
+import { contieneProfanidad, MENSAJE_PROFANIDAD } from '../utils/profanity';
 import { theme } from '../theme/theme';
 
 export default function CreateReviewScreen() {
@@ -39,11 +40,17 @@ export default function CreateReviewScreen() {
 
         if (calificacion < 1 || calificacion > 5) {
             Alert.alert(
-                'Calificación requerida',
-                'Seleccioná una cantidad de estrellas del 1 al 5.'
+                'Calificacion requerida',
+                'Seleccione una cantidad de estrellas del 1 al 5.'
             );
             return;
         }
+
+        if (contieneProfanidad(comentario)) {
+            Alert.alert('Lenguaje inapropiado', MENSAJE_PROFANIDAD);
+            return;
+        }
+
 
         try {
             setProcesando(true);
