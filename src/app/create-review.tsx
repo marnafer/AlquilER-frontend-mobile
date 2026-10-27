@@ -14,8 +14,8 @@ import {
 
 import ScreenHeader from '../components/ScreenHeader';
 import { crearResena } from '../services/reviewService';
-import { contieneProfanidad, MENSAJE_PROFANIDAD } from '../utils/profanity';
 import { theme } from '../theme/theme';
+import { contieneProfanidad, MENSAJE_PROFANIDAD } from '../utils/profanity';
 
 import type { ReviewRating } from '../types/review';
 
