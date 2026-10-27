@@ -20,7 +20,10 @@ import {
 
 import ScreenHeader from '../components/ScreenHeader';
 import { obtenerTodasLasConsultas } from '../services/messageService';
-import { obtenerPerfil } from '../services/userService';
+import {
+    obtenerPerfil,
+    obtenerPerfilPublico,
+} from '../services/userService';
 import { theme } from '../theme/theme';
 
 import type { Consultation } from '../types/conversation';
@@ -35,7 +38,7 @@ function agruparConversaciones(
             consulta.propiedad_id ?? consulta.propiedad?.id;
 
         const solicitanteId = consulta.usuario_id;
-        const propietarioId = consulta.propiedad?.usuario?.id;
+        const propietarioId = consulta.propiedad?.usuario_id;
 
         // Si faltan datos para identificar a los participantes,
         // conservamos la consulta sin agruparla.
@@ -85,6 +88,8 @@ export default function MensajesScreen() {
 
     const [consultas, setConsultas] = useState<Consultation[]>([]);
     const [usuarioActualId, setUsuarioActualId] = useState<number | null>(null);
+    const [nombresContactos, setNombresContactos] =
+        useState<Record<number, string>>({});
     
     const cargarConsultas = async (actualizar = false) => {
         try {
@@ -97,10 +102,12 @@ export default function MensajesScreen() {
             setError('');
 
             const perfilResponse = await obtenerPerfil();
+            const idActual = perfilResponse.success
+                ? perfilResponse.data.id
+                : usuarioActualId;
 
-            if (perfilResponse?.success) {
-                const perfil = perfilResponse.data;
-                setUsuarioActualId(perfilResponse.data.id);
+            if (perfilResponse.success) {
+                setUsuarioActualId(idActual);
             }
 
             const response = await obtenerTodasLasConsultas();
@@ -112,9 +119,84 @@ export default function MensajesScreen() {
                 );
             }
 
-            const items = response.data?.items || [];
+            const consultasAgrupadas = agruparConversaciones(
+                response.data?.items || []
+            );
 
-            setConsultas(agruparConversaciones(items));
+            setConsultas(consultasAgrupadas);
+
+            if (idActual !== null) {
+                const idsSinNombre = [
+                    ...new Set(
+                        consultasAgrupadas
+                            .filter((consulta) => {
+                                const contactoId = obtenerIdContacto(consulta, idActual);
+                                if (contactoId === null) return false;
+
+                                const contacto = Number(consulta.usuario_id) === idActual
+                                    ? consulta.propiedad?.usuario
+                                    : consulta.usuario;
+
+                                const nombreIncluido = [
+                                    contacto?.nombre,
+                                    contacto?.apellido,
+                                ]
+                                    .filter((parte) => Boolean(parte?.trim()))
+                                    .join(' ')
+                                    .trim();
+
+                                return !nombreIncluido && !nombresContactos[contactoId];
+                            })
+                            .map((consulta) => obtenerIdContacto(consulta, idActual))
+                            .filter((id): id is number => id !== null)
+                    ),
+                ];
+
+                const perfiles = await Promise.all(
+                    idsSinNombre.map(async (id) => {
+                        try {
+                            const perfil = await obtenerPerfilPublico(id);
+
+                            if (!perfil.success) {
+                                console.warn(
+                                    `MESSAGES: no se pudo cargar el perfil público ${id}`,
+                                    perfil.message
+                                );
+                                return null;
+                            }
+
+                            const nombre = [
+                                perfil.data.nombre,
+                                perfil.data.apellido,
+                            ]
+                                .filter((parte) => Boolean(parte?.trim()))
+                                .join(' ')
+                                .trim();
+
+                            return nombre ? { id, nombre } : null;
+                        } catch (error) {
+                            console.error(
+                                `MESSAGES: error al cargar el perfil público ${id}`,
+                                error
+                            );
+                            return null;
+                        }
+                    })
+                );
+
+                const nuevosNombres: Record<number, string> = {};
+
+                for (const perfil of perfiles) {
+                    if (perfil) {
+                        nuevosNombres[perfil.id] = perfil.nombre;
+                    }
+                }
+
+                setNombresContactos((actuales) => ({
+                    ...actuales,
+                    ...nuevosNombres,
+                }));
+            }
         } catch (err) {
             console.error(
                 'MESSAGES: error al cargar conversaciones',
@@ -148,60 +230,54 @@ export default function MensajesScreen() {
         );
     };
 
-    function obtenerNombreContacto(consulta: Consultation): string {
-        const interesadoId = Number(consulta.usuario_id);
-        const propietarioId = Number(
-            consulta.propiedad?.usuario_id
-        );
-
-        if (usuarioActualId === null) {
-            return 'Cargando contacto...';
-        }
-
-        if (usuarioActualId === interesadoId) {
-            const propietario = consulta.propiedad?.usuario;
-
-            return [
-                propietario?.nombre,
-                propietario?.apellido,
-            ].filter(Boolean).join(' ') || 'Propietario';
-        }
-
-        if (usuarioActualId === propietarioId) {
-            const interesado = consulta.usuario;
-
-            return [
-                interesado?.nombre,
-                interesado?.apellido,
-            ].filter(Boolean).join(' ') || 'Interesado';
-        }
-
-        return 'Contacto';
-    }
-
-    function obtenerIdContacto(consulta: Consultation): number | null {
-        const interesadoId = Number(consulta.usuario_id);
-        const propietarioId = Number(
-            consulta.propiedad?.usuario_id
-        );
-
-        if (usuarioActualId === null) {
+    function obtenerIdContacto(
+        consulta: Consultation,
+        idActual = usuarioActualId
+    ): number | null {
+        if (idActual === null) {
             return null;
         }
 
-        if (usuarioActualId === interesadoId) {
-            return propietarioId !== usuarioActualId
+        const interesadoId = Number(consulta.usuario_id);
+        const propietarioId = Number(consulta.propiedad?.usuario_id);
+
+        if (idActual === interesadoId) {
+            return Number.isFinite(propietarioId) && propietarioId > 0
+                && propietarioId !== idActual
                 ? propietarioId
                 : null;
         }
 
-        if (usuarioActualId === propietarioId) {
-            return interesadoId !== usuarioActualId
+        if (idActual === propietarioId) {
+            return Number.isFinite(interesadoId) && interesadoId > 0
+                && interesadoId !== idActual
                 ? interesadoId
                 : null;
         }
 
         return null;
+    }
+
+    function obtenerNombreContacto(consulta: Consultation): string {
+        if (usuarioActualId === null) {
+            return 'Cargando contacto...';
+        }
+
+        const contactoId = obtenerIdContacto(consulta);
+        if (contactoId === null) {
+            return 'Contacto';
+        }
+
+        const contacto = Number(consulta.usuario_id) === usuarioActualId
+            ? consulta.propiedad?.usuario
+            : consulta.usuario;
+
+        const nombreIncluido = [contacto?.nombre, contacto?.apellido]
+            .filter((parte) => Boolean(parte?.trim()))
+            .join(' ')
+            .trim();
+
+        return nombreIncluido || nombresContactos[contactoId] || 'Contacto';
     }
 
     const formatearFechaActividad = (
@@ -369,7 +445,7 @@ export default function MensajesScreen() {
                                 </Text>
                             </Pressable>
                         </View>
-                    ) : null
+                    ) : undefined
                 }
             />
         </View>
