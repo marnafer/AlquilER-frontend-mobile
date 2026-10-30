@@ -132,7 +132,7 @@ export default function HomeScreen() {
                 localidadesResponse,
             ] = await Promise.all([
                 api.get<PropertySearchResponse>('/propiedades', {
-                    params: { limit: 5 },
+                    params: { page: 1, per_page: 5 },
                 }),
                 api.get<PropertyCatalogResponse<PropertyCategory>>('/categorias'),
                 api.get<PropertyCatalogResponse<PropertyLocation>>('/localidades'),
