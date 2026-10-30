@@ -346,7 +346,7 @@ export default function NotificacionesScreen() {
                                     Marcar todas como leídas
                                 </Text>
                             </TouchableOpacity>
-                        ) : null
+                        ) : undefined
                     }
                 />
             ) : (

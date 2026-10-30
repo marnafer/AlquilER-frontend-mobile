@@ -16,6 +16,7 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 
 import { useLayout } from '@/context/LayoutContext';
 import { theme } from '@/theme/theme';
@@ -78,7 +79,7 @@ export default function PropiedadDetailScreen() {
     const [creandoReserva, setCreandoReserva] = useState(false);
     const [errorReserva, setErrorReserva] = useState('');
 
-    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollViewRef = useRef<ScrollViewInstance | null>(null);
     const [posicionFormulario, setPosicionFormulario] = useState(0);
 
     const cargarEstadoFavorito = useCallback(async () => {

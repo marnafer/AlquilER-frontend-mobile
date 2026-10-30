@@ -612,7 +612,7 @@ export default function ChatScreen() {
                                 </Text>
                             )}
                         </Pressable>
-                    ) : null
+                    ) : undefined
                 }
                 ListEmptyComponent={
                     <View style={styles.vacio}>

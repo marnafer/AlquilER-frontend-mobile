@@ -1,8 +1,8 @@
 import {
-    StatusBar,
     StyleSheet,
     View,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,10 +13,7 @@ export default function AppHeader() {
 
     return (
         <>
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor={theme.colors.primaryDark}
-            />
+            <StatusBar style="light" />
 
             <View
                 style={[

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import {
     StyleSheet,
     Text,
@@ -9,10 +9,10 @@ import {
 import { theme } from '../theme/theme';
 
 const enlaces = [
-    { ruta: '/contacto', icono: '✉️', titulo: 'Contacto' },
-    { ruta: '/preguntas-frecuentes', icono: '❔', titulo: 'Preguntas frecuentes' },
-    { ruta: '/terminos', icono: '📄', titulo: 'Términos y condiciones' },
-    { ruta: '/privacidad', icono: '🛡️', titulo: 'Política de privacidad' },
+    { ruta: '/contacto' as Href, icono: '✉️', titulo: 'Contacto' },
+    { ruta: '/preguntas-frecuentes' as Href, icono: '❔', titulo: 'Preguntas frecuentes' },
+    { ruta: '/terminos' as Href, icono: '📄', titulo: 'Términos y condiciones' },
+    { ruta: '/privacidad' as Href, icono: '🛡️', titulo: 'Política de privacidad' },
 ] as const;
 
 export default function HelpAndInfoSection() {
@@ -26,7 +26,7 @@ export default function HelpAndInfoSection() {
             <View style={styles.links}>
                 {enlaces.map((enlace) => (
                     <TouchableOpacity
-                        key={enlace.ruta}
+                        key={enlace.titulo}
                         style={styles.link}
                         onPress={() => router.push(enlace.ruta)}
                         activeOpacity={0.8}
