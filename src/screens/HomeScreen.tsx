@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -14,7 +13,9 @@ import {
 } from 'react-native';
 
 import PropertyCard from '../components/PropertyCard';
+import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import PublicarPropiedadSection from '../components/PublicarPropiedadSection';
+import Skeleton from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { obtenerCantidadNotificacionesNoLeidas } from '../services/notificationService';
@@ -269,10 +270,68 @@ export default function HomeScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={styles.loadingText}>Cargando...</Text>
-            </View>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+                accessibilityLabel="Cargando inicio"
+                accessibilityRole="progressbar"
+            >
+                <View style={styles.hero}>
+                    <View style={styles.heroHeader}>
+                        <Skeleton
+                            color="rgba(255,255,255,0.22)"
+                            style={styles.heroLogoSkeleton}
+                        />
+                        <Skeleton
+                            color="rgba(255,255,255,0.22)"
+                            style={styles.heroTitleSkeleton}
+                        />
+                        <Skeleton
+                            color="rgba(255,255,255,0.22)"
+                            style={styles.heroActionSkeleton}
+                        />
+                    </View>
+
+                    <View style={styles.descriptionCard}>
+                        <Skeleton
+                            color="rgba(255,255,255,0.22)"
+                            style={styles.descriptionTitleSkeleton}
+                        />
+                        <Skeleton
+                            color="rgba(255,255,255,0.16)"
+                            style={styles.descriptionTextSkeleton}
+                        />
+                        <Skeleton
+                            color="rgba(255,255,255,0.16)"
+                            style={styles.descriptionTextSkeletonShort}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.searchBox}>
+                    <Skeleton style={styles.searchTitleSkeleton} />
+                    <Skeleton style={styles.searchFieldSkeleton} />
+                    <Skeleton style={styles.searchFieldSkeleton} />
+                    <Skeleton style={styles.searchButtonSkeleton} />
+                </View>
+
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Skeleton style={styles.sectionBadgeSkeleton} />
+                        <Skeleton style={styles.sectionTitleSkeleton} />
+                    </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.propertiesScroll}
+                    >
+                        {[0, 1, 2].map((item) => (
+                            <PropertyCardSkeleton key={item} compacto />
+                        ))}
+                    </ScrollView>
+                </View>
+            </ScrollView>
         );
     }
 
@@ -497,9 +556,18 @@ const crearEstilos = (
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: theme.colors.background },
         content: { paddingBottom: bottomContentSpace },
-        loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, paddingHorizontal },
-        loadingText: { marginTop: separacionMedia, color: theme.colors.textMuted, fontSize: fontBody, fontWeight: '500' },
-        
+        heroLogoSkeleton: { width: 48, height: 48, borderRadius: 24 },
+        heroTitleSkeleton: { width: '42%', height: 30, borderRadius: 8 },
+        heroActionSkeleton: { width: 42, height: 42, borderRadius: 21 },
+        descriptionTitleSkeleton: { width: '72%', height: fontBody + 4, alignSelf: 'center', borderRadius: 5, marginBottom: separacionPequena },
+        descriptionTextSkeleton: { width: '92%', height: fontSmall, alignSelf: 'center', borderRadius: 5, marginBottom: 6 },
+        descriptionTextSkeletonShort: { width: '64%', height: fontSmall, alignSelf: 'center', borderRadius: 5 },
+        searchTitleSkeleton: { width: '62%', height: fontBody + 4, alignSelf: 'center', borderRadius: 5, marginBottom: separacionMedia },
+        searchFieldSkeleton: { width: '100%', height: 56, borderRadius: 12, marginBottom: 12 },
+        searchButtonSkeleton: { width: '100%', height: 48, borderRadius: 12, marginTop: 4 },
+        sectionBadgeSkeleton: { width: 104, height: fontSmall, borderRadius: 5, marginBottom: 8 },
+        sectionTitleSkeleton: { width: '68%', height: fontSectionTitle, borderRadius: 6 },
+
         hero: {
             backgroundColor: theme.colors.primary,
             paddingHorizontal: paddingHero,

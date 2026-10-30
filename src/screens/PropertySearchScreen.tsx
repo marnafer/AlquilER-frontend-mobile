@@ -9,7 +9,6 @@ import {
     useState,
 } from 'react';
 import {
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -21,7 +20,9 @@ import {
 
 import PropertyAdvancedFilter from '../components/PropertyAdvancedFilter';
 import PropertyCard from '../components/PropertyCard';
+import PropertyCardSkeleton from '../components/PropertyCardSkeleton';
 import ScreenHeader from '../components/ScreenHeader';
+import Skeleton from '../components/Skeleton';
 import api from '../services/api';
 import { abrirPropiedad } from '../services/propertyNavigation';
 import { theme } from '../theme/theme';
@@ -361,16 +362,44 @@ export default function PropertySearchScreen() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator
-                    size="large"
-                    color={theme.colors.primary}
-                />
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                accessibilityLabel="Cargando propiedades"
+                accessibilityRole="progressbar"
+            >
+                <ScrollView
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <ScreenHeader
+                        title="Encontrá tu próximo hogar"
+                        subtitle="Explorá propiedades y encontrá la que mejor se adapte a lo que buscás."
+                    />
 
-                <Text style={styles.loadingText}>
-                    Cargando propiedades...
-                </Text>
-            </View>
+                    <View style={styles.filtersContainer}>
+                        <Skeleton style={styles.filterTitleSkeleton} />
+                        <Skeleton style={styles.filterFieldSkeleton} />
+                        <Skeleton style={styles.filterFieldSkeleton} />
+                        <Skeleton style={styles.filterButtonSkeleton} />
+                    </View>
+
+                    <View style={styles.resultsSection}>
+                        <View style={styles.resultsHeader}>
+                            <Skeleton style={styles.resultsTitleSkeleton} />
+                            <Skeleton style={styles.resultsCountSkeleton} />
+                            <Skeleton style={styles.sortSkeleton} />
+                        </View>
+
+                        <View style={styles.propertiesGrid}>
+                            {[0, 1, 2, 3].map((item) => (
+                                <PropertyCardSkeleton key={item} />
+                            ))}
+                        </View>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         );
     }
 
@@ -610,23 +639,50 @@ const styles = StyleSheet.create({
         paddingBottom: theme.spacing.xl + 90,
     },
 
-    loadingContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: theme.colors.background,
-        paddingHorizontal: theme.spacing.lg,
-    },
-
-    loadingText: {
-        marginTop: theme.spacing.md,
-        color: theme.colors.textMuted,
-        fontSize: 14,
-    },
-
     filtersContainer: {
         marginTop: theme.spacing.md,
         marginHorizontal: theme.spacing.md,
+    },
+
+    filterTitleSkeleton: {
+        width: '65%',
+        height: 22,
+        borderRadius: 6,
+        marginBottom: theme.spacing.md,
+    },
+
+    filterFieldSkeleton: {
+        width: '100%',
+        height: 54,
+        borderRadius: 10,
+        marginBottom: theme.spacing.sm,
+    },
+
+    filterButtonSkeleton: {
+        width: '100%',
+        height: 46,
+        borderRadius: 10,
+        marginTop: theme.spacing.sm,
+    },
+
+    resultsTitleSkeleton: {
+        width: 160,
+        height: 28,
+        borderRadius: 6,
+    },
+
+    resultsCountSkeleton: {
+        width: 110,
+        height: 14,
+        borderRadius: 5,
+        marginTop: theme.spacing.sm,
+    },
+
+    sortSkeleton: {
+        width: '100%',
+        height: 54,
+        borderRadius: 10,
+        marginTop: theme.spacing.md,
     },
 
     errorBox: {
