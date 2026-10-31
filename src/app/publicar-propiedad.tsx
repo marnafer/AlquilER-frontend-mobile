@@ -15,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -75,7 +76,7 @@ export default function PublicarPropiedad() {
 
     const router = useRouter();
 
-    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollViewRef = useRef<ScrollViewInstance | null>(null);
 
     const posicionesSectores = useRef<Record<string, number>>({});
 
